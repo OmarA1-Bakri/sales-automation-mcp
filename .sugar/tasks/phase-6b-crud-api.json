@@ -1,0 +1,230 @@
+{
+  "id": "phase-6b",
+  "title": "Phase 6B: Campaign CRUD API with Sequelize ORM",
+  "description": "Build RESTful API for campaign template and instance management using Sequelize ORM",
+  "priority": "CRITICAL",
+  "complexity": "moderate",
+  "estimated_hours": "16-20",
+  "status": "pending",
+  "phase": "Phase 6: Backend Foundation",
+  "week": "2",
+  "depends_on": ["phase-6a"],
+
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/campaigns/templates",
+      "description": "Create new campaign template",
+      "request_body": {
+        "name": "string (required)",
+        "description": "string",
+        "type": "enum: email|linkedin|multi_channel",
+        "path_type": "enum: structured|dynamic_ai",
+        "icp_profile_id": "uuid",
+        "settings": "object"
+      },
+      "response": {
+        "201": "Template created successfully",
+        "400": "Validation error",
+        "500": "Server error"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/campaigns/templates",
+      "description": "List all campaign templates with pagination and filters",
+      "query_params": {
+        "page": "integer (default: 1)",
+        "limit": "integer (default: 20)",
+        "type": "enum: email|linkedin|multi_channel",
+        "path_type": "enum: structured|dynamic_ai",
+        "is_active": "boolean"
+      },
+      "response": {
+        "200": "Array of templates with pagination metadata"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/campaigns/templates/:id",
+      "description": "Get single template with sequences",
+      "response": {
+        "200": "Template object with email_sequences and linkedin_sequences",
+        "404": "Template not found"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/campaigns/templates/:id",
+      "description": "Update existing template",
+      "request_body": "Partial template object",
+      "response": {
+        "200": "Template updated successfully",
+        "404": "Template not found",
+        "400": "Validation error"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/campaigns/templates/:id",
+      "description": "Soft delete template (set is_active = false)",
+      "response": {
+        "204": "Template deleted successfully",
+        "404": "Template not found"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/campaigns/instances",
+      "description": "Start new campaign from template",
+      "request_body": {
+        "template_id": "uuid (required)",
+        "name": "string (required)",
+        "provider_config": "object (provider-specific settings)"
+      },
+      "response": {
+        "201": "Campaign instance created",
+        "400": "Invalid template or configuration",
+        "404": "Template not found"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/campaigns/instances/:id",
+      "description": "Get campaign instance with statistics",
+      "response": {
+        "200": "Instance object with enrollments and events summary"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/campaigns/instances/:id",
+      "description": "Update instance status (pause/resume/complete)",
+      "request_body": {
+        "status": "enum: active|paused|completed"
+      },
+      "response": {
+        "200": "Status updated successfully",
+        "400": "Invalid status transition"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/campaigns/instances/:id/performance",
+      "description": "Get detailed performance analytics",
+      "response": {
+        "200": "Analytics object with metrics, time series, and funnel data"
+      }
+    }
+  ],
+
+  "deliverables": [
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/models/CampaignTemplate.js",
+      "description": "Sequelize model for campaign_templates"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/models/CampaignInstance.js",
+      "description": "Sequelize model for campaign_instances"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/models/EmailSequence.js",
+      "description": "Sequelize model for email_sequences"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/models/LinkedInSequence.js",
+      "description": "Sequelize model for linkedin_sequences"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/models/CampaignEnrollment.js",
+      "description": "Sequelize model for campaign_enrollments"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/models/CampaignEvent.js",
+      "description": "Sequelize model for campaign_events"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/models/index.js",
+      "description": "Model associations and exports"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/routes/campaigns.js",
+      "description": "Express router for campaign endpoints"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/controllers/campaign-controller.js",
+      "description": "Business logic for campaign operations"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/validators/campaign-validator.js",
+      "description": "Input validation using Zod"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/middleware/error-handler.js",
+      "description": "Centralized error handling middleware"
+    }
+  ],
+
+  "validation_rules": {
+    "campaign_template": {
+      "name": "1-255 characters, required",
+      "type": "Must be email, linkedin, or multi_channel",
+      "path_type": "Must be structured or dynamic_ai",
+      "settings": "Valid JSON object"
+    },
+    "email_sequence": {
+      "subject": "1-255 characters for email type",
+      "body": "Required, min 10 characters",
+      "delay_hours": "0-720 (0-30 days)",
+      "step_number": "Positive integer, unique per template"
+    },
+    "linkedin_sequence": {
+      "type": "Must be profile_visit, connection_request, message, or voice_message",
+      "message": "Required for message types, max 300 chars for connection_request",
+      "delay_hours": "Minimum 24 hours between LinkedIn actions"
+    },
+    "campaign_instance": {
+      "name": "Required, 1-255 characters",
+      "template_id": "Must reference existing active template",
+      "status_transitions": "draft->active, active->paused, paused->active, active->completed"
+    }
+  },
+
+  "frontend_integration": [
+    {
+      "file": "/home/omar/claude - sales_auto_skill/desktop-app/src/services/api.js",
+      "changes": "Replace mock data functions with real API calls using fetch/axios"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/desktop-app/src/pages/CampaignsPage.jsx",
+      "changes": "Update to use API service for all CRUD operations"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/desktop-app/src/hooks/useCampaigns.js",
+      "changes": "Create custom hook for campaign data management"
+    }
+  ],
+
+  "success_criteria": [
+    "All API endpoints return correct status codes",
+    "Request validation works for all inputs",
+    "Database transactions handle errors properly",
+    "Frontend can create, read, update, delete templates",
+    "Campaign instances persist correctly",
+    "Performance metrics calculated accurately",
+    "API response time under 200ms for simple queries",
+    "Pagination works correctly with large datasets"
+  ],
+
+  "testing_requirements": [
+    "Unit tests for each model",
+    "Integration tests for API endpoints",
+    "Validation tests for error cases",
+    "End-to-end test: Create template, start instance, update status",
+    "Load test: 100 concurrent requests"
+  ],
+
+  "agent_assignment": "Backend Developer",
+  "reviewer": "Tech Lead",
+  "qa_engineer": "QA Test Engineer"
+}

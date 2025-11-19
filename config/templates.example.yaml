@@ -1,0 +1,458 @@
+# Email and Messaging Templates
+# Copy this file to .sales-automation/templates.yaml and customize
+
+version: "1.0"
+
+# Email Templates for lemlist Sequences
+email_templates:
+
+  # Template 1: Funding Hook
+  funding_hook:
+    name: "Funding Congratulations + Growth Challenge"
+    persona: "VP Finance, CFO"
+    icp_segment: "fintech_core, saas_core"
+    priority: 1
+
+    conditions:
+      has_funding_signal: true
+      funding_days_ago_max: 90
+
+    subject_variants:
+      - "{{firstName}}, quick question about {{company}}'s growth"
+      - "{{company}}'s {{fundingSeries}} → scaling challenges?"
+      - "{{firstName}}, congrats on the funding round 🎉"
+
+    body: |
+      Hi {{firstName}},
+
+      {{hookText}}
+
+      Quick question: As {{company}} scales with this new funding, how are you handling {{painPoint}} without adding more headcount?
+
+      {{caseStudyMatch}}.
+
+      Worth a 15-minute conversation?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - hookText
+      - painPoint
+      - caseStudyMatch
+
+    performance_baseline:
+      open_rate: 0.38
+      reply_rate: 0.09
+
+
+  # Template 2: Hiring Signal Hook
+  hiring_hook:
+    name: "Hiring Growth + Team Scaling Challenge"
+    persona: "VP Finance, CFO"
+    icp_segment: "all"
+    priority: 2
+
+    conditions:
+      has_hiring_signal: true
+      hiring_department: "Finance"
+
+    subject_variants:
+      - "{{firstName}}, hiring {{hiringCount}} finance roles?"
+      - "Growing the team at {{company}}?"
+      - "{{firstName}}, quick question about your finance team"
+
+    body: |
+      Hi {{firstName}},
+
+      Noticed {{company}} is hiring {{hiringCount}} finance roles—growing team is a great sign!
+
+      That said, I'm curious: as the team expands, how are you keeping {{painPoint}} from becoming a bottleneck?
+
+      {{caseStudyMatch}}.
+
+      Quick 15-min chat to explore?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - hiringCount
+      - painPoint
+      - caseStudyMatch
+
+
+  # Template 3: Technology Stack Hook
+  tech_stack_hook:
+    name: "Recent Tech Adoption + Integration Value"
+    persona: "VP Finance, CFO, Director"
+    icp_segment: "all"
+    priority: 3
+
+    conditions:
+      has_tech_signal: true
+      tech_adoption_days_ago_max: 90
+
+    subject_variants:
+      - "{{firstName}}, making the most of {{recentTech}}?"
+      - "{{company}} + {{recentTech}} integration"
+      - "Quick question about your {{recentTech}} setup"
+
+    body: |
+      Hi {{firstName}},
+
+      Saw {{company}} recently adopted {{recentTech}}—smart move for {{painPoint}}.
+
+      Quick question: Are you leveraging {{recentTech}} for financial reporting automation, or is that still manual?
+
+      We integrate directly with {{recentTech}} to {{valueProp}}. {{caseStudyMatch}}.
+
+      Worth exploring?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - recentTech
+      - painPoint
+      - valueProp
+      - caseStudyMatch
+
+
+  # Template 4: Generic High-Quality (Fallback)
+  generic_pain_based:
+    name: "Pain-Point Focused (No Specific Hook)"
+    persona: "all"
+    icp_segment: "all"
+    priority: 4
+
+    conditions: {}  # No specific conditions (fallback)
+
+    subject_variants:
+      - "{{firstName}}, quick question about {{company}}'s {{painArea}}"
+      - "{{company}} + {{painArea}}"
+      - "{{firstName}}, 15 minutes to discuss {{painArea}}?"
+
+    body: |
+      Hi {{firstName}},
+
+      Most {{title}} leaders at {{companySizeRange}}-employee {{industry}} companies struggle with {{painPoint}}.
+
+      Quick question: How is {{company}} handling this today?
+
+      {{caseStudyMatch}}.
+
+      Open to a 15-minute conversation?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - title
+      - company
+      - companySizeRange
+      - industry
+      - painPoint
+      - painArea
+      - caseStudyMatch
+
+
+  # Template 5: Follow-Up Email (Step 2)
+  follow_up_1:
+    name: "Follow-Up: Reference Original + Add Value"
+    sequence_step: 2
+
+    subject_variants:
+      - "{{firstName}}, following up on {{painPoint}}"
+      - "Quick follow-up, {{firstName}}"
+      - "{{firstName}}, still relevant?"
+
+    body: |
+      Hi {{firstName}},
+
+      Following up on my email about {{painPoint}} at {{company}}.
+
+      I wanted to add: {{additionalValue}}
+
+      {{caseStudyMatch}}.
+
+      Would 15 minutes next week work?
+
+      Best,
+      {{senderName}}
+
+    variables_required:
+      - firstName
+      - company
+      - painPoint
+      - additionalValue
+      - caseStudyMatch
+
+
+  # Template 6: Breakup Email (Final Step)
+  breakup_email:
+    name: "Breakup Email: Permission to Close Loop"
+    sequence_step: 5
+
+    subject_variants:
+      - "{{firstName}}, is this a priority?"
+      - "{{firstName}}, should I close your file?"
+      - "Last note, {{firstName}}"
+
+    body: |
+      Hi {{firstName}},
+
+      I've reached out a few times about {{painPoint}} at {{company}}, but haven't heard back.
+
+      I'm guessing it's either:
+      1. Not a priority right now
+      2. You're already solving it another way
+      3. Wrong timing
+
+      If none of those, happy to chat. Otherwise, I'll close your file.
+
+      Best,
+      {{senderName}}
+
+    variables_required:
+      - firstName
+      - company
+      - painPoint
+
+
+# LinkedIn Message Templates
+linkedin_templates:
+
+  connection_request:
+    name: "LinkedIn Connection Request"
+    max_characters: 300
+
+    variants:
+      - message: |
+          Hi {{firstName}}, following up on my email about {{painPoint}} at {{company}}. Would love to connect!
+
+      - message: |
+          {{firstName}}, saw your background in {{industry}}. I work with finance leaders at companies like {{company}}. Let's connect!
+
+      - message: |
+          Hi {{firstName}}, reaching out about {{company}}'s growth and financial operations. Would be great to connect!
+
+    variables_required:
+      - firstName
+      - company
+      - painPoint
+      - industry
+
+  connection_message:
+    name: "LinkedIn Message After Connection"
+    max_characters: 500
+
+    message: |
+      Thanks for connecting, {{firstName}}!
+
+      I reached out because I noticed {{company}} {{hook}}.
+
+      We help finance teams at {{industry}} companies like yours {{valueProp}}.
+
+      {{caseStudyMatch}}.
+
+      Worth a quick call to explore?
+
+    variables_required:
+      - firstName
+      - company
+      - hook
+      - industry
+      - valueProp
+      - caseStudyMatch
+
+
+# SMS/Text Templates (if using SMS channel)
+sms_templates:
+
+  initial_outreach:
+    name: "SMS Initial Outreach"
+    max_characters: 160
+
+    message: |
+      Hi {{firstName}}, {{senderFirstName}} here. Quick Q about {{company}}'s {{painArea}}. Worth a chat? {{calendarLink}}
+
+    variables_required:
+      - firstName
+      - senderFirstName
+      - company
+      - painArea
+      - calendarLink
+
+
+# Call Script Templates
+call_scripts:
+
+  cold_call_opener:
+    name: "Cold Call Opening"
+
+    script: |
+      Hi {{firstName}}, this is {{senderName}} from [Company].
+
+      I'm calling because I noticed {{company}} {{hook}}, and I wanted to ask:
+
+      How are you currently handling {{painPoint}}?
+
+      [LISTEN]
+
+      The reason I ask is that we work with finance leaders at companies like {{similarCompany}}, and they often struggle with {{painPoint}} as they scale.
+
+      {{caseStudyMatch}}.
+
+      Would it make sense to schedule 15 minutes to explore whether we could help {{company}} with this?
+
+    variables_required:
+      - firstName
+      - senderName
+      - company
+      - hook
+      - painPoint
+      - similarCompany
+      - caseStudyMatch
+
+  voicemail_script:
+    name: "Voicemail Script"
+    max_seconds: 30
+
+    script: |
+      Hi {{firstName}}, {{senderName}} from [Company].
+
+      Noticed {{company}} {{hook}}. I work with finance teams to {{valueProp}}.
+
+      {{caseStudyMatch}}.
+
+      Worth a chat? Call me at {{senderPhone}} or grab time at {{calendarLink}}.
+
+    variables_required:
+      - firstName
+      - senderName
+      - company
+      - hook
+      - valueProp
+      - caseStudyMatch
+      - senderPhone
+      - calendarLink
+
+
+# Case Study Snippets (referenced in templates)
+case_studies:
+
+  fintech_200_500:
+    snippet: "Similar 300-person fintech reduced close time from 15 days to 6 days"
+    industry: "Fintech"
+    company_size_range: "200-500"
+    metric: "Close time reduction"
+
+  saas_500_1000:
+    snippet: "500-person SaaS company saved 40 hours/month on financial reporting"
+    industry: "SaaS"
+    company_size_range: "500-1000"
+    metric: "Time savings"
+
+  ecommerce_200_500:
+    snippet: "E-commerce company automated reconciliation, eliminated 2 FTE"
+    industry: "E-commerce"
+    company_size_range: "200-500"
+    metric: "Headcount savings"
+
+  generic:
+    snippet: "Companies like yours typically see 40% reduction in close time and 30+ hours saved per month"
+    industry: "all"
+    company_size_range: "all"
+    metric: "Combined"
+
+
+# Value Propositions (by pain point)
+value_propositions:
+
+  manual_close_process:
+    value_prop: "automate month-end close and reduce manual work by 40%"
+    pain_area: "financial close"
+
+  headcount_scaling:
+    value_prop: "scale financial operations without adding headcount"
+    pain_area: "team scaling"
+
+  data_consolidation:
+    value_prop: "consolidate data from multiple sources into unified reporting"
+    pain_area: "data consolidation"
+
+  reporting_delays:
+    value_prop: "deliver real-time financial insights instead of waiting weeks"
+    pain_area: "reporting speed"
+
+  audit_prep:
+    value_prop: "streamline audit preparation and reduce audit costs"
+    pain_area: "audit readiness"
+
+
+# Personalization Variable Defaults
+default_variables:
+  senderName: "John Doe"
+  senderFirstName: "John"
+  senderTitle: "Account Executive"
+  senderPhone: "+1-555-123-4567"
+  senderEmail: "john@company.com"
+  calendarLink: "https://calendly.com/john-doe"
+  companyName: "Your Company"
+  companyWebsite: "https://yourcompany.com"
+
+
+# Content Guardrails (spam trigger avoidance)
+content_guardrails:
+
+  blocked_phrases:
+    - "Buy now"
+    - "Click here"
+    - "Free money"
+    - "Limited time offer"
+    - "Act now"
+    - "Congratulations, you've won"
+    - "100% free"
+    - "Risk-free"
+
+  max_exclamation_marks: 1
+  max_capital_letters_percent: 10
+  max_emoji_count: 1
+
+  required_elements:
+    - unsubscribe_link: true
+    - sender_address: true
+    - company_name: true
+
+
+# A/B Testing Configuration
+ab_testing:
+
+  subject_line_tests:
+    enabled: true
+    distribution: "bandit"  # Options: round_robin, bandit, champion_challenger
+    exploration_rate: 0.10  # 10% explore, 90% exploit
+    min_sample_size: 100
+    winning_metric: "reply_rate"
+
+  content_tests:
+    enabled: true
+    test_elements:
+      - "opening_line"
+      - "case_study_placement"
+      - "cta_wording"
+
+  send_time_tests:
+    enabled: false  # Disable for now, rely on timezone optimization

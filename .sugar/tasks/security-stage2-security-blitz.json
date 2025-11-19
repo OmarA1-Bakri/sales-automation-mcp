@@ -1,0 +1,318 @@
+{
+  "id": "security-stage2-security-blitz",
+  "title": "Stage 2: Security Blitz - Input Validation, Auth Hardening, Webhook Security",
+  "type": "feature",
+  "priority": 5,
+  "status": "pending",
+  "created_at": "2025-01-17T00:00:00Z",
+  "estimated_effort_hours": 26,
+
+  "context": "Stage 2 of the 4-stage security-first acceleration plan. This is the CRITICAL security hardening phase that addresses all remaining Phase 2 security tasks: comprehensive input validation (T2.6), authentication hardening (T2.8), webhook signature verification (T2.9), and CSRF protection. Success here will raise Security score from C+ (65/100) to B+ (82/100), implementing enterprise-grade security without external dependencies.",
+
+  "business_context": "Enterprise-grade security is non-negotiable for production deployment. This stage eliminates all CRITICAL and HIGH severity security vulnerabilities, implements OWASP Top 10 protections, and establishes security-first patterns across the codebase. Customers require SOC 2, GDPR, and enterprise security compliance - this stage delivers that foundation.",
+
+  "security_tasks": [
+    {
+      "id": "T2.6",
+      "name": "Comprehensive Input Validation",
+      "severity": "CRITICAL",
+      "estimated_hours": 12,
+      "current_state": "Partial validation, inconsistent patterns, SQL injection risks",
+      "target_state": "Zod schemas validate ALL inputs (query, body, params) on ALL endpoints",
+      "agent": "compounding-engineering:security-sentinel"
+    },
+    {
+      "id": "T2.8",
+      "name": "Authentication Hardening",
+      "severity": "CRITICAL",
+      "estimated_hours": 7,
+      "current_state": "Basic API key auth, no rate limiting, no account lockout",
+      "target_state": "Enterprise auth: rate limiting, account lockout, session management, MFA ready",
+      "plugin": "api-rate-limiter",
+      "agent": "compounding-engineering:kieran-typescript-reviewer"
+    },
+    {
+      "id": "T2.9",
+      "name": "Webhook Signature Verification",
+      "severity": "HIGH",
+      "estimated_hours": 5,
+      "current_state": "Webhooks accept any payload, no signature verification",
+      "target_state": "HMAC-SHA256 signature verification for all webhook providers",
+      "agent": "compounding-engineering:security-sentinel"
+    },
+    {
+      "id": "CSRF-PROTECTION",
+      "name": "CSRF Token Protection",
+      "severity": "HIGH",
+      "estimated_hours": 4,
+      "current_state": "No CSRF protection on state-changing endpoints",
+      "target_state": "CSRF tokens required for all POST/PUT/DELETE requests",
+      "agent": "compounding-engineering:security-sentinel"
+    },
+    {
+      "id": "SECURITY-TESTING",
+      "name": "Penetration Testing & Validation",
+      "severity": "CRITICAL",
+      "estimated_hours": 6,
+      "current_state": "No automated security testing",
+      "target_state": "OWASP Top 10 scanning, SQL injection tests, XSS tests automated",
+      "plugin": "security-test-scanner"
+    }
+  ],
+
+  "technical_requirements": [
+    "Create Zod schemas for ALL 20+ API endpoints (query, body, params)",
+    "Add express-rate-limit with per-endpoint and per-user limits",
+    "Implement account lockout after 5 failed auth attempts (15-minute window)",
+    "Add session management with Redis-backed sessions",
+    "Prepare MFA infrastructure (TOTP ready, not enforced yet)",
+    "Implement HMAC-SHA256 signature verification for Lemlist, HubSpot webhooks",
+    "Add CSRF token generation and validation middleware",
+    "Configure csurf middleware for all state-changing endpoints",
+    "Run OWASP ZAP or similar for automated vulnerability scanning",
+    "Test for SQL injection, XSS, CSRF, auth bypass, path traversal",
+    "All changes must maintain backward compatibility with existing integrations"
+  ],
+
+  "files_to_create": [
+    {
+      "path": "mcp-server/src/middleware/csrf-protection.js",
+      "description": "CSRF token generation and validation",
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/middleware/account-lockout.js",
+      "description": "Track failed auth attempts, implement lockout logic",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/src/middleware/session-manager.js",
+      "description": "Redis-backed session management",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/src/validators/complete-schemas.js",
+      "description": "Zod schemas for all endpoints",
+      "estimated_hours": 8
+    },
+    {
+      "path": "mcp-server/src/webhooks/signature-verifier.js",
+      "description": "HMAC-SHA256 signature verification utility",
+      "estimated_hours": 3
+    }
+  ],
+
+  "files_to_modify": [
+    {
+      "path": "mcp-server/src/api-server.js",
+      "changes": [
+        "Add CSRF middleware before routes",
+        "Add session management middleware",
+        "Add account lockout middleware before authentication"
+      ],
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/src/middleware/authenticate.js",
+      "changes": [
+        "Add rate limiting per API key (100 requests/15 min)",
+        "Integrate with account lockout middleware",
+        "Add failed attempt tracking",
+        "Log all authentication failures"
+      ],
+      "estimated_hours": 3
+    },
+    {
+      "path": "All route files (campaigns.js, etc.)",
+      "changes": [
+        "Add Zod validation middleware to ALL endpoints",
+        "Ensure CSRF protection on POST/PUT/DELETE",
+        "Add input sanitization for XSS prevention"
+      ],
+      "estimated_hours": 6
+    },
+    {
+      "path": "mcp-server/src/routes/webhooks.js",
+      "changes": [
+        "Add signature verification before processing",
+        "Reject webhooks with invalid signatures",
+        "Log signature verification failures"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "path": ".env.example",
+      "changes": [
+        "Add SESSION_SECRET variable with generation instructions",
+        "Add CSRF_SECRET variable with generation instructions",
+        "Add WEBHOOK_SIGNING_SECRET for signature verification",
+        "Document all security-related environment variables"
+      ],
+      "estimated_hours": 1
+    }
+  ],
+
+  "agent_assignments": {
+    "security_architect": {
+      "responsibility": "Design security architecture and create validation schemas",
+      "agent": "compounding-engineering:security-sentinel",
+      "tasks": [
+        "Design CSRF protection strategy",
+        "Create comprehensive Zod validation schemas for all endpoints",
+        "Review .env security documentation",
+        "Conduct final OWASP security audit"
+      ]
+    },
+    "auth_specialist": {
+      "responsibility": "Implement authentication hardening (T2.8)",
+      "plugin": "api-authentication-builder",
+      "tasks": [
+        "Add rate limiting (100/15min) to all endpoints",
+        "Implement account lockout (5 attempts/15min)",
+        "Configure session management with Redis",
+        "Add MFA infrastructure (TOTP ready)"
+      ]
+    },
+    "webhook_specialist": {
+      "responsibility": "Implement webhook security (T2.9)",
+      "plugin": "webhook-handler-creator",
+      "tasks": [
+        "Implement HMAC-SHA256 signature verification",
+        "Add signature validation middleware",
+        "Configure webhook secret management",
+        "Test signature enforcement"
+      ]
+    },
+    "middleware_developer": {
+      "responsibility": "Implement CSRF and integrate all middleware",
+      "agent": "compounding-engineering:security-sentinel",
+      "tasks": [
+        "Create CSRF token generation middleware",
+        "Implement CSRF validation middleware",
+        "Integrate all middleware into api-server.js",
+        "Configure middleware execution order"
+      ]
+    },
+    "security_tester": {
+      "responsibility": "Automated security testing and vulnerability scanning",
+      "plugin": "security-test-scanner",
+      "tasks": [
+        "Run OWASP ZAP against all endpoints",
+        "Test SQL injection, XSS, CSRF vulnerabilities",
+        "Test auth bypass scenarios",
+        "Generate vulnerability report"
+      ]
+    },
+    "code_reviewer": {
+      "responsibility": "Review all implementations for code quality",
+      "agent": "compounding-engineering:kieran-typescript-reviewer",
+      "tasks": [
+        "Review all new middleware for code quality",
+        "Review Zod schemas for completeness",
+        "Review auth implementation for best practices",
+        "Ensure TypeScript types are correct"
+      ]
+    },
+    "qa_validator": {
+      "responsibility": "Final validation and quality gate",
+      "agent": "sugar:quality-guardian",
+      "tasks": [
+        "Verify all endpoints have input validation",
+        "Test account lockout behavior",
+        "Test CSRF protection",
+        "Approve Stage 3 progression"
+      ]
+    }
+  },
+
+  "success_criteria": [
+    "Security Score: 65/100 → 82/100 (+17 points)",
+    "Overall Grade: 79/100 → 83/100 (+4 points)",
+    "T2.6 Complete: Zod validation on ALL 20+ endpoints, zero validation gaps",
+    "T2.8 Complete: Rate limiting (100/15min), account lockout (5 attempts/15min), session mgmt",
+    "T2.9 Complete: HMAC-SHA256 verification for Lemlist, HubSpot, Explorium webhooks",
+    "CSRF Complete: CSRF tokens required on all POST/PUT/DELETE endpoints",
+    "Security Testing Complete: OWASP Top 10 scan passes, zero CRITICAL vulnerabilities",
+    "Quality Gate Passed: sugar:quality-guardian + security-test-scanner approve Stage 3 progression"
+  ],
+
+  "acceptance_tests": [
+    {
+      "test": "Input Validation - Valid",
+      "action": "Send valid request to any endpoint",
+      "expected": "Request processed successfully"
+    },
+    {
+      "test": "Input Validation - Invalid",
+      "action": "Send malformed data (SQL injection, XSS payloads)",
+      "expected": "400 Bad Request with clear validation error, attack blocked"
+    },
+    {
+      "test": "Rate Limiting - Normal Use",
+      "action": "Send 50 requests in 15 minutes",
+      "expected": "All requests succeed"
+    },
+    {
+      "test": "Rate Limiting - Abuse",
+      "action": "Send 101 requests in 15 minutes",
+      "expected": "101st request returns 429 Too Many Requests"
+    },
+    {
+      "test": "Account Lockout",
+      "action": "Send 5 requests with invalid API key",
+      "expected": "6th request returns 429 with 'Account locked' message"
+    },
+    {
+      "test": "Webhook Signature - Valid",
+      "action": "Send webhook with valid HMAC signature",
+      "expected": "Webhook processed successfully"
+    },
+    {
+      "test": "Webhook Signature - Invalid",
+      "action": "Send webhook with invalid or missing signature",
+      "expected": "401 Unauthorized, webhook rejected"
+    },
+    {
+      "test": "CSRF Protection - With Token",
+      "action": "POST request with valid CSRF token",
+      "expected": "Request succeeds"
+    },
+    {
+      "test": "CSRF Protection - Without Token",
+      "action": "POST request without CSRF token",
+      "expected": "403 Forbidden"
+    },
+    {
+      "test": "OWASP Top 10 Scan",
+      "action": "Run OWASP ZAP against all endpoints",
+      "expected": "Zero CRITICAL vulnerabilities, <3 HIGH vulnerabilities"
+    }
+  ],
+
+  "dependencies": [
+    "Stage 1 Complete: Quick wins validated and passed",
+    "Redis Running: For session management and rate limiting (can be mocked if not available)",
+    "API Credentials: Valid keys for testing all integrations"
+  ],
+
+  "deliverables": [
+    "Zod validation schemas for all 20+ API endpoints",
+    "Rate limiting on all endpoints (100/15min general, per-endpoint configs)",
+    "Account lockout after 5 failed attempts (15-minute lockout)",
+    "Session management with Redis backing",
+    "HMAC-SHA256 webhook signature verification for all providers",
+    "CSRF protection on all state-changing endpoints",
+    "OWASP Top 10 compliance with zero CRITICAL vulnerabilities",
+    "Security test suite integrated into CI/CD",
+    "Quality gate review completed and passed"
+  ],
+
+  "stage_progression": {
+    "previous_stage": "Stage 1: Quick Wins (20 hours, +15 security points)",
+    "current_stage": "Stage 2: Security Blitz (26 hours, +4 points overall, +17 security points)",
+    "next_stage": "Stage 3: Test Coverage Surge (85 hours, +5 points)",
+    "grade_progression": "79 → 83 (+4 points)",
+    "security_progression": "65 → 82 (+17 points)",
+    "optimization": "8 hours saved via specialized plugins and parallel execution"
+  }
+}

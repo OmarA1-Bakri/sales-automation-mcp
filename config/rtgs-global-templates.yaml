@@ -1,0 +1,650 @@
+# RTGS.global - Outreach Templates
+# Customized messaging for payment service providers and treasury leaders
+
+version: "1.0"
+
+# Email Templates for lemlist Sequences
+email_templates:
+
+  # Template 1: Liquidity Management Hook (PRIMARY PAIN)
+  liquidity_management_hook:
+    name: "Liquidity Management Challenge"
+    persona: "Head of Treasury, VP Treasury, Treasury Director"
+    icp_segment: "rtgs_psp_treasury, rtgs_fintech_treasury"
+    priority: 1
+
+    conditions:
+      title_match: ["Treasury", "Treasurer"]
+      company_size_min: 50
+
+    subject_variants:
+      - "{{firstName}}, quick question about {{company}}'s treasury workflows"
+      - "{{company}}'s liquidity management as you scale"
+      - "{{firstName}}, optimizing working capital at {{company}}?"
+
+    body: |
+      Hi {{firstName}},
+
+      I noticed {{company}} {{hook}} — congrats on the growth!
+
+      Quick question: As you scale cross-border operations, how are you managing liquidity across multiple corridors without tying up excessive working capital?
+
+      Most PSPs we work with face the same challenge — **inefficient treasury workflows that limit their ability to scale** while maintaining healthy cash positions.
+
+      RTGS.global enables **just-in-time funding with instant settlement** (seconds, not days), which means:
+      • No collateral tied up in correspondent accounts
+      • Real-time visibility into global liquidity
+      • 24/7 settlement capability
+
+      {{caseStudy}}
+
+      Worth a 15-minute conversation about your treasury operations?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - hook
+      - caseStudy
+
+    performance_baseline:
+      open_rate: 0.42
+      reply_rate: 0.11
+
+
+  # Template 2: Cost Reduction Hook (High SWIFT/Correspondent Banking Fees)
+  cost_reduction_hook:
+    name: "Correspondent Banking Costs"
+    persona: "Head of Payments, Operations Director, CFO"
+    icp_segment: "all"
+    priority: 2
+
+    conditions:
+      has_expansion_signal: true
+
+    subject_variants:
+      - "{{firstName}}, reducing {{company}}'s correspondent banking costs"
+      - "SWIFT fees eating into {{company}}'s margins?"
+      - "{{firstName}}, question about your cross-border payment costs"
+
+    body: |
+      Hi {{firstName}},
+
+      Saw that {{company}} {{hook}}.
+
+      Quick question: As you expand into {{newMarket}}, are SWIFT and correspondent banking fees becoming a significant cost center?
+
+      Most payment operators we speak with see **2-4% of transaction value** disappear in correspondent fees, SWIFT charges, and FX markups.
+
+      RTGS.global removes the intermediaries:
+      • **Direct settlement** without correspondent banking chains
+      • Access to the **most competitive FX rates** across our member network
+      • Transparent pricing with no hidden fees
+
+      {{caseStudy}}
+
+      Open to exploring how this could improve your unit economics?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - hook
+      - newMarket
+      - caseStudy
+
+
+  # Template 3: Global Expansion / Licensing Hook
+  expansion_licensing_hook:
+    name: "Instant Global Expansion"
+    persona: "Head of Partnerships, VP Business Development, CEO"
+    icp_segment: "rtgs_psp_treasury, rtgs_fintech_treasury"
+    priority: 1
+
+    conditions:
+      has_expansion_signal: true
+      OR:
+        has_funding_signal: true
+
+    subject_variants:
+      - "{{firstName}}, expanding {{company}} into {{targetRegion}} overnight"
+      - "{{company}}'s {{targetRegion}} expansion without licensing delays"
+      - "{{firstName}}, quick question about {{company}}'s international strategy"
+
+    body: |
+      Hi {{firstName}},
+
+      {{hook}}
+
+      Quick question: As {{company}} eyes {{targetRegion}} expansion, how are you planning to navigate the **licensing requirements and regulatory hurdles** in each new market?
+
+      Most PSPs we work with face a painful choice:
+      1. Spend 12-24 months and significant capital getting licensed
+      2. Compromise on target markets
+
+      RTGS.global offers a third option: **Instant access to global currencies by partnering with our licensed funds controllers** in your target markets.
+
+      • Enter new territories **overnight** vs years of regulatory work
+      • Leverage local expertise in compliance and settlement
+      • Focus your resources on customer acquisition, not licensing
+
+      {{caseStudy}}
+
+      Would love to show you how this works for {{targetRegion}}. 15 minutes next week?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - hook
+      - targetRegion
+      - caseStudy
+
+
+  # Template 4: Settlement Speed Hook
+  settlement_speed_hook:
+    name: "Real-Time Settlement"
+    persona: "Head of Operations, Chief Payments Officer"
+    icp_segment: "all"
+    priority: 3
+
+    conditions:
+      industry_match: ["PSP", "Payment", "Fintech"]
+
+    subject_variants:
+      - "{{firstName}}, {{company}}'s settlement times vs competitors"
+      - "Real-time settlement at {{company}}?"
+      - "{{firstName}}, quick question about payment settlement"
+
+    body: |
+      Hi {{firstName}},
+
+      I'm reaching out because most payment operators in {{region}} are facing pressure to offer **real-time settlement** while traditional correspondent banking still takes 1-3 days.
+
+      Quick question: How is {{company}} handling customer expectations around **instant cross-border payments** while working within legacy settlement infrastructure?
+
+      RTGS.global's platform enables **settlement in seconds, 24/7**:
+      • Removal of intermediaries = no more settlement delays
+      • Real-time settlement improves NPS and customer retention
+      • No banking hours constraints (truly 24/7/365)
+
+      {{caseStudy}}
+
+      Worth exploring for {{company}}'s operations?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - region
+      - caseStudy
+
+
+  # Template 5: ISO20022 / Regulatory Compliance Hook
+  regulatory_compliance_hook:
+    name: "ISO20022 & Regulatory Compliance"
+    persona: "Head of Compliance, Chief Risk Officer, Head of Operations"
+    icp_segment: "all"
+    priority: 3
+
+    conditions:
+      has_regulatory_signal: true
+
+    subject_variants:
+      - "{{firstName}}, {{company}}'s ISO20022 readiness"
+      - "Regulatory compliance infrastructure at {{company}}"
+      - "{{firstName}}, question about {{company}}'s compliance strategy"
+
+    body: |
+      Hi {{firstName}},
+
+      With the **ISO20022 migration** underway and regulators tightening AML/sanctions requirements, most PSPs are re-evaluating their payment infrastructure.
+
+      Quick question: How is {{company}} ensuring your settlement infrastructure stays compliant with evolving standards while maintaining operational efficiency?
+
+      RTGS.global is **built with compliance at its core**:
+      • **ISO20022-aligned** from day one
+      • Built-in transparency for AML and sanctions screening
+      • Partner with licensed funds controllers for regulatory coverage
+
+      {{caseStudy}}
+
+      Would a brief conversation about your compliance roadmap be valuable?
+
+      Best,
+      {{senderName}}
+      {{senderTitle}}
+
+    variables_required:
+      - firstName
+      - company
+      - caseStudy
+
+
+  # Template 6: Follow-Up Email (Step 2)
+  follow_up_value_add:
+    name: "Follow-Up: Add Value with Insight"
+    sequence_step: 2
+
+    subject_variants:
+      - "{{firstName}}, following up + {{valuableInsight}}"
+      - "{{company}} + treasury optimization"
+      - "{{firstName}}, thought this might be relevant"
+
+    body: |
+      Hi {{firstName}},
+
+      Following up on my email about {{painPoint}} at {{company}}.
+
+      I wanted to share something relevant: {{valuableInsight}}
+
+      Many PSPs in {{region}} are facing similar challenges around {{painPoint}}, and we're seeing a shift toward **instant settlement infrastructure** to address this.
+
+      {{caseStudy}}
+
+      Would 15 minutes next week work to discuss {{company}}'s approach?
+
+      Best,
+      {{senderName}}
+
+    variables_required:
+      - firstName
+      - company
+      - painPoint
+      - region
+      - valuableInsight
+      - caseStudy
+
+
+  # Template 7: Breakup Email (Final Step)
+  breakup_email:
+    name: "Breakup Email: Permission to Close"
+    sequence_step: 5
+
+    subject_variants:
+      - "{{firstName}}, should I close your file?"
+      - "{{firstName}}, is treasury optimization a priority?"
+      - "Last note, {{firstName}}"
+
+    body: |
+      Hi {{firstName}},
+
+      I've reached out a few times about optimizing {{company}}'s treasury operations and cross-border settlement infrastructure, but haven't heard back.
+
+      I'm guessing it's either:
+      1. **Not a priority** right now
+      2. You're already working with a settlement network that meets your needs
+      3. **Wrong timing** with other initiatives taking precedence
+
+      If none of those apply and you'd like to see how RTGS.global could help {{company}} with {{painPoint}}, happy to chat.
+
+      Otherwise, I'll close your file and wish you the best with your expansion.
+
+      Best,
+      {{senderName}}
+
+    variables_required:
+      - firstName
+      - company
+      - painPoint
+
+
+# LinkedIn Message Templates (via lemlist LinkedIn integration)
+linkedin_templates:
+
+  connection_request:
+    name: "LinkedIn Connection Request"
+    max_characters: 300
+    channel: "linkedin"  # Sent via lemlist LinkedIn integration
+
+    variants:
+      - message: |
+          Hi {{firstName}}, I work with PSPs and fintechs on treasury optimization and instant settlement infrastructure. Would love to connect!
+
+      - message: |
+          {{firstName}}, noticed {{company}}'s expansion into {{region}}. I help payment operators optimize liquidity and settlement. Let's connect!
+
+      - message: |
+          Hi {{firstName}}, following up on my email about treasury workflows at {{company}}. Would be great to connect here!
+
+    variables_required:
+      - firstName
+      - company
+      - region
+
+  linkedin_message_after_connection:
+    name: "LinkedIn Message After Connection"
+    max_characters: 500
+    channel: "linkedin"  # Sent via lemlist LinkedIn integration
+
+    message: |
+      Thanks for connecting, {{firstName}}!
+
+      I reached out because {{company}} {{hook}}, and I noticed you're managing treasury operations.
+
+      We help PSPs and fintechs with:
+      • **Instant global expansion** without licensing delays
+      • **Real-time settlement** (seconds, not days)
+      • **Smart liquidity management** with just-in-time funding
+
+      {{caseStudy}}
+
+      Worth a quick call to explore how this could benefit {{company}}?
+
+    variables_required:
+      - firstName
+      - company
+      - hook
+      - caseStudy
+
+  linkedin_follow_up:
+    name: "LinkedIn Follow-Up Message"
+    max_characters: 400
+    channel: "linkedin"
+    sequence_step: 3
+
+    message: |
+      Hi {{firstName}},
+
+      Following up on my email about {{company}}'s {{painPoint}}.
+
+      Quick question: As you scale cross-border operations in {{region}}, what's your biggest challenge with treasury and settlement right now?
+
+      Happy to share how other PSPs are addressing this.
+
+    variables_required:
+      - firstName
+      - company
+      - painPoint
+      - region
+
+
+# SMS/Text Templates (Optional - for high-value prospects)
+sms_templates:
+
+  urgent_follow_up:
+    name: "SMS Follow-Up for High-Value Leads"
+    max_characters: 160
+
+    message: |
+      Hi {{firstName}}, {{senderFirstName}} here. Quick Q about {{company}}'s treasury operations. Worth a chat? {{calendarLink}}
+
+    variables_required:
+      - firstName
+      - senderFirstName
+      - company
+      - calendarLink
+
+
+# Case Study Snippets (referenced in templates)
+case_studies:
+
+  psp_treasury_optimization:
+    snippet: "A UK-based PSP with €500M annual volume reduced their correspondent banking costs by 60% and improved working capital efficiency by 40% using RTGS.global"
+    industry: "PSP"
+    company_size_range: "100-500"
+    metric: "Cost reduction + Capital efficiency"
+    region: "Europe"
+
+  fintech_global_expansion:
+    snippet: "A Singapore fintech entered 15 new markets in 3 months using RTGS.global's network — a process that would have taken 2+ years through traditional licensing"
+    industry: "Fintech"
+    company_size_range: "50-200"
+    metric: "Time to market"
+    region: "APAC"
+
+  instant_settlement:
+    snippet: "A Middle East payments operator reduced settlement times from T+2 days to real-time (seconds), improving customer NPS by 25 points"
+    industry: "Payment Operator"
+    company_size_range: "200-1000"
+    metric: "Settlement speed + NPS"
+    region: "CEMEA"
+
+  liquidity_management:
+    snippet: "A multi-corridor PSP freed up $12M in working capital by eliminating pre-funded correspondent accounts and switching to just-in-time settlement"
+    industry: "PSP"
+    company_size_range: "500-2000"
+    metric: "Working capital optimization"
+    region: "Global"
+
+  generic:
+    snippet: "PSPs using RTGS.global typically see 40-60% reduction in settlement costs, instant access to new markets, and significantly improved treasury efficiency"
+    industry: "all"
+    company_size_range: "all"
+    metric: "Combined"
+    region: "Global"
+
+
+# Value Propositions (by pain point)
+value_propositions:
+
+  liquidity_management:
+    value_prop: "just-in-time funding with instant settlement, eliminating collateral demands and optimizing 24/7"
+    pain_area: "treasury workflows"
+    talking_points:
+      - "No capital tied up in pre-funded accounts"
+      - "Real-time visibility into global liquidity positions"
+      - "24/7 settlement removes banking hours constraints"
+
+  high_costs:
+    value_prop: "direct settlement removing intermediaries and providing access to competitive FX rates"
+    pain_area: "correspondent banking fees"
+    talking_points:
+      - "Eliminate correspondent banking fees"
+      - "Access most competitive FX rates across member network"
+      - "Transparent pricing with no hidden costs"
+
+  licensing_barriers:
+    value_prop: "instant global expansion by partnering with licensed funds controllers in target markets"
+    pain_area: "regulatory licensing"
+    talking_points:
+      - "Enter new markets overnight vs 12-24 months"
+      - "Partner with funds controllers who have local licenses"
+      - "Focus resources on growth, not regulatory compliance"
+
+  settlement_delays:
+    value_prop: "settlement in seconds, 24/7, with removal of intermediaries"
+    pain_area: "slow settlement times"
+    talking_points:
+      - "Real-time settlement improves customer experience"
+      - "24/7 operation removes time zone constraints"
+      - "No intermediary delays or failures"
+
+  regulatory_pressure:
+    value_prop: "ISO20022-aligned platform with built-in compliance and transparency"
+    pain_area: "regulatory compliance"
+    talking_points:
+      - "Future-proof for ISO20022 migration"
+      - "Built-in AML and sanctions screening support"
+      - "Transparent audit trails for regulators"
+
+
+# Personalization Variable Defaults
+default_variables:
+  senderName: "Your Name"
+  senderFirstName: "Your"
+  senderTitle: "Business Development, RTGS.global"
+  senderPhone: "+44-xxx-xxx-xxxx"
+  senderEmail: "yourname@rtgs.global"
+  calendarLink: "https://calendly.com/yourname"
+  companyName: "RTGS.global"
+  companyWebsite: "https://rtgs.global"
+
+
+# Content Guardrails (spam trigger avoidance)
+content_guardrails:
+
+  blocked_phrases:
+    - "Free money"
+    - "No risk"
+    - "Guaranteed"
+    - "Act now"
+    - "Limited time"
+    - "Click here immediately"
+
+  max_exclamation_marks: 2
+  max_capital_letters_percent: 10
+  max_emoji_count: 2
+
+  required_elements:
+    - unsubscribe_link: true
+    - sender_address: true
+    - company_name: true
+
+
+# A/B Testing Configuration
+ab_testing:
+
+  subject_line_tests:
+    enabled: true
+    distribution: "bandit"
+    exploration_rate: 0.15  # 15% explore, 85% exploit
+    min_sample_size: 50
+    winning_metric: "reply_rate"
+
+  content_tests:
+    enabled: true
+    test_elements:
+      - "opening_hook"
+      - "pain_point_emphasis"
+      - "case_study_placement"
+      - "cta_wording"
+
+  send_time_tests:
+    enabled: true
+    optimal_times:
+      # CEMEA
+      europe: ["08:00-10:00", "14:00-16:00"]  # GMT
+      middle_east: ["09:00-11:00", "15:00-17:00"]  # GST
+      # APAC
+      singapore: ["09:00-11:00", "14:00-16:00"]  # SGT
+      hong_kong: ["09:00-11:00", "14:00-16:00"]  # HKT
+      australia: ["09:00-11:00", "14:00-16:00"]  # AEDT
+
+
+# lemlist-Specific Configuration
+lemlist_config:
+
+  # LinkedIn integration settings (via lemlist)
+  linkedin_automation:
+    enabled: true  # lemlist supports LinkedIn messaging
+    connection_request_enabled: true
+    message_after_connection_enabled: true
+    daily_limit: 30  # Conservative: 30 connection requests per day
+    message_delay_days: 2  # Wait 2 days after connection before messaging
+
+  # Email settings
+  email_settings:
+    warm_up_enabled: true
+    daily_send_limit: 100  # Start conservative
+    open_tracking: true
+    click_tracking: true
+    unsubscribe_tracking: true
+
+  # Multi-channel sequence
+  multi_channel:
+    enabled: true
+    channels: ["email", "linkedin"]
+    channel_coordination:
+      - step: 1
+        channel: "email"
+        delay_days: 0
+
+      - step: 2
+        channel: "linkedin"  # LinkedIn connection via lemlist
+        delay_days: 2
+        condition: "email_opened"
+
+      - step: 3
+        channel: "email"
+        delay_days: 3
+        condition: "!replied"
+
+      - step: 4
+        channel: "linkedin"  # LinkedIn message via lemlist
+        delay_days: 2
+        condition: "connection_accepted && !replied"
+
+      - step: 5
+        channel: "email"
+        delay_days: 3
+        condition: "!replied"
+
+
+# Sequence Definitions
+sequences:
+
+  treasury_liquidity_sequence:
+    name: "Treasury & Liquidity Management Sequence"
+    target_persona: "Head of Treasury, VP Treasury"
+    duration_days: 12
+
+    steps:
+      - step: 1
+        channel: "email"
+        template: "liquidity_management_hook"
+        delay_days: 0
+        send_time: "09:00"
+
+      - step: 2
+        channel: "linkedin"
+        template: "connection_request"
+        delay_days: 2
+        condition: "email_opened"
+
+      - step: 3
+        channel: "email"
+        template: "follow_up_value_add"
+        delay_days: 3
+        send_time: "14:00"
+
+      - step: 4
+        channel: "linkedin"
+        template: "linkedin_message_after_connection"
+        delay_days: 2
+        condition: "linkedin_connection_accepted"
+
+      - step: 5
+        channel: "email"
+        template: "breakup_email"
+        delay_days: 5
+        send_time: "10:00"
+
+  expansion_licensing_sequence:
+    name: "Global Expansion & Licensing Sequence"
+    target_persona: "Head of Partnerships, VP Business Development"
+    duration_days: 10
+
+    steps:
+      - step: 1
+        channel: "email"
+        template: "expansion_licensing_hook"
+        delay_days: 0
+
+      - step: 2
+        channel: "linkedin"
+        template: "connection_request"
+        delay_days: 2
+        condition: "email_opened"
+
+      - step: 3
+        channel: "email"
+        template: "follow_up_value_add"
+        delay_days: 3
+
+      - step: 4
+        channel: "email"
+        template: "breakup_email"
+        delay_days: 5

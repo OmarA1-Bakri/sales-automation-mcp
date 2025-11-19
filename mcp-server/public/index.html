@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTGS.agentic - Sales Automation Platform</title>
+    <link rel="stylesheet" href="/dashboard/styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="/dashboard/rtgs-logo.png" alt="RTGS.agentic" class="nav-logo">
+                <span class="nav-title">RTGS.agentic</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#integrations" class="nav-link">Integrations</a>
+                <a href="#dashboard" class="nav-link">Dashboard</a>
+                <a href="/health" class="nav-link">Status</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <img src="/dashboard/rtgs-logo.png" alt="RTGS.agentic" class="hero-logo">
+            <h1 class="hero-title">Sales Automation Platform</h1>
+            <p class="hero-subtitle">
+                Autonomous multi-channel outreach powered by AI
+            </p>
+            <p class="hero-description">
+                Discover leads, enrich data, sync with HubSpot, and launch campaigns across email, LinkedIn, and video channels — all in one unified platform.
+            </p>
+            <div class="hero-actions">
+                <button class="btn btn-primary" onclick="window.location.href='#dashboard'">
+                    Go to Dashboard
+                </button>
+                <button class="btn btn-secondary" onclick="checkHealth()">
+                    Check System Status
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Lead Discovery</h3>
+                    <p>Find high-quality leads matching your ICP using Apollo, LinkedIn, and intent signals</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✨</div>
+                    <h3>Data Enrichment</h3>
+                    <p>Enrich contacts with firmographic, technographic, and behavioral data from multiple sources</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>CRM Sync</h3>
+                    <p>Seamless HubSpot integration with automatic contact, company, and deal synchronization</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📧</div>
+                    <h3>Multi-Channel Outreach</h3>
+                    <p>Email, LinkedIn, and video campaigns with real-time tracking and analytics</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>YOLO Mode</h3>
+                    <p>Fully autonomous operation — discover, enrich, sync, and launch campaigns automatically</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Real-Time Analytics</h3>
+                    <p>Track campaign performance, engagement metrics, and ROI in real-time</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations Section -->
+    <section id="integrations" class="integrations">
+        <div class="container">
+            <h2 class="section-title">Integrations</h2>
+            <div class="integration-grid">
+                <div class="integration-card">HubSpot</div>
+                <div class="integration-card">Lemlist</div>
+                <div class="integration-card">Explorium</div>
+                <div class="integration-card">Apollo.io</div>
+                <div class="integration-card">LinkedIn</div>
+                <div class="integration-card">Postmark</div>
+                <div class="integration-card">Phantombuster</div>
+                <div class="integration-card">HeyGen</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="dashboard-section">
+        <div class="container">
+            <h2 class="section-title">System Dashboard</h2>
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-label">System Status</div>
+                    <div class="stat-value" id="system-status">Loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Campaigns</div>
+                    <div class="stat-value" id="active-campaigns">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Jobs Queued</div>
+                    <div class="stat-value" id="jobs-queued">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">YOLO Mode</div>
+                    <div class="stat-value" id="yolo-status">--</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <img src="/dashboard/rtgs-logo.png" alt="RTGS.agentic" class="footer-logo">
+            <p>&copy; 2025 RTGS.agentic - Sales Automation Platform</p>
+        </div>
+    </footer>
+
+    <script src="/dashboard/app.js"></script>
+</body>
+</html>

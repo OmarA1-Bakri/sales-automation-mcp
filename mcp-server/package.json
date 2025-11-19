@@ -1,0 +1,77 @@
+{
+  "name": "sales-automation-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for sales automation plugin - orchestrates HubSpot, Explorium, lemlist, and enrichment APIs",
+  "type": "module",
+  "main": "src/server.js",
+  "bin": {
+    "sales-automation-mcp": "./src/server.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "api-server": "node src/api-server.js",
+    "api-server:yolo": "node src/api-server.js --yolo",
+    "api-server:dev": "node --watch src/api-server.js",
+    "db:migrate": "npx sequelize-cli db:migrate",
+    "db:migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "db:migrate:status": "npx sequelize-cli db:migrate:status"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0",
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "argon2": "^0.44.0",
+    "axios": "^1.6.0",
+    "axios-retry": "^4.0.0",
+    "better-sqlite3": "^9.2.2",
+    "bottleneck": "^2.19.5",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.0",
+    "dotenv": "^16.3.1",
+    "email-validator": "^2.0.4",
+    "express": "^4.18.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.8.2",
+    "isomorphic-dompurify": "^2.32.0",
+    "node-cache": "^5.1.2",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.0",
+    "opossum": "^9.0.0",
+    "pg": "^8.16.3",
+    "pg-pool": "^3.10.1",
+    "prom-client": "^15.1.3",
+    "sequelize": "^6.37.7",
+    "ws": "^8.16.0",
+    "yaml": "^2.3.4",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "@jest/globals": "^30.2.0",
+    "@types/node": "^20.10.0",
+    "jest": "^30.2.0",
+    "sequelize-cli": "^6.6.3",
+    "sqlite3": "^5.1.7",
+    "supertest": "^7.1.4"
+  },
+  "keywords": [
+    "mcp",
+    "sales-automation",
+    "hubspot",
+    "lemlist",
+    "explorium",
+    "enrichment",
+    "crm",
+    "outreach"
+  ],
+  "author": "Sales Automation Team",
+  "license": "MIT"
+}

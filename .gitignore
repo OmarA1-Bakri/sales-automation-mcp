@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (NEVER commit secrets!)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build outputs
+dist/
+build/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+.sales-automation/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Security sensitive
+*.pem
+*.key
+*.cert
+*.crt
+
+# MCP Server specific
+mcp-server/logs/
+/tmp/
+
+# Test output
+test-xss-sanitization.js
+SECURITY-VALIDATION-REPORT.md
+PHASE-3.1-XSS-SANITIZATION-REPORT.md

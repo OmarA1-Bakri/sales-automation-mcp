@@ -1,0 +1,85 @@
+{
+  "name": "task-router-skill",
+  "version": "1.0.0",
+  "description": "Intelligent task analysis and plugin recommendation system for Claude Code",
+  "author": "Claude Code Community",
+  "license": "MIT",
+  "type": "claude-skill",
+  "keywords": [
+    "claude-code",
+    "skill",
+    "task-router",
+    "plugin-selector",
+    "workflow-optimizer",
+    "automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/task-router-skill"
+  },
+  "main": "skills/task-router/skill.md",
+  "files": [
+    ".claude/commands/task-router.md",
+    "skills/task-router/skill.md",
+    "skills/task-router/README.md",
+    "skills/task-router/QUICK_REFERENCE.md",
+    "docs/TASK_ROUTER_GUIDE.md",
+    "docs/TASK_ROUTER_SUMMARY.md",
+    "docs/INSTALLATION_COMPLETE.md",
+    "scripts/verify-task-router.sh",
+    "scripts/install.sh",
+    "scripts/uninstall.sh"
+  ],
+  "categories": {
+    "primary": "productivity",
+    "secondary": [
+      "automation",
+      "workflow",
+      "tools"
+    ]
+  },
+  "capabilities": {
+    "task_analysis": true,
+    "plugin_recommendation": true,
+    "workflow_planning": true,
+    "complexity_estimation": true
+  },
+  "coverage": {
+    "domains": 6,
+    "plugins": "100+",
+    "execution_strategies": 4
+  },
+  "requirements": {
+    "claude_code": ">=1.0.0",
+    "plugins": {
+      "minimum": 0,
+      "recommended": 10
+    }
+  },
+  "installation": {
+    "method": "script",
+    "command": "bash scripts/install.sh"
+  },
+  "verification": {
+    "script": "scripts/verify-task-router.sh",
+    "checks": 13
+  },
+  "documentation": {
+    "quick_start": "docs/INSTALLATION_COMPLETE.md",
+    "guide": "docs/TASK_ROUTER_GUIDE.md",
+    "reference": "skills/task-router/QUICK_REFERENCE.md"
+  },
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2025-11-07",
+      "changes": [
+        "Initial release",
+        "Support for 100+ plugins across 6 domains",
+        "4 execution strategies (sequential, parallel, phased, conditional)",
+        "Comprehensive documentation",
+        "Automated verification script"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+{
+  "id": "security-stage4-final-polish",
+  "title": "Stage 4: Final Polish - Encryption at Rest, Performance Optimization, Documentation",
+  "type": "feature",
+  "priority": 3,
+  "status": "pending",
+  "created_at": "2025-01-17T00:00:00Z",
+  "estimated_effort_hours": 28,
+
+  "context": "Stage 4 of the 4-stage security-first acceleration plan. Final polish to reach A- grade (90/100) from current 88/100. This stage addresses remaining high-priority items: database encryption at rest (T2.5), performance optimization for sub-100ms API response times (P3.7), comprehensive API documentation, production deployment preparation, and final code quality improvements. This is the final development stage before work-critic validation.",
+
+  "business_context": "Enterprise customers require encryption at rest for compliance (SOC 2, GDPR, HIPAA). Performance optimization ensures scalability and positive user experience. Comprehensive documentation enables enterprise onboarding and support. This stage transforms the codebase from 'good enough' to 'enterprise-ready', completing the remediation exercise objectives.",
+
+  "remaining_tasks": [
+    {
+      "id": "T2.5",
+      "name": "Database Encryption at Rest",
+      "severity": "HIGH",
+      "estimated_hours": 10,
+      "current_state": "PostgreSQL database stores sensitive data (PII, API keys, tokens) unencrypted",
+      "target_state": "All sensitive columns encrypted with AES-256, encryption keys in AWS KMS",
+      "compliance": "Required for SOC 2, GDPR, HIPAA compliance"
+    },
+    {
+      "id": "P3.7",
+      "name": "Performance Optimization",
+      "severity": "MEDIUM",
+      "estimated_hours": 8,
+      "current_state": "API response times 200-500ms, no query optimization, N+1 queries present",
+      "target_state": "API response times <100ms p95, database indexes optimized, N+1 queries eliminated",
+      "metrics": "Response time reduction 50%, throughput increase 2x"
+    },
+    {
+      "id": "API-DOCS",
+      "name": "Comprehensive API Documentation",
+      "severity": "MEDIUM",
+      "estimated_hours": 6,
+      "current_state": "Minimal API documentation, no OpenAPI spec, no interactive docs",
+      "target_state": "Complete OpenAPI 3.0 spec, Swagger UI, example requests/responses for all endpoints",
+      "deliverables": "OpenAPI spec, Swagger UI hosted, Postman collection"
+    },
+    {
+      "id": "PROD-PREP",
+      "name": "Production Deployment Preparation",
+      "severity": "HIGH",
+      "estimated_hours": 4,
+      "current_state": "No deployment documentation, environment-specific configs hardcoded",
+      "target_state": "Production deployment guide, environment variables documented, health checks comprehensive",
+      "deliverables": "DEPLOYMENT.md, docker-compose.prod.yml, monitoring setup"
+    }
+  ],
+
+  "technical_requirements": [
+    "Implement Sequelize field-level encryption for sensitive columns (API keys, PII, tokens)",
+    "Use AWS KMS for encryption key management (not stored in codebase)",
+    "Add database indexes for all foreign keys and frequently queried fields",
+    "Implement query result caching with Redis (TTL 60s for lists, 300s for details)",
+    "Eliminate N+1 queries with Sequelize eager loading (include)",
+    "Add database query logging to identify slow queries (>50ms)",
+    "Generate OpenAPI 3.0 spec from route definitions (swagger-jsdoc)",
+    "Set up Swagger UI at /api-docs endpoint",
+    "Create Postman collection with example requests for all endpoints",
+    "Document all environment variables in .env.example with descriptions",
+    "Create comprehensive DEPLOYMENT.md with AWS, Docker, and local setup",
+    "Add health check endpoints: /health (basic), /health/detailed (with DB/Redis/API checks)",
+    "Configure production logging with Winston (file rotation, error tracking)",
+    "Add performance monitoring with basic metrics (response times, error rates)",
+    "All changes must maintain backward compatibility"
+  ],
+
+  "files_to_create": [
+    {
+      "path": "mcp-server/src/config/encryption.js",
+      "description": "Field-level encryption utilities using AES-256-GCM",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/src/config/kms-client.js",
+      "description": "AWS KMS client wrapper for encryption key management",
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/middleware/caching.js",
+      "description": "Redis-based response caching middleware",
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/docs/openapi.yaml",
+      "description": "OpenAPI 3.0 specification for all endpoints",
+      "estimated_hours": 4
+    },
+    {
+      "path": "mcp-server/docs/postman-collection.json",
+      "description": "Postman collection with example requests",
+      "estimated_hours": 2
+    },
+    {
+      "path": "docs/DEPLOYMENT.md",
+      "description": "Comprehensive production deployment guide",
+      "estimated_hours": 3
+    },
+    {
+      "path": "docker-compose.prod.yml",
+      "description": "Production Docker Compose configuration",
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/routes/health.js",
+      "description": "Comprehensive health check endpoints",
+      "estimated_hours": 2
+    }
+  ],
+
+  "files_to_modify": [
+    {
+      "path": "mcp-server/src/models/Campaign.js",
+      "changes": [
+        "Add field-level encryption for sensitive fields (if any)",
+        "Add database indexes for foreign keys (userId, companyId)",
+        "Add validation hooks for data integrity"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "path": "mcp-server/src/models/Company.js",
+      "changes": [
+        "Add field-level encryption for PII fields (domain, contacts)",
+        "Add database indexes for domain (frequently queried)",
+        "Optimize eager loading relationships"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "path": "mcp-server/src/models/Contact.js",
+      "changes": [
+        "Add field-level encryption for PII fields (email, firstName, lastName)",
+        "Add database indexes for email, companyId",
+        "Add unique constraint on (email, companyId)"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "path": "mcp-server/src/models/User.js",
+      "changes": [
+        "Add field-level encryption for API keys and tokens",
+        "Add database index for email (unique)",
+        "Add password complexity validation"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "path": "mcp-server/src/routes/campaigns.js",
+      "changes": [
+        "Add response caching for GET endpoints",
+        "Optimize queries with eager loading (eliminate N+1)",
+        "Add OpenAPI JSDoc comments for all endpoints",
+        "Add query result pagination (limit 100)"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/routes/companies.js",
+      "changes": [
+        "Add response caching for GET endpoints",
+        "Optimize queries with eager loading",
+        "Add OpenAPI JSDoc comments",
+        "Add pagination"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/routes/contacts.js",
+      "changes": [
+        "Add response caching for GET endpoints",
+        "Optimize queries with eager loading",
+        "Add OpenAPI JSDoc comments",
+        "Add pagination"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/api-server.js",
+      "changes": [
+        "Add /api-docs Swagger UI endpoint",
+        "Add /health and /health/detailed endpoints",
+        "Add query logging for slow queries (>50ms)",
+        "Add performance monitoring middleware",
+        "Initialize KMS client on startup"
+      ],
+      "estimated_hours": 3
+    },
+    {
+      "path": ".env.example",
+      "changes": [
+        "Add AWS_KMS_KEY_ID for encryption key",
+        "Add REDIS_CACHE_TTL_* variables",
+        "Add comprehensive descriptions for all variables",
+        "Add production-specific variables (LOG_LEVEL, etc.)"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "path": "mcp-server/src/config/database.js",
+      "changes": [
+        "Add query logging configuration",
+        "Add slow query threshold (50ms)",
+        "Add connection pool optimization for production"
+      ],
+      "estimated_hours": 1
+    }
+  ],
+
+  "agent_assignments": {
+    "security_engineer": {
+      "responsibility": "Implement database encryption at rest with AWS KMS",
+      "agent": "compounding-engineering:security-sentinel",
+      "tasks": [
+        "Design field-level encryption architecture",
+        "Implement AES-256-GCM encryption utilities",
+        "Integrate AWS KMS for key management",
+        "Encrypt all sensitive database columns",
+        "Test encryption/decryption performance impact"
+      ]
+    },
+    "performance_engineer": {
+      "responsibility": "Optimize API performance to <100ms p95 response times",
+      "agent": "compounding-engineering:performance-oracle",
+      "tasks": [
+        "Identify N+1 query patterns",
+        "Add database indexes for frequently queried fields",
+        "Implement Redis caching for GET endpoints",
+        "Optimize Sequelize eager loading",
+        "Benchmark and validate <100ms p95 target"
+      ]
+    },
+    "backend_developer": {
+      "responsibility": "Implement API documentation and health checks",
+      "agent": "compounding-engineering:kieran-typescript-reviewer",
+      "tasks": [
+        "Add OpenAPI JSDoc comments to all endpoints",
+        "Generate OpenAPI 3.0 spec with swagger-jsdoc",
+        "Set up Swagger UI at /api-docs",
+        "Create comprehensive health check endpoints",
+        "Export Postman collection from OpenAPI spec"
+      ]
+    },
+    "devops_engineer": {
+      "responsibility": "Production deployment preparation and documentation",
+      "plugin": "docker-compose-generator",
+      "tasks": [
+        "Create production Docker Compose configuration",
+        "Write comprehensive DEPLOYMENT.md guide",
+        "Document all environment variables",
+        "Set up production logging and monitoring",
+        "Test deployment process on staging environment"
+      ]
+    },
+    "data_integrity_specialist": {
+      "responsibility": "Validate encryption implementation and data migrations",
+      "agent": "compounding-engineering:data-integrity-guardian",
+      "tasks": [
+        "Review encryption implementation for security",
+        "Create database migration for adding indexes",
+        "Create migration for encrypting existing data",
+        "Test encryption key rotation process",
+        "Validate data integrity after encryption"
+      ]
+    },
+    "qa_engineer": {
+      "responsibility": "Validate all implementations and performance targets",
+      "agent": "sugar:quality-guardian",
+      "tasks": [
+        "Test encrypted data storage and retrieval",
+        "Validate API response times <100ms p95",
+        "Test health check endpoints",
+        "Review API documentation completeness",
+        "Approve work-critic validation stage progression"
+      ]
+    }
+  },
+
+  "success_criteria": [
+    "Grade improvement: 88/100 → 90/100 (+2 points)",
+    "Security Score: 85/100 → 92/100 (+7 points, encryption at rest)",
+    "Performance Score: 70/100 → 85/100 (+15 points, <100ms p95)",
+    "T2.5 Complete: All sensitive data encrypted at rest with AES-256, keys in AWS KMS",
+    "P3.7 Complete: API response times <100ms p95, N+1 queries eliminated, indexes optimized",
+    "API-DOCS Complete: OpenAPI 3.0 spec, Swagger UI live, Postman collection available",
+    "PROD-PREP Complete: DEPLOYMENT.md comprehensive, docker-compose.prod.yml tested",
+    "Quality Gate Passed: sugar:quality-guardian approves final validation stage"
+  ],
+
+  "acceptance_tests": [
+    {
+      "test": "Database Encryption - Storage",
+      "action": "Insert sensitive data, inspect database directly",
+      "expected": "Sensitive fields stored as encrypted ciphertext, not plaintext"
+    },
+    {
+      "test": "Database Encryption - Retrieval",
+      "action": "Query encrypted data via API",
+      "expected": "Data automatically decrypted, returned as plaintext in API response"
+    },
+    {
+      "test": "KMS Integration",
+      "action": "Start application, verify KMS key retrieval",
+      "expected": "Application retrieves encryption key from AWS KMS successfully"
+    },
+    {
+      "test": "Performance - Response Time",
+      "action": "Load test API with 100 concurrent users",
+      "expected": "p95 response time <100ms for all endpoints"
+    },
+    {
+      "test": "Performance - Caching",
+      "action": "Call GET /api/campaigns twice within 60s",
+      "expected": "Second request served from Redis cache (<10ms)"
+    },
+    {
+      "test": "Performance - Database Indexes",
+      "action": "Run EXPLAIN on common queries",
+      "expected": "All queries use indexes, no full table scans"
+    },
+    {
+      "test": "API Documentation - Swagger UI",
+      "action": "Navigate to http://localhost:3000/api-docs",
+      "expected": "Swagger UI loads with all endpoints documented"
+    },
+    {
+      "test": "API Documentation - Completeness",
+      "action": "Review OpenAPI spec",
+      "expected": "All 20+ endpoints documented with request/response schemas"
+    },
+    {
+      "test": "Health Check - Basic",
+      "action": "GET /health",
+      "expected": "200 OK with {status: 'healthy'}"
+    },
+    {
+      "test": "Health Check - Detailed",
+      "action": "GET /health/detailed",
+      "expected": "200 OK with DB, Redis, and API client statuses"
+    },
+    {
+      "test": "Production Deployment",
+      "action": "Follow DEPLOYMENT.md on staging environment",
+      "expected": "Application deploys successfully, all services healthy"
+    }
+  ],
+
+  "dependencies": [
+    "Stage 1 Complete: Security quick wins validated",
+    "Stage 2 Complete: Security blitz validated",
+    "Stage 3 Complete: 80% test coverage achieved",
+    "AWS Account: Access to AWS KMS for encryption key management",
+    "Redis Running: For caching middleware",
+    "Staging Environment: For deployment testing"
+  ],
+
+  "deliverables": [
+    "Database encryption at rest with AES-256 and AWS KMS",
+    "API response times <100ms p95 with Redis caching",
+    "Database indexes optimized, N+1 queries eliminated",
+    "OpenAPI 3.0 specification for all endpoints",
+    "Swagger UI live at /api-docs",
+    "Postman collection with example requests",
+    "Comprehensive DEPLOYMENT.md guide",
+    "Production Docker Compose configuration",
+    "Health check endpoints (/health, /health/detailed)",
+    "Quality gate review completed and passed"
+  ],
+
+  "stage_progression": {
+    "previous_stage": "Stage 3: Test Coverage Surge (85 hours, +4 points)",
+    "current_stage": "Stage 4: Final Polish (28 hours, +2 points)",
+    "next_stage": "Final Validation: Work-Critic Review (4 hours)",
+    "grade_progression": "88 → 90 (+2 points)",
+    "performance_progression": "70 → 85 (+15 points)"
+  }
+}

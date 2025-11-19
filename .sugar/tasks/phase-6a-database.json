@@ -1,0 +1,168 @@
+{
+  "id": "phase-6a",
+  "title": "Phase 6A: PostgreSQL Database Architecture",
+  "description": "Design and implement PostgreSQL database schema with 6 core tables for campaign management",
+  "priority": "CRITICAL",
+  "complexity": "moderate",
+  "estimated_hours": "12-16",
+  "status": "pending",
+  "phase": "Phase 6: Backend Foundation",
+  "week": "1-2",
+
+  "tables": [
+    {
+      "name": "campaign_templates",
+      "purpose": "Store reusable campaign templates with path type (structured/dynamic_ai)",
+      "columns": [
+        "id (UUID PRIMARY KEY)",
+        "name (VARCHAR 255 NOT NULL)",
+        "description (TEXT)",
+        "type (ENUM: 'email', 'linkedin', 'multi_channel')",
+        "path_type (ENUM: 'structured', 'dynamic_ai')",
+        "icp_profile_id (UUID FOREIGN KEY)",
+        "settings (JSONB)",
+        "created_at (TIMESTAMP)",
+        "updated_at (TIMESTAMP)",
+        "created_by (VARCHAR 255)",
+        "is_active (BOOLEAN DEFAULT true)"
+      ]
+    },
+    {
+      "name": "campaign_instances",
+      "purpose": "Track runtime campaign executions",
+      "columns": [
+        "id (UUID PRIMARY KEY)",
+        "template_id (UUID FOREIGN KEY)",
+        "name (VARCHAR 255 NOT NULL)",
+        "status (ENUM: 'draft', 'active', 'paused', 'completed', 'failed')",
+        "started_at (TIMESTAMP)",
+        "paused_at (TIMESTAMP)",
+        "completed_at (TIMESTAMP)",
+        "total_enrolled (INTEGER DEFAULT 0)",
+        "total_sent (INTEGER DEFAULT 0)",
+        "total_opened (INTEGER DEFAULT 0)",
+        "total_clicked (INTEGER DEFAULT 0)",
+        "total_replied (INTEGER DEFAULT 0)",
+        "provider_config (JSONB)",
+        "created_at (TIMESTAMP)",
+        "updated_at (TIMESTAMP)"
+      ]
+    },
+    {
+      "name": "email_sequences",
+      "purpose": "Define email sequence steps for campaigns",
+      "columns": [
+        "id (UUID PRIMARY KEY)",
+        "template_id (UUID FOREIGN KEY)",
+        "step_number (INTEGER NOT NULL)",
+        "subject (VARCHAR 255)",
+        "body (TEXT NOT NULL)",
+        "delay_hours (INTEGER DEFAULT 0)",
+        "is_active (BOOLEAN DEFAULT true)",
+        "a_b_variant (VARCHAR 50)",
+        "created_at (TIMESTAMP)",
+        "updated_at (TIMESTAMP)"
+      ],
+      "indexes": ["template_id", "step_number"]
+    },
+    {
+      "name": "linkedin_sequences",
+      "purpose": "Define LinkedIn sequence steps for campaigns",
+      "columns": [
+        "id (UUID PRIMARY KEY)",
+        "template_id (UUID FOREIGN KEY)",
+        "step_number (INTEGER NOT NULL)",
+        "type (ENUM: 'profile_visit', 'connection_request', 'message', 'voice_message')",
+        "message (TEXT)",
+        "delay_hours (INTEGER DEFAULT 0)",
+        "is_active (BOOLEAN DEFAULT true)",
+        "created_at (TIMESTAMP)",
+        "updated_at (TIMESTAMP)"
+      ],
+      "indexes": ["template_id", "step_number"]
+    },
+    {
+      "name": "campaign_enrollments",
+      "purpose": "Track individual contact enrollments in campaigns",
+      "columns": [
+        "id (UUID PRIMARY KEY)",
+        "instance_id (UUID FOREIGN KEY)",
+        "contact_id (UUID FOREIGN KEY)",
+        "status (ENUM: 'enrolled', 'active', 'paused', 'completed', 'unsubscribed', 'bounced')",
+        "current_step (INTEGER DEFAULT 0)",
+        "next_action_at (TIMESTAMP)",
+        "enrolled_at (TIMESTAMP)",
+        "completed_at (TIMESTAMP)",
+        "unsubscribed_at (TIMESTAMP)",
+        "metadata (JSONB)",
+        "created_at (TIMESTAMP)",
+        "updated_at (TIMESTAMP)"
+      ],
+      "indexes": ["instance_id", "contact_id", "status", "next_action_at"],
+      "constraints": ["UNIQUE(instance_id, contact_id)"]
+    },
+    {
+      "name": "campaign_events",
+      "purpose": "Store all campaign-related events for analytics and tracking",
+      "columns": [
+        "id (UUID PRIMARY KEY)",
+        "enrollment_id (UUID FOREIGN KEY)",
+        "event_type (ENUM: 'sent', 'delivered', 'opened', 'clicked', 'replied', 'bounced', 'unsubscribed', 'connection_accepted', 'connection_rejected')",
+        "channel (ENUM: 'email', 'linkedin')",
+        "step_number (INTEGER)",
+        "timestamp (TIMESTAMP NOT NULL)",
+        "provider (VARCHAR 50)",
+        "provider_event_id (VARCHAR 255)",
+        "metadata (JSONB)",
+        "created_at (TIMESTAMP)"
+      ],
+      "indexes": ["enrollment_id", "event_type", "timestamp", "provider_event_id"]
+    }
+  ],
+
+  "deliverables": [
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/db/schema.sql",
+      "description": "Complete PostgreSQL schema definition"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/db/migrations/001_campaign_architecture.sql",
+      "description": "Migration script for initial schema"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/db/migrations/002_indexes_constraints.sql",
+      "description": "Performance indexes and constraints"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/db/seed.sql",
+      "description": "Sample data for development and testing"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/db/connection.js",
+      "description": "Database connection pool and configuration"
+    }
+  ],
+
+  "dependencies": {
+    "npm_packages": ["pg", "pg-pool", "sequelize"],
+    "environment_variables": [
+      "POSTGRES_HOST",
+      "POSTGRES_PORT",
+      "POSTGRES_DB",
+      "POSTGRES_USER",
+      "POSTGRES_PASSWORD"
+    ]
+  },
+
+  "success_criteria": [
+    "All 6 tables created successfully",
+    "Proper foreign key relationships established",
+    "Indexes created for performance-critical queries",
+    "Sample data seeds successfully",
+    "Connection pool tested and working",
+    "Migration scripts are idempotent (can run multiple times safely)"
+  ],
+
+  "agent_assignment": "Backend Developer",
+  "reviewer": "Tech Lead"
+}

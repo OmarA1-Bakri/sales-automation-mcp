@@ -1,0 +1,240 @@
+{
+  "id": "phase-6b-blocker-fixes",
+  "title": "Phase 6B: Fix Remaining BLOCKER Issues for Campaign API",
+  "type": "bug_fix",
+  "priority": 5,
+  "status": "pending",
+  "created_at": "2025-11-09T12:00:00Z",
+  "estimated_effort_hours": 8,
+
+  "context": "The Campaign CRUD API (Phase 6B) was reviewed by work-critic and received a 65/100 grade (NOT PRODUCTION READY). We've already fixed 4 BLOCKER issues (missing endpoint, Sequelize syntax, duplicate files, JSONB sanitization), but 5 critical blockers remain that prevent production deployment and pose serious security/data integrity risks.",
+
+  "business_context": "Campaign management is a core feature of the sales automation platform. Without proper security (auth, rate limiting) and data integrity (transactions, logging), we cannot deploy to production or proceed to Phase 6C (frontend integration). These blockers are preventing the entire campaign management workflow from being usable.",
+
+  "blockers_to_fix": [
+    {
+      "id": "BLOCKER-1",
+      "name": "Missing Authentication and Authorization",
+      "severity": "CRITICAL SECURITY VULNERABILITY",
+      "current_state": "All 9 campaign endpoints are completely public and unprotected",
+      "risk": "Any user can create/delete templates, modify campaigns, access all data",
+      "fix_required": "Apply existing authenticate middleware to all campaign routes"
+    },
+    {
+      "id": "BLOCKER-2",
+      "name": "Missing Rate Limiting",
+      "severity": "HIGH",
+      "current_state": "No rate limiting on any campaign endpoints",
+      "risk": "DoS attacks possible, expensive analytics queries can overwhelm database",
+      "fix_required": "Add express-rate-limit: 100 req/15min general, 20 req/5min for /performance endpoint"
+    },
+    {
+      "id": "BLOCKER-4",
+      "name": "No Transaction Support for Critical Operations",
+      "severity": "HIGH",
+      "current_state": "Multi-step operations lack transaction boundaries",
+      "risk": "Race conditions can corrupt data, partial failures leave inconsistent state",
+      "fix_required": "Wrap deleteTemplate, createInstance, updateInstanceStatus in Sequelize transactions"
+    },
+    {
+      "id": "BLOCKER-7",
+      "name": "Missing Database Connection Error Handling",
+      "severity": "MEDIUM",
+      "current_state": "Routes mounted without DB connection check",
+      "risk": "Cryptic errors when database is down, poor user experience",
+      "fix_required": "Add DB health check middleware in api-server.js before campaign routes"
+    },
+    {
+      "id": "BLOCKER-9",
+      "name": "No Logging Infrastructure",
+      "severity": "MEDIUM",
+      "current_state": "Zero logging of operations - no audit trail",
+      "risk": "Cannot debug issues, no compliance audit trail, security incidents untrackable",
+      "fix_required": "Add structured logging to all CRUD operations using existing logger"
+    }
+  ],
+
+  "technical_requirements": [
+    "Use existing authentication middleware from mcp-server/src/api-server.js (line 333)",
+    "Use existing logger infrastructure from mcp-server/src/utils/logger.js",
+    "Implement Sequelize transactions with proper error handling and rollback",
+    "Add express-rate-limit middleware with different limits per endpoint type",
+    "Add database health check middleware before routing to campaign endpoints",
+    "Maintain backwards compatibility with existing 9 endpoints",
+    "All fixes must use ES6 module syntax (.mjs files)",
+    "Follow existing error handling patterns using custom error classes from campaign-error-handler.mjs",
+    "Preserve request validation (Zod schemas must still run)",
+    "Keep asyncHandler wrapper for all routes"
+  ],
+
+  "files_to_modify": [
+    {
+      "path": "mcp-server/src/routes/campaigns.mjs",
+      "changes": [
+        "Import authenticate middleware from ../middleware/authenticate.js",
+        "Import express-rate-limit and configure two limiters",
+        "Apply router.use(authenticate) to require auth on all routes",
+        "Apply campaignRateLimit (100/15min) to all routes",
+        "Apply analyticsRateLimit (20/5min) to /instances/:id/performance endpoint"
+      ],
+      "example_code": "import { authenticate } from '../middleware/authenticate.js';\nimport rateLimit from 'express-rate-limit';\n\nconst campaignRateLimit = rateLimit({\n  windowMs: 15 * 60 * 1000,\n  max: 100,\n  message: { error: 'Too many requests', statusCode: 429 }\n});\n\nrouter.use(authenticate);\nrouter.use(campaignRateLimit);"
+    },
+    {
+      "path": "mcp-server/src/controllers/campaign-controller.mjs",
+      "changes": [
+        "Import logger: import { createLogger } from '../utils/logger.js'",
+        "Create logger instance: const logger = createLogger('CampaignController')",
+        "Import sequelize for transactions: import { sequelize } from '../db/connection.mjs'",
+        "Wrap deleteTemplate in transaction with row locking",
+        "Wrap createInstance validation + creation in transaction",
+        "Wrap updateInstanceStatus transitions in transaction",
+        "Add logger.info() for all successful operations (create, update, delete)",
+        "Add logger.warn() for validation failures",
+        "Add logger.error() for unexpected errors",
+        "Include userId (from req.user?.id), operation type, entity ID in all logs"
+      ],
+      "example_code": "async function deleteTemplate(req, res) {\n  const { id } = req.validatedParams;\n  const userId = req.user?.id || 'anonymous';\n  \n  logger.info('Template deletion requested', { templateId: id, userId });\n  \n  const result = await sequelize.transaction(async (t) => {\n    const template = await CampaignTemplate.findByPk(id, {\n      transaction: t,\n      lock: t.LOCK.UPDATE\n    });\n    \n    if (!template) throw new NotFoundError('Campaign template');\n    \n    const activeInstances = await CampaignInstance.count({\n      where: { template_id: id, status: 'active' },\n      transaction: t\n    });\n    \n    if (activeInstances > 0) {\n      logger.warn('Template deletion blocked', { templateId: id, activeInstances });\n      throw new ConflictError(...);\n    }\n    \n    return await template.update({ is_active: false }, { transaction: t });\n  });\n  \n  logger.info('Template deleted', { templateId: id, userId });\n  res.status(204).send();\n}"
+    },
+    {
+      "path": "mcp-server/src/api-server.js",
+      "changes": [
+        "Import sequelize from ./db/connection.mjs (may need to use dynamic import or createRequire)",
+        "Create dbHealthCheck middleware function",
+        "Apply dbHealthCheck before mounting campaign routes",
+        "Middleware should test sequelize.authenticate() and return 503 if fails"
+      ],
+      "example_code": "import { createRequire } from 'module';\nconst require = createRequire(import.meta.url);\nconst { sequelize } = require('./db/connection.js');\n\nconst dbHealthCheck = async (req, res, next) => {\n  try {\n    await sequelize.authenticate();\n    next();\n  } catch (error) {\n    res.status(503).json({\n      error: 'Database unavailable',\n      statusCode: 503,\n      message: 'Campaign service temporarily unavailable'\n    });\n  }\n};\n\nthis.app.use('/api/campaigns/v2', dbHealthCheck, campaignRoutes);"
+    }
+  ],
+
+  "reference_files": [
+    "PHASE-6B-CRITICAL-FIXES.md - Detailed requirements and examples for each fix",
+    "mcp-server/src/api-server.js - Line 333 shows authenticate middleware pattern",
+    "mcp-server/src/utils/logger.js - Logger infrastructure and usage examples",
+    "mcp-server/src/middleware/authenticate.js - Authentication middleware source",
+    "mcp-server/src/db/connection.mjs - Sequelize instance for transactions"
+  ],
+
+  "agent_assignments": {
+    "backend_developer": {
+      "responsibility": "Implement authentication integration, rate limiting middleware, and database health checks",
+      "tasks": [
+        "Add authenticate middleware to campaign routes",
+        "Configure and apply express-rate-limit with correct limits",
+        "Implement DB health check middleware in api-server.js",
+        "Test all middleware integrations"
+      ]
+    },
+    "tech_lead": {
+      "responsibility": "Design transaction boundaries, review security patterns, ensure data integrity",
+      "tasks": [
+        "Review transaction isolation levels and locking strategies",
+        "Ensure proper error handling and rollback in all transactions",
+        "Validate that all race conditions are addressed",
+        "Review authentication implementation for security gaps"
+      ]
+    },
+    "qa_test_engineer": {
+      "responsibility": "Verify all security measures work, test transaction rollbacks, validate logging output",
+      "tasks": [
+        "Test authentication: unauthenticated requests return 401",
+        "Test rate limiting: verify 429 responses at limits",
+        "Test transactions: concurrent operations don't corrupt data",
+        "Test DB health check: verify 503 when database down",
+        "Verify all operations appear in logs with correct context"
+      ]
+    }
+  },
+
+  "success_criteria": [
+    "BLOCKER-1 Fixed: All 9 campaign endpoints require authentication, return 401 if missing",
+    "BLOCKER-2 Fixed: Rate limiting active (100/15min general, 20/5min analytics), returns 429 on exceed",
+    "BLOCKER-4 Fixed: deleteTemplate, createInstance, updateInstanceStatus use transactions with rollback",
+    "BLOCKER-7 Fixed: Database health check returns 503 when DB unavailable",
+    "BLOCKER-9 Fixed: All CRUD operations logged with timestamp, userId, action, result",
+    "Work-critic grade improves from 65/100 to 85+/100",
+    "All existing 9 endpoints still functional",
+    "API handles concurrent requests without data corruption",
+    "Failed operations roll back cleanly with proper error messages"
+  ],
+
+  "acceptance_tests": [
+    {
+      "test": "Authentication Required",
+      "action": "POST /api/campaigns/v2/templates without auth header",
+      "expected": "401 Unauthorized response"
+    },
+    {
+      "test": "Rate Limiting - General",
+      "action": "Send 101 requests in 15 minutes to any endpoint",
+      "expected": "101st request returns 429 Too Many Requests"
+    },
+    {
+      "test": "Rate Limiting - Analytics",
+      "action": "Send 21 requests in 5 minutes to /instances/:id/performance",
+      "expected": "21st request returns 429 Too Many Requests"
+    },
+    {
+      "test": "Transaction Rollback",
+      "action": "Concurrent DELETE requests for same template with active instances",
+      "expected": "Both fail with 409 Conflict, no partial state changes"
+    },
+    {
+      "test": "Database Health Check",
+      "action": "Stop PostgreSQL, send request to any campaign endpoint",
+      "expected": "503 Service Unavailable with clear message"
+    },
+    {
+      "test": "Logging - Success",
+      "action": "Create a template, check logs",
+      "expected": "Log entry with: timestamp, userId, 'Template created', templateId"
+    },
+    {
+      "test": "Logging - Failure",
+      "action": "Try to delete template with active instances, check logs",
+      "expected": "Log entry with: timestamp, userId, 'Template deletion blocked', reason"
+    }
+  ],
+
+  "testing_checklist": [
+    "All 9 endpoints require valid authentication token",
+    "Rate limits enforced correctly for both general and analytics endpoints",
+    "Transactions prevent partial failures in deleteTemplate",
+    "Transactions prevent partial failures in createInstance",
+    "Transactions prevent partial failures in updateInstanceStatus",
+    "Database disconnect returns clear 503 error",
+    "All successful operations logged with user context",
+    "All failed operations logged with error details",
+    "Concurrent operations don't cause race conditions",
+    "Error messages don't leak sensitive information"
+  ],
+
+  "dependencies": [
+    "PostgreSQL database must be running for testing",
+    "Existing authenticate middleware must be functional",
+    "Logger utility must be available and configured",
+    "express-rate-limit package must be installed (check package.json)"
+  ],
+
+  "related_tasks": [
+    "Phase 6C: Frontend Integration - BLOCKED until this completes",
+    "Phase 6B: Manual API Testing - BLOCKED until this completes"
+  ],
+
+  "deliverables": [
+    "Modified mcp-server/src/routes/campaigns.mjs with auth and rate limiting",
+    "Modified mcp-server/src/controllers/campaign-controller.mjs with transactions and logging",
+    "Modified mcp-server/src/api-server.js with DB health check",
+    "All 9 endpoints functional with new security measures",
+    "Comprehensive logging for audit trail",
+    "Documentation of transaction boundaries and rollback behavior"
+  ],
+
+  "rollback_plan": {
+    "if_issues_found": [
+      "Git revert to commit before changes",
+      "All changes are in 3 files, easy to isolate",
+      "Existing functionality preserved due to backwards compatibility requirement"
+    ]
+  }
+}

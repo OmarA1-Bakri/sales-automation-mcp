@@ -1,0 +1,480 @@
+# ICP (Ideal Customer Profile) Configuration
+# Copy this file to .sales-automation/icp-profiles.yaml and customize for your business
+
+version: "1.0"
+
+# Default ICP used when no specific profile is specified
+default_profile: icp_fintech_vp_finance
+
+# ICP Profile Definitions
+profiles:
+
+  # Profile 1: Core Fintech VP Finance
+  icp_fintech_vp_finance:
+    name: "Fintech VP Finance/CFO"
+    description: "Primary ICP - VP Finance/CFO at growth-stage fintech companies using modern data stack"
+    tier: core
+    active: true
+
+    # Firmographic Criteria
+    firmographics:
+      company_size:
+        min: 200
+        max: 1000
+        weight: 0.25
+
+      industry:
+        include:
+          - "Fintech"
+          - "Financial Services"
+          - "Financial Technology"
+          - "Payments"
+          - "Banking"
+        weight: 0.30
+
+      revenue:
+        min: 10000000  # $10M
+        max: 500000000  # $500M
+        weight: 0.15
+
+      geography:
+        include:
+          - "United States"
+          - "Canada"
+          - "United Kingdom"
+          - "Australia"
+        weight: 0.10
+
+      funding_stage:
+        include:
+          - "Series A"
+          - "Series B"
+          - "Series C"
+          - "Series D"
+        weight: 0.20
+
+    # Technographic Criteria
+    technographics:
+      required_any:
+        - "Snowflake"
+        - "BigQuery"
+        - "Redshift"
+        - "Databricks"
+
+      preferred:
+        - "Stripe"
+        - "Braintree"
+        - "AWS"
+        - "GCP"
+        - "dbt"
+        - "Looker"
+        - "Tableau"
+
+      weight: 0.30
+
+    # Role/Title Criteria
+    titles:
+      primary:
+        - "VP Finance"
+        - "CFO"
+        - "Chief Financial Officer"
+        - "Vice President Finance"
+        - "Vice President of Finance"
+
+      secondary:
+        - "Controller"
+        - "Director Finance"
+        - "Director FP&A"
+        - "Head of Finance"
+        - "Head of FP&A"
+
+      weight: 0.30
+
+      seniority:
+        include:
+          - "VP"
+          - "C-Level"
+          - "Director"
+        weight: 0.15
+
+    # Intent Signals & Scoring
+    intent_signals:
+      high_value:  # +0.4 to intent score
+        - type: "funding"
+          timeframe_days: 90
+          min_amount: 10000000  # $10M+
+
+        - type: "hiring"
+          department: "Finance"
+          min_roles: 3
+
+        - type: "tech_adoption"
+          technologies: ["Snowflake", "BigQuery", "dbt"]
+          timeframe_days: 60
+
+      medium_value:  # +0.2 to intent score
+        - type: "job_posting"
+          titles: ["FP&A", "Finance Analyst", "Financial Analyst"]
+
+        - type: "news_mention"
+          keywords: ["expansion", "growth", "scale"]
+
+        - type: "conference"
+          events: ["SaaStr", "SaaStock", "FinTech conferences"]
+
+      low_value:  # +0.1 to intent score
+        - type: "website_visit"
+          min_visits: 2
+
+        - type: "content_download"
+          topics: ["financial reporting", "fp&a"]
+
+    # Scoring Thresholds
+    scoring:
+      composite_formula: "(fit * 0.40) + (intent * 0.30) + (reachability * 0.20) + (freshness * 0.10)"
+
+      thresholds:
+        auto_approve: 0.80  # Auto-enroll in outreach
+        review_required: 0.70  # Queue for manual review
+        disqualify: 0.50  # Below this = exclude
+
+      reachability_requirements:
+        email_verified: true
+        min_confidence: 0.70
+
+    # Compliance Rules
+    compliance:
+      gdpr_consent_required: true  # For EU contacts
+      exclude_industries:
+        - "Government"
+        - "Military"
+
+      exclude_titles:
+        - "Student"
+        - "Intern"
+
+
+  # Profile 2: SaaS Finance Leaders
+  icp_saas_finance:
+    name: "SaaS Finance Leaders"
+    description: "VP Finance/CFO at SaaS companies with strong growth metrics"
+    tier: core
+    active: true
+
+    firmographics:
+      company_size:
+        min: 200
+        max: 2000
+        weight: 0.25
+
+      industry:
+        include:
+          - "SaaS"
+          - "Software"
+          - "B2B Software"
+          - "Enterprise Software"
+        weight: 0.30
+
+      revenue:
+        min: 10000000
+        max: 1000000000
+        weight: 0.15
+
+      geography:
+        include:
+          - "United States"
+          - "Canada"
+          - "United Kingdom"
+          - "Ireland"
+          - "Germany"
+          - "France"
+          - "Australia"
+        weight: 0.10
+
+      funding_stage:
+        include:
+          - "Series B"
+          - "Series C"
+          - "Series D"
+          - "Series E+"
+        weight: 0.20
+
+    technographics:
+      required_any:
+        - "Snowflake"
+        - "BigQuery"
+        - "Redshift"
+
+      preferred:
+        - "Salesforce"
+        - "HubSpot"
+        - "NetSuite"
+        - "Stripe"
+        - "AWS"
+        - "dbt"
+        - "Looker"
+
+      weight: 0.25
+
+    titles:
+      primary:
+        - "VP Finance"
+        - "CFO"
+        - "Chief Financial Officer"
+
+      secondary:
+        - "Controller"
+        - "Director FP&A"
+        - "VP FP&A"
+        - "Head of Finance"
+
+      weight: 0.30
+
+    intent_signals:
+      high_value:
+        - type: "funding"
+          timeframe_days: 120
+          min_amount: 20000000
+
+        - type: "hiring"
+          department: "Finance"
+          min_roles: 2
+
+        - type: "ipo_prep"
+          signals: ["hiring CFO", "hiring controller", "audit preparation"]
+
+      medium_value:
+        - type: "revenue_milestone"
+          keywords: ["ARR growth", "crossed $50M ARR"]
+
+        - type: "expansion"
+          signals: ["new office", "international expansion"]
+
+    scoring:
+      composite_formula: "(fit * 0.40) + (intent * 0.30) + (reachability * 0.20) + (freshness * 0.10)"
+
+      thresholds:
+        auto_approve: 0.75
+        review_required: 0.65
+        disqualify: 0.50
+
+    compliance:
+      gdpr_consent_required: true
+      exclude_industries:
+        - "Adult Entertainment"
+        - "Gambling"
+        - "Weapons"
+
+
+  # Profile 3: E-commerce Finance (Adjacent ICP)
+  icp_ecommerce_finance:
+    name: "E-commerce Finance Leaders"
+    description: "Adjacent ICP - Finance leaders at high-growth e-commerce companies"
+    tier: adjacent
+    active: true
+
+    firmographics:
+      company_size:
+        min: 100
+        max: 1000
+        weight: 0.20
+
+      industry:
+        include:
+          - "E-commerce"
+          - "Retail"
+          - "Direct-to-Consumer"
+          - "Marketplace"
+        weight: 0.30
+
+      revenue:
+        min: 20000000  # Higher revenue floor for e-commerce
+        max: 500000000
+        weight: 0.20
+
+      geography:
+        include:
+          - "United States"
+          - "United Kingdom"
+          - "Canada"
+        weight: 0.10
+
+    technographics:
+      required_any:
+        - "Shopify Plus"
+        - "Magento"
+        - "BigCommerce"
+        - "Stripe"
+        - "Braintree"
+
+      preferred:
+        - "Snowflake"
+        - "BigQuery"
+        - "NetSuite"
+        - "QuickBooks Enterprise"
+
+      weight: 0.20
+
+    titles:
+      primary:
+        - "CFO"
+        - "VP Finance"
+        - "Controller"
+
+      secondary:
+        - "Director Finance"
+        - "Head of Finance"
+        - "Finance Manager"
+
+      weight: 0.30
+
+    intent_signals:
+      high_value:
+        - type: "funding"
+          timeframe_days: 90
+          min_amount: 15000000
+
+        - type: "hiring"
+          department: "Finance"
+          min_roles: 2
+
+      medium_value:
+        - type: "revenue_growth"
+          keywords: ["GMV growth", "sales milestone"]
+
+    scoring:
+      composite_formula: "(fit * 0.40) + (intent * 0.25) + (reachability * 0.25) + (freshness * 0.10)"
+
+      thresholds:
+        auto_approve: 0.70  # Lower bar for adjacent ICP
+        review_required: 0.60
+        disqualify: 0.45
+
+    compliance:
+      gdpr_consent_required: true
+      exclude_industries: []
+
+
+# Global Exclusion Rules (apply to all profiles)
+global_exclusions:
+
+  # Company-level exclusions
+  companies:
+    exclude_domains:
+      - "example.com"
+      - "test.com"
+
+    exclude_names:
+      - "Test Company"
+      - "Example Corp"
+
+  # Contact-level exclusions
+  contacts:
+    exclude_titles:
+      - "Student"
+      - "Intern"
+      - "Co-op"
+      - "Contractor"
+      - "Consultant"
+
+    exclude_email_patterns:
+      - "*@gmail.com"  # Personal emails
+      - "*@yahoo.com"
+      - "*@hotmail.com"
+      - "noreply@*"
+      - "do-not-reply@*"
+
+  # Geographic exclusions
+  geography:
+    exclude_countries:
+      - "North Korea"
+      - "Iran"
+      - "Syria"
+      - "Cuba"  # OFAC sanctions
+
+  # Industry exclusions
+  industries:
+    exclude:
+      - "Adult Entertainment"
+      - "Gambling"
+      - "Weapons"
+      - "Tobacco"
+      - "Payday Loans"
+
+
+# Scoring Configuration
+scoring_config:
+
+  # Fit score calculation
+  fit:
+    company_size_match: 0.25
+    industry_match: 0.30
+    revenue_match: 0.15
+    geography_match: 0.10
+    tech_stack_match: 0.20
+
+  # Intent score calculation
+  intent:
+    funding_weight: 0.40
+    hiring_weight: 0.30
+    tech_adoption_weight: 0.20
+    web_engagement_weight: 0.10
+
+  # Reachability score calculation
+  reachability:
+    email_verified: 0.50
+    linkedin_accessible: 0.30
+    phone_available: 0.20
+
+  # Freshness score decay
+  freshness:
+    excellent: 30  # days
+    good: 90
+    acceptable: 180
+    stale: 365
+
+
+# Data Source Priorities (for conflict resolution during enrichment)
+data_source_priority:
+  - "explorium"
+  - "apollo"
+  - "clearbit"
+  - "linkedin"
+  - "crunchbase"
+  - "builtwith"
+
+
+# Notification Settings
+notifications:
+
+  # Alert on high-value leads
+  high_value_lead_alert:
+    enabled: true
+    threshold: 0.85
+    channels:
+      - "slack"
+      - "email"
+
+  # Daily digest
+  daily_digest:
+    enabled: true
+    time: "09:00"
+    timezone: "America/New_York"
+    include:
+      - "leads_discovered"
+      - "leads_enriched"
+      - "leads_enrolled"
+      - "replies_received"
+
+  # Quality alerts
+  quality_alerts:
+    enabled: true
+    triggers:
+      - event: "low_data_quality"
+        threshold: 0.60
+
+      - event: "high_duplicate_rate"
+        threshold: 0.30
+
+      - event: "low_email_verification_rate"
+        threshold: 0.50

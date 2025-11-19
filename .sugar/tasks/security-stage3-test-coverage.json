@@ -1,0 +1,407 @@
+{
+  "id": "security-stage3-test-coverage",
+  "title": "Stage 3: Test Coverage Surge - 14% → 80% Coverage with 540 New Tests",
+  "type": "test",
+  "priority": 4,
+  "status": "pending",
+  "created_at": "2025-01-17T00:00:00Z",
+  "estimated_effort_hours": 85,
+
+  "context": "Stage 3 of the 4-stage security-first acceleration plan. With security hardened (Grade 84/100, Security 85/100), this stage focuses on comprehensive test coverage to reach A- grade (88/100). Current test coverage is critically low at 14% (95/673 lines). This stage adds 540 new tests across all layers: 400 unit tests, 40 integration tests, 90 component tests, and 10 E2E tests. Success raises Test Coverage score from F (14%) to A- (80%), Quality score from C+ (75) to A- (88).",
+
+  "business_context": "Enterprise customers require >80% test coverage for production deployment. Low test coverage creates technical debt, increases bug risk, and blocks enterprise sales. This stage establishes comprehensive testing infrastructure and best practices, enabling confident refactoring and feature development. The 540 new tests provide regression protection for all security improvements from Stages 1-2.",
+
+  "testing_requirements": [
+    {
+      "category": "Backend Unit Tests",
+      "current_coverage": "12%",
+      "target_coverage": "80%",
+      "new_tests": 400,
+      "estimated_hours": 50,
+      "scope": [
+        "API endpoints (campaigns, companies, contacts, users, webhooks): 120 tests",
+        "Middleware (auth, rate limiting, validation, CSRF, account lockout): 80 tests",
+        "Services (HubSpot, Lemlist, Explorium clients with circuit breakers): 90 tests",
+        "Database models (Campaign, Company, Contact, User): 50 tests",
+        "Utilities (logger, secrets-manager, signature-verifier): 40 tests",
+        "Error handling and edge cases: 20 tests"
+      ]
+    },
+    {
+      "category": "Integration Tests",
+      "current_coverage": "0%",
+      "target_coverage": "60%",
+      "new_tests": 40,
+      "estimated_hours": 10,
+      "scope": [
+        "API endpoint full request/response cycles: 15 tests",
+        "Database transactions and rollbacks: 10 tests",
+        "External API mocking (HubSpot, Lemlist, Explorium): 10 tests",
+        "Webhook signature verification flows: 5 tests"
+      ]
+    },
+    {
+      "category": "Frontend Component Tests",
+      "current_coverage": "18%",
+      "target_coverage": "85%",
+      "new_tests": 90,
+      "estimated_hours": 25,
+      "scope": [
+        "CampaignBuilder.jsx with validation: 20 tests",
+        "SettingsPage.jsx with encrypted storage: 15 tests",
+        "CampaignList.jsx with filtering/sorting: 15 tests",
+        "Dashboard.jsx with metrics: 15 tests",
+        "CompanyList.jsx, ContactList.jsx: 15 tests",
+        "Error boundaries and loading states: 10 tests"
+      ]
+    },
+    {
+      "category": "End-to-End Tests",
+      "current_coverage": "0%",
+      "target_coverage": "critical paths",
+      "new_tests": 10,
+      "estimated_hours": 10,
+      "scope": [
+        "Complete campaign creation workflow: 3 tests",
+        "Authentication and session management: 2 tests",
+        "Settings update with encrypted storage: 2 tests",
+        "Webhook processing end-to-end: 2 tests",
+        "Error handling and recovery: 1 test"
+      ]
+    }
+  ],
+
+  "technical_requirements": [
+    "Use Jest 29.x for all backend unit and integration tests",
+    "Use React Testing Library for all frontend component tests",
+    "Use Supertest for API endpoint integration tests",
+    "Use MSW (Mock Service Worker) for external API mocking",
+    "Use Playwright for E2E tests (desktop Electron app)",
+    "Achieve >80% line coverage, >75% branch coverage, >70% function coverage",
+    "All tests must pass in CI/CD pipeline",
+    "Test data generation with realistic fixtures (test-data-generator plugin)",
+    "Mutation testing to validate test quality (mutation-test-runner plugin)",
+    "Parallel test execution for performance (jest --maxWorkers=4)",
+    "Snapshot testing for React components where appropriate",
+    "Database cleanup between integration tests (beforeEach/afterEach)",
+    "Mock Electron APIs for frontend tests (safeStorage, IPC)",
+    "Test coverage reports in HTML and JSON formats",
+    "Quality gate: <5% mutation survival rate (mutation testing)"
+  ],
+
+  "files_to_create": [
+    {
+      "path": "mcp-server/tests/unit/routes/campaigns.test.js",
+      "description": "30 unit tests for campaign CRUD endpoints",
+      "estimated_hours": 5
+    },
+    {
+      "path": "mcp-server/tests/unit/routes/companies.test.js",
+      "description": "20 unit tests for company CRUD endpoints",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/tests/unit/routes/contacts.test.js",
+      "description": "20 unit tests for contact CRUD endpoints",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/tests/unit/routes/webhooks.test.js",
+      "description": "15 unit tests for webhook endpoints with signature verification",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/tests/unit/middleware/authenticate.test.js",
+      "description": "20 unit tests for auth middleware (rate limiting, lockout)",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/tests/unit/middleware/csrf-protection.test.js",
+      "description": "15 unit tests for CSRF middleware",
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/tests/unit/middleware/account-lockout.test.js",
+      "description": "15 unit tests for account lockout logic",
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/tests/unit/clients/hubspot-client.test.js",
+      "description": "30 unit tests for HubSpot client with circuit breaker",
+      "estimated_hours": 4
+    },
+    {
+      "path": "mcp-server/tests/unit/lemlist/lemlist-client.test.js",
+      "description": "30 unit tests for Lemlist client with circuit breaker",
+      "estimated_hours": 4
+    },
+    {
+      "path": "mcp-server/tests/unit/clients/explorium-client.test.js",
+      "description": "30 unit tests for Explorium client with circuit breaker",
+      "estimated_hours": 4
+    },
+    {
+      "path": "mcp-server/tests/unit/validators/complete-schemas.test.js",
+      "description": "40 unit tests for all Zod validation schemas",
+      "estimated_hours": 5
+    },
+    {
+      "path": "mcp-server/tests/unit/webhooks/signature-verifier.test.js",
+      "description": "20 unit tests for HMAC signature verification",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/tests/integration/api-endpoints.test.js",
+      "description": "40 integration tests for full API request/response cycles",
+      "estimated_hours": 10
+    },
+    {
+      "path": "desktop-app/tests/components/CampaignBuilder.test.jsx",
+      "description": "20 component tests for CampaignBuilder",
+      "estimated_hours": 5
+    },
+    {
+      "path": "desktop-app/tests/components/SettingsPage.test.jsx",
+      "description": "15 component tests for SettingsPage with encrypted storage",
+      "estimated_hours": 4
+    },
+    {
+      "path": "desktop-app/tests/components/CampaignList.test.jsx",
+      "description": "15 component tests for CampaignList",
+      "estimated_hours": 4
+    },
+    {
+      "path": "desktop-app/tests/components/Dashboard.test.jsx",
+      "description": "15 component tests for Dashboard",
+      "estimated_hours": 4
+    },
+    {
+      "path": "desktop-app/tests/e2e/campaign-workflow.spec.js",
+      "description": "3 E2E tests for campaign creation workflow",
+      "estimated_hours": 4
+    },
+    {
+      "path": "desktop-app/tests/e2e/authentication.spec.js",
+      "description": "2 E2E tests for authentication and session management",
+      "estimated_hours": 3
+    },
+    {
+      "path": "desktop-app/tests/e2e/settings.spec.js",
+      "description": "2 E2E tests for settings update with encryption",
+      "estimated_hours": 3
+    },
+    {
+      "path": "mcp-server/tests/fixtures/test-data.js",
+      "description": "Realistic test data fixtures for all entities",
+      "estimated_hours": 3
+    },
+    {
+      "path": "jest.config.js",
+      "description": "Jest configuration with coverage thresholds",
+      "estimated_hours": 1
+    },
+    {
+      "path": "playwright.config.js",
+      "description": "Playwright configuration for E2E tests",
+      "estimated_hours": 1
+    }
+  ],
+
+  "files_to_modify": [
+    {
+      "path": "package.json",
+      "changes": [
+        "Add test scripts: test, test:unit, test:integration, test:e2e, test:coverage",
+        "Add mutation testing script: test:mutation",
+        "Add coverage thresholds: lines 80%, branches 75%, functions 70%",
+        "Add test dependencies: @testing-library/react, @testing-library/jest-dom, supertest, msw, playwright"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "changes": [
+        "Add test execution step in CI pipeline",
+        "Add coverage reporting to GitHub Actions",
+        "Add mutation testing step (weekly schedule)",
+        "Fail build if coverage below thresholds"
+      ],
+      "estimated_hours": 2
+    }
+  ],
+
+  "agent_assignments": {
+    "test_orchestrator": {
+      "responsibility": "Coordinate test strategy and execution across all test types",
+      "agent": "test-orchestrator",
+      "tasks": [
+        "Design comprehensive test strategy for 540 tests",
+        "Coordinate parallel test execution",
+        "Manage test data fixtures and mocking strategies",
+        "Monitor coverage metrics and identify gaps",
+        "Ensure test quality with mutation testing"
+      ]
+    },
+    "backend_test_engineer": {
+      "responsibility": "Create all backend unit and integration tests (440 tests)",
+      "plugin": "api-test-automation",
+      "tasks": [
+        "Write 400 unit tests for routes, middleware, services, models",
+        "Write 40 integration tests for API endpoints",
+        "Set up MSW for external API mocking",
+        "Configure Supertest for API testing",
+        "Achieve 80% backend coverage"
+      ]
+    },
+    "frontend_test_engineer": {
+      "responsibility": "Create all frontend component tests (90 tests)",
+      "agent": "compounding-engineering:kieran-typescript-reviewer",
+      "tasks": [
+        "Write 90 React component tests with Testing Library",
+        "Test encrypted storage integration in SettingsPage",
+        "Test form validation in CampaignBuilder",
+        "Mock Electron APIs (safeStorage, IPC)",
+        "Achieve 85% frontend coverage"
+      ]
+    },
+    "e2e_test_engineer": {
+      "responsibility": "Create end-to-end tests for critical workflows (10 tests)",
+      "plugin": "test-environment-manager",
+      "tasks": [
+        "Set up Playwright for Electron app testing",
+        "Write 10 E2E tests for critical user workflows",
+        "Configure test database and seed data",
+        "Test authentication and session management",
+        "Validate complete campaign creation workflow"
+      ]
+    },
+    "test_quality_specialist": {
+      "responsibility": "Validate test effectiveness with mutation testing",
+      "plugin": "mutation-test-runner",
+      "tasks": [
+        "Configure Stryker for mutation testing",
+        "Run mutation tests on all unit tests",
+        "Analyze mutation survival rate (<5% target)",
+        "Identify weak tests and improve assertions",
+        "Generate mutation testing reports"
+      ]
+    },
+    "test_data_specialist": {
+      "responsibility": "Generate realistic test data and fixtures",
+      "plugin": "test-data-generator",
+      "tasks": [
+        "Create realistic fixtures for campaigns, companies, contacts",
+        "Generate test data for edge cases and boundary conditions",
+        "Set up factory patterns for test data creation",
+        "Create mock data for external API responses",
+        "Document test data usage patterns"
+      ]
+    },
+    "qa_engineer": {
+      "responsibility": "Validate all test implementations and coverage targets",
+      "agent": "sugar:quality-guardian",
+      "tasks": [
+        "Review all test files for quality and completeness",
+        "Verify 80% coverage target achieved",
+        "Validate mutation testing results (<5% survival)",
+        "Ensure CI/CD pipeline integration works",
+        "Approve Stage 4 progression"
+      ]
+    }
+  },
+
+  "success_criteria": [
+    "Test Coverage: 14% → 80% (+66 percentage points)",
+    "Overall Grade: 84/100 → 88/100 (+4 points)",
+    "Quality Score: 75/100 → 88/100 (+13 points)",
+    "540 Total Tests: 400 unit + 40 integration + 90 component + 10 E2E",
+    "Backend Coverage: 80% lines, 75% branches, 70% functions",
+    "Frontend Coverage: 85% lines, 80% branches, 75% functions",
+    "Mutation Testing: <5% mutation survival rate",
+    "All Tests Pass: Zero failing tests in CI/CD",
+    "Quality Gate Passed: sugar:quality-guardian + mutation-test-runner approve Stage 4 progression"
+  ],
+
+  "acceptance_tests": [
+    {
+      "test": "Unit Tests - All Pass",
+      "action": "Run npm test:unit",
+      "expected": "400 unit tests pass, 0 failures"
+    },
+    {
+      "test": "Integration Tests - All Pass",
+      "action": "Run npm test:integration",
+      "expected": "40 integration tests pass, 0 failures"
+    },
+    {
+      "test": "Component Tests - All Pass",
+      "action": "Run npm test:components",
+      "expected": "90 component tests pass, 0 failures"
+    },
+    {
+      "test": "E2E Tests - All Pass",
+      "action": "Run npm test:e2e",
+      "expected": "10 E2E tests pass, 0 failures"
+    },
+    {
+      "test": "Coverage Threshold - Backend",
+      "action": "Run npm test:coverage (backend)",
+      "expected": "Lines: 80%, Branches: 75%, Functions: 70%"
+    },
+    {
+      "test": "Coverage Threshold - Frontend",
+      "action": "Run npm test:coverage (frontend)",
+      "expected": "Lines: 85%, Branches: 80%, Functions: 75%"
+    },
+    {
+      "test": "Mutation Testing - Quality",
+      "action": "Run npm test:mutation",
+      "expected": "Mutation survival rate <5%, mutation score >95%"
+    },
+    {
+      "test": "CI/CD Integration",
+      "action": "Push to GitHub, trigger CI/CD pipeline",
+      "expected": "All tests pass in CI, coverage reports generated"
+    },
+    {
+      "test": "Test Data Fixtures",
+      "action": "Review test-data.js fixtures",
+      "expected": "Realistic data for all entities, edge cases covered"
+    },
+    {
+      "test": "Mock External APIs",
+      "action": "Review MSW handlers",
+      "expected": "HubSpot, Lemlist, Explorium APIs fully mocked"
+    }
+  ],
+
+  "dependencies": [
+    "Stage 1 Complete: Security quick wins validated",
+    "Stage 2 Complete: Security blitz validated, secrets in AWS",
+    "All Security Tests Passing: OWASP scan clean, no CRITICAL vulnerabilities",
+    "Test Infrastructure: Jest, React Testing Library, Supertest, MSW, Playwright installed",
+    "Test Database: Separate test database configured for integration tests",
+    "CI/CD Pipeline: GitHub Actions configured and working"
+  ],
+
+  "deliverables": [
+    "400 backend unit tests with 80% coverage",
+    "40 integration tests covering full API request/response cycles",
+    "90 frontend component tests with 85% coverage",
+    "10 E2E tests covering critical user workflows",
+    "Test data fixtures for all entities",
+    "Mutation testing configured with <5% survival rate",
+    "Jest and Playwright configurations with coverage thresholds",
+    "CI/CD integration with automated test execution",
+    "Test coverage reports (HTML and JSON)",
+    "Quality gate review completed and passed"
+  ],
+
+  "stage_progression": {
+    "previous_stage": "Stage 2: Security Blitz (48 hours, +5 points)",
+    "current_stage": "Stage 3: Test Coverage Surge (85 hours, +4 points)",
+    "next_stage": "Stage 4: Final Polish (28 hours, +2 points)",
+    "grade_progression": "84 → 88 (+4 points)",
+    "coverage_progression": "14% → 80% (+66 percentage points)"
+  }
+}

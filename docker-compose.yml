@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  rtgs-sales-automation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rtgs-sales-automation
+    ports:
+      - "3456:3456"  # MCP Server HTTP (redirects to HTTPS)
+      - "3457:3457"  # MCP Server HTTPS
+      - "5173:5173"  # Desktop App Dev Server
+    environment:
+      # API Keys (set these via .env file)
+      - HUBSPOT_API_KEY=${HUBSPOT_API_KEY:-}
+      - LEMLIST_API_KEY=${LEMLIST_API_KEY:-}
+      - EXPLORIUM_API_KEY=${EXPLORIUM_API_KEY:-}
+      - APOLLO_API_KEY=${APOLLO_API_KEY:-}
+      - LINKEDIN_SESSION_COOKIE=${LINKEDIN_SESSION_COOKIE:-}
+
+      # Server config
+      - PORT=3456
+      - NODE_ENV=development
+
+      # PostgreSQL config
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rtgs_sales_automation
+      - POSTGRES_USER=rtgs_user
+      - POSTGRES_PASSWORD=rtgs_password_dev
+
+    volumes:
+      # Mount source code for live development
+      - ./mcp-server:/app/mcp-server
+      - ./desktop-app:/app/desktop-app
+
+      # Persist data
+      - sales-data:/app/.sales-automation
+
+      # Exclude node_modules from mount (use container's version)
+      - /app/mcp-server/node_modules
+      - /app/desktop-app/node_modules
+
+    command: /app/start.sh
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3456/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    networks:
+      - rtgs-network
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: rtgs-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=rtgs_sales_automation
+      - POSTGRES_USER=rtgs_user
+      - POSTGRES_PASSWORD=rtgs_password_dev
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./mcp-server/src/db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtgs_user -d rtgs_sales_automation"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - rtgs-network
+    restart: unless-stopped
+
+volumes:
+  sales-data:
+    driver: local
+  postgres-data:
+    driver: local
+
+networks:
+  rtgs-network:
+    driver: bridge

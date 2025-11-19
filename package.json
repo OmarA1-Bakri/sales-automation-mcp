@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "isomorphic-dompurify": "^2.32.0"
+  }
+}

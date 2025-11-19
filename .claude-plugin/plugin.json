@@ -1,0 +1,158 @@
+{
+  "name": "sales-automation-suite",
+  "version": "1.0.0",
+  "description": "Autonomous sales lead generation, enrichment, and outreach automation with HubSpot, Explorium, and lemlist integration",
+  "author": "Sales Automation Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/sales-automation-suite"
+  },
+  "category": "sales",
+  "tags": [
+    "sales",
+    "crm",
+    "automation",
+    "lead-generation",
+    "enrichment",
+    "hubspot",
+    "lemlist",
+    "outreach",
+    "explorium"
+  ],
+  "capabilities": {
+    "commands": true,
+    "agents": true,
+    "skills": true,
+    "hooks": true,
+    "mcp": true
+  },
+  "mcpServers": {
+    "sales-automation": {
+      "command": "node",
+      "args": [
+        "${pluginDir}/mcp-server/src/server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "SALES_AUTO_LOG_LEVEL": "info",
+        "HUBSPOT_API_KEY": "${env:HUBSPOT_API_KEY}",
+        "EXPLORIUM_API_KEY": "${env:EXPLORIUM_API_KEY}",
+        "LEMLIST_API_KEY": "${env:LEMLIST_API_KEY}"
+      },
+      "description": "Background job orchestration for lead enrichment, CRM sync, and outreach automation"
+    },
+    "lemlist": {
+      "command": "node",
+      "args": [
+        "${pluginDir}/mcp-server/src/lemlist/index.js"
+      ],
+      "env": {
+        "LEMLIST_API_KEY": "${env:LEMLIST_API_KEY}"
+      },
+      "description": "Lemlist API integration for email campaign management, lead enrichment, and LinkedIn URL discovery"
+    },
+    "hubspot": {
+      "command": "npx",
+      "args": [
+        "@shinzolabs/hubspot-mcp"
+      ],
+      "env": {
+        "HUBSPOT_ACCESS_TOKEN": "${env:HUBSPOT_API_KEY}",
+        "TELEMETRY_ENABLED": "false"
+      },
+      "description": "HubSpot CRM API integration with 100+ tools for contacts, companies, deals, and engagements"
+    },
+    "explorium": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@explorium/mcp-server"
+      ],
+      "env": {
+        "EXPLORIUM_API_KEY": "${env:EXPLORIUM_API_KEY}"
+      },
+      "description": "Explorium data enrichment with live company and contact intelligence for prospecting and research"
+    }
+  },
+  "configuration": {
+    "hubspot_api_key": {
+      "type": "string",
+      "description": "HubSpot Private App API Key",
+      "required": true,
+      "env": "HUBSPOT_API_KEY",
+      "sensitive": true
+    },
+    "explorium_api_key": {
+      "type": "string",
+      "description": "Explorium API Key for data enrichment",
+      "required": true,
+      "env": "EXPLORIUM_API_KEY",
+      "sensitive": true
+    },
+    "lemlist_api_key": {
+      "type": "string",
+      "description": "lemlist API Key for outreach sequences",
+      "required": true,
+      "env": "LEMLIST_API_KEY",
+      "sensitive": true
+    },
+    "auto_enrichment_enabled": {
+      "type": "boolean",
+      "description": "Enable automatic background enrichment of new contacts",
+      "default": true
+    },
+    "auto_outreach_enabled": {
+      "type": "boolean",
+      "description": "Enable automatic outreach sequence enrollment (requires manual approval by default)",
+      "default": false
+    },
+    "enrichment_batch_size": {
+      "type": "number",
+      "description": "Number of contacts to enrich per batch",
+      "default": 50,
+      "min": 1,
+      "max": 500
+    },
+    "job_check_interval_seconds": {
+      "type": "number",
+      "description": "How often to check for pending enrichment jobs",
+      "default": 30,
+      "min": 10,
+      "max": 300
+    },
+    "icp_profile_path": {
+      "type": "string",
+      "description": "Path to ICP configuration file",
+      "default": ".sales-automation/icp-profiles.yaml"
+    },
+    "default_lemlist_campaign_id": {
+      "type": "string",
+      "description": "Default lemlist campaign ID for auto-enrollment",
+      "required": false
+    },
+    "compliance_mode": {
+      "type": "string",
+      "description": "Compliance framework (gdpr, ccpa, both, none)",
+      "default": "both",
+      "enum": ["gdpr", "ccpa", "both", "none"]
+    }
+  },
+  "requirements": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "installation": {
+    "steps": [
+      "npm install --prefix mcp-server",
+      "mkdir -p .sales-automation",
+      "cp config/icp-profiles.example.yaml .sales-automation/icp-profiles.yaml",
+      "cp config/templates.example.yaml .sales-automation/templates.yaml"
+    ]
+  },
+  "documentation": {
+    "readme": "README.md",
+    "setup": "SETUP.md",
+    "architecture": "CLAUDE.md"
+  }
+}

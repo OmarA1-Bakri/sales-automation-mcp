@@ -1,0 +1,593 @@
+# RTGS.global - Ideal Customer Profile Configuration
+# Customized for global payment service providers and cross-border payment operators
+
+version: "1.0"
+default_profile: icp_rtgs_psp_treasury
+
+profiles:
+
+  # Primary ICP: Payment Service Providers - Treasury Focus
+  icp_rtgs_psp_treasury:
+    name: "PSP Treasury Leaders"
+    description: "Treasury heads at global PSPs managing liquidity and FX risk"
+    tier: core
+    active: true
+
+    # Firmographic Criteria
+    firmographics:
+      company_size:
+        min: 10
+        max: 2000
+        optimal_range: [50, 500]
+        weight: 0.25
+
+      industry:
+        include:
+          - "Payment Service Provider"
+          - "PSP"
+          - "Cross-border Payments"
+          - "Fintech"
+          - "Financial Services"
+          - "Payment Processing"
+          - "Money Transfer"
+          - "Remittance"
+          - "Digital Payments"
+        weight: 0.35
+
+      revenue:
+        min: 5000000      # $5M minimum
+        max: 500000000    # $500M maximum
+        optimal_min: 10000000  # $10M+ preferred
+        weight: 0.15
+
+      geography:
+        include:
+          # CEMEA Priority
+          - "United Kingdom"
+          - "Germany"
+          - "France"
+          - "Netherlands"
+          - "Switzerland"
+          - "United Arab Emirates"
+          - "Saudi Arabia"
+          - "South Africa"
+          - "Poland"
+          - "Czech Republic"
+          # APAC Priority
+          - "Singapore"
+          - "Hong Kong"
+          - "Australia"
+          - "Japan"
+          - "South Korea"
+          - "India"
+          - "Indonesia"
+          - "Malaysia"
+          - "Thailand"
+          - "Philippines"
+        weight: 0.15
+
+      funding_stage:
+        include:
+          - "Seed"
+          - "Series A"
+          - "Series B"
+          - "Series C"
+          - "Growth"
+          - "Profitable"
+        weight: 0.10
+
+    # Technographic Criteria
+    technographics:
+      required_any:
+        - "Payment Gateway"
+        - "Payment Processing"
+        - "Treasury Management System"
+        - "FX Trading Platform"
+        - "Banking Software"
+        - "Core Banking"
+        - "API Platform"
+
+      preferred:
+        - "AWS"
+        - "Azure"
+        - "GCP"
+        - "Kubernetes"
+        - "Microservices"
+        - "REST API"
+        - "ISO20022"
+        - "SWIFT"
+        - "Stripe"
+        - "Plaid"
+        - "Wise"
+        - "Currencycloud"
+
+      compliance_indicators:
+        - "AML Software"
+        - "KYC Platform"
+        - "Compliance Management"
+        - "RegTech"
+        - "Risk Management"
+
+      weight: 0.30
+
+    # Role/Title Criteria
+    titles:
+      primary:
+        # Treasury (PRIMARY STAKEHOLDER)
+        - "Head of Treasury"
+        - "VP Treasury"
+        - "Chief Treasury Officer"
+        - "Treasury Director"
+        - "Treasury Manager"
+        - "Group Treasurer"
+
+        # Operations
+        - "Head of Operations"
+        - "VP Operations"
+        - "Chief Operating Officer"
+        - "Operations Director"
+        - "Operations Manager"
+
+        # Payments
+        - "Chief Payments Officer"
+        - "Head of Payments"
+        - "VP Payments"
+        - "Payments Director"
+        - "Head of Payment Operations"
+
+      secondary:
+        # Partnerships
+        - "Head of Partnerships"
+        - "VP Business Development"
+        - "Strategic Partnerships Director"
+        - "Head of Strategic Partnerships"
+
+        # Revenue/Digital
+        - "Chief Revenue Officer"
+        - "CRO"
+        - "Head of Digital Strategy"
+        - "Chief Digital Officer"
+        - "VP Digital Transformation"
+
+        # Finance (influence on treasury decisions)
+        - "CFO"
+        - "Chief Financial Officer"
+        - "VP Finance"
+        - "Finance Director"
+
+      weight: 0.35
+
+      seniority:
+        include:
+          - "C-Level"
+          - "VP"
+          - "Head"
+          - "Director"
+        weight: 0.20
+
+    # Intent Signals & Scoring
+    intent_signals:
+      high_value:  # +0.4 to intent score
+        - type: "funding"
+          timeframe_days: 120
+          min_amount: 10000000
+          reason: "Fresh capital for expansion and infrastructure"
+
+        - type: "hiring"
+          department: ["Treasury", "Operations", "Payments", "Compliance"]
+          min_roles: 2
+          reason: "Building out critical functions"
+
+        - type: "expansion"
+          keywords: ["cross-border", "international", "global expansion", "new market", "new corridor"]
+          reason: "Expanding payment corridors = liquidity needs"
+
+        - type: "regulatory"
+          keywords: ["ISO20022", "compliance upgrade", "regulatory change", "license application"]
+          reason: "Regulatory pressure = need for compliant infrastructure"
+
+        - type: "partnership"
+          keywords: ["strategic partnership", "payment network", "correspondent bank", "treasury solution"]
+          reason: "Actively seeking infrastructure partners"
+
+      medium_value:  # +0.2 to intent score
+        - type: "technology_adoption"
+          technologies: ["Treasury Management", "FX Platform", "Payment Gateway", "API Platform"]
+          timeframe_days: 90
+
+        - type: "pain_signals"
+          keywords: ["liquidity management", "FX risk", "settlement delays", "correspondent banking costs", "SWIFT fees"]
+          source: ["LinkedIn posts", "blog", "press release"]
+
+        - type: "conference"
+          events: ["Sibos", "Money20/20", "Fintech Festival", "Paris Fintech Forum", "Rise Hong Kong"]
+
+        - type: "job_posting"
+          titles: ["Treasury", "Payments", "Operations", "Compliance", "Partnership"]
+
+      low_value:  # +0.1 to intent score
+        - type: "website_visit"
+          min_visits: 2
+
+        - type: "content_engagement"
+          topics: ["cross-border payments", "treasury management", "liquidity optimization"]
+
+    # Scoring Thresholds
+    scoring:
+      composite_formula: "(fit * 0.35) + (intent * 0.35) + (reachability * 0.20) + (freshness * 0.10)"
+
+      thresholds:
+        auto_approve: 0.75    # High-fit prospects
+        review_required: 0.60  # Manual review for medium-fit
+        disqualify: 0.45       # Below this = exclude
+
+      reachability_requirements:
+        email_verified: true
+        min_confidence: 0.65
+
+    # Compliance Rules
+    compliance:
+      gdpr_consent_required: true  # For EU contacts
+      exclude_industries:
+        - "Gambling"
+        - "Adult Entertainment"
+        - "Weapons"
+        - "Sanctioned Countries"
+
+      exclude_titles:
+        - "Student"
+        - "Intern"
+        - "Analyst" # Unless paired with "Senior" or "Lead"
+
+
+  # Secondary ICP: Fintech with Treasury Capabilities
+  icp_rtgs_fintech_treasury:
+    name: "Fintech Treasury Operators"
+    description: "Fintechs with treasury and settlement capabilities expanding globally"
+    tier: core
+    active: true
+
+    firmographics:
+      company_size:
+        min: 20
+        max: 1000
+        weight: 0.25
+
+      industry:
+        include:
+          - "Fintech"
+          - "Financial Technology"
+          - "Digital Banking"
+          - "Neobank"
+          - "Challenger Bank"
+          - "Payment Technology"
+          - "Blockchain Payments"
+          - "Crypto Payments"
+        weight: 0.35
+
+      revenue:
+        min: 5000000
+        max: 300000000
+        weight: 0.15
+
+      geography:
+        include: # Same as primary
+          - "United Kingdom"
+          - "Germany"
+          - "France"
+          - "Singapore"
+          - "Hong Kong"
+          - "United Arab Emirates"
+          - "Australia"
+        weight: 0.15
+
+      funding_stage:
+        include:
+          - "Series A"
+          - "Series B"
+          - "Series C"
+          - "Growth"
+        weight: 0.10
+
+    technographics:
+      required_any:
+        - "Payment API"
+        - "Banking API"
+        - "Treasury System"
+        - "Blockchain"
+        - "DeFi"
+
+      preferred:
+        - "Microservices"
+        - "Cloud-native"
+        - "Kubernetes"
+        - "API-first"
+
+      weight: 0.25
+
+    titles:
+      primary:
+        - "Head of Treasury"
+        - "VP Treasury"
+        - "Head of Operations"
+        - "VP Operations"
+        - "Head of Payments"
+
+      secondary:
+        - "CTO"
+        - "VP Product"
+        - "Head of Partnerships"
+
+      weight: 0.35
+
+    intent_signals:
+      high_value:
+        - type: "funding"
+          timeframe_days: 90
+          min_amount: 15000000
+
+        - type: "expansion"
+          keywords: ["international launch", "global expansion", "new market entry"]
+
+        - type: "hiring"
+          department: ["Treasury", "Operations"]
+          min_roles: 2
+
+      medium_value:
+        - type: "partnership_announcement"
+          keywords: ["payment infrastructure", "treasury partner", "settlement network"]
+
+        - type: "regulatory_milestone"
+          keywords: ["license approved", "regulatory approval", "EMI license", "PI license"]
+
+    scoring:
+      composite_formula: "(fit * 0.35) + (intent * 0.35) + (reachability * 0.20) + (freshness * 0.10)"
+
+      thresholds:
+        auto_approve: 0.70
+        review_required: 0.55
+        disqualify: 0.40
+
+    compliance:
+      gdpr_consent_required: true
+
+
+  # Tertiary ICP: Financial Institutions Expanding Multi-Currency
+  icp_rtgs_financial_institutions:
+    name: "Financial Institutions - Multi-Currency"
+    description: "Banks and FIs expanding into multi-currency instant settlement"
+    tier: adjacent
+    active: true
+
+    firmographics:
+      company_size:
+        min: 50
+        max: 5000
+        weight: 0.20
+
+      industry:
+        include:
+          - "Banking"
+          - "Financial Services"
+          - "Commercial Bank"
+          - "Investment Bank"
+          - "Credit Union"
+          - "Building Society"
+        weight: 0.30
+
+      revenue:
+        min: 50000000
+        weight: 0.15
+
+      geography:
+        include: # Focus on emerging markets for expansion
+          - "United Arab Emirates"
+          - "Saudi Arabia"
+          - "Singapore"
+          - "Hong Kong"
+          - "India"
+          - "South Africa"
+          - "Brazil"
+          - "Mexico"
+        weight: 0.20
+
+    technographics:
+      required_any:
+        - "Core Banking System"
+        - "Treasury Management"
+        - "SWIFT"
+        - "Payment Hub"
+
+      preferred:
+        - "Cloud Banking"
+        - "API Banking"
+        - "ISO20022"
+
+      weight: 0.20
+
+    titles:
+      primary:
+        - "Head of Treasury"
+        - "Head of Transaction Banking"
+        - "Head of Payments"
+        - "Head of Correspondent Banking"
+
+      secondary:
+        - "Chief Digital Officer"
+        - "Head of Innovation"
+        - "VP Digital Transformation"
+
+      weight: 0.30
+
+    intent_signals:
+      high_value:
+        - type: "digital_transformation"
+          keywords: ["digital transformation", "cloud migration", "modernization", "API strategy"]
+
+        - type: "expansion"
+          keywords: ["cross-border expansion", "new corridor", "remittance corridor"]
+
+      medium_value:
+        - type: "partnership"
+          keywords: ["fintech partnership", "payment infrastructure", "settlement network"]
+
+    scoring:
+      composite_formula: "(fit * 0.30) + (intent * 0.35) + (reachability * 0.25) + (freshness * 0.10)"
+
+      thresholds:
+        auto_approve: 0.65
+        review_required: 0.50
+        disqualify: 0.35
+
+    compliance:
+      gdpr_consent_required: true
+
+
+# Global Exclusion Rules
+global_exclusions:
+  companies:
+    exclude_names:
+      - "Test"
+      - "Example"
+      - "Demo"
+
+    exclude_keywords:
+      - "gambling"
+      - "casino"
+      - "betting"
+
+  contacts:
+    exclude_titles:
+      - "Student"
+      - "Intern"
+      - "Consultant" # Unless "Treasury Consultant"
+
+    exclude_email_patterns:
+      - "*@gmail.com"
+      - "*@yahoo.com"
+      - "*@hotmail.com"
+      - "noreply@*"
+
+  geography:
+    exclude_countries:
+      - "North Korea"
+      - "Iran"
+      - "Syria"
+      - "Cuba"
+      - "Russia" # Due to sanctions (adjust based on current policy)
+
+  industries:
+    exclude:
+      - "Adult Entertainment"
+      - "Gambling"
+      - "Weapons"
+      - "Tobacco"
+      - "Payday Loans"
+
+
+# Pain Point Mapping (for personalization)
+pain_points:
+  liquidity_management:
+    primary_pain: "Inefficient treasury workflows limiting ability to scale operations"
+    value_prop: "Smart liquidity management with just-in-time funding, eliminating collateral demands and optimizing 24/7"
+    talking_points:
+      - "Instant settlement enables better working capital management"
+      - "Non-SWIFT platform removes intermediary delays"
+      - "Real-time visibility into global liquidity positions"
+
+  high_costs:
+    primary_pain: "SWIFT and correspondent banking fees reducing profitability"
+    value_prop: "Removal of intermediaries resulting in reduced transaction chains and lower costs"
+    talking_points:
+      - "Direct settlement without correspondent banking fees"
+      - "Access to most competitive FX rates across member network"
+      - "Eliminate hidden costs in traditional payment chains"
+
+  licensing_barriers:
+    primary_pain: "Cannot afford to be licensed in all target jurisdictions"
+    value_prop: "Instant global expansion with access to global currencies overnight"
+    talking_points:
+      - "Partner with funds controllers in your target markets"
+      - "Avoid lengthy and costly licensing processes"
+      - "Enter new territories overnight vs years of regulatory work"
+
+  regulatory_pressure:
+    primary_pain: "Stricter compliance obligations (AML, ISO20022) demand secure systems"
+    value_prop: "Built-in transparency aligned with ISO20022 standards"
+    talking_points:
+      - "Regulatory compliance built into the platform"
+      - "Address AML and sanctions screening requirements"
+      - "Future-proof for ISO20022 migration"
+
+  slow_settlement:
+    primary_pain: "Settlement delays impacting customer experience and competitiveness"
+    value_prop: "Settlement in seconds, 24/7 instant settlement capability"
+    talking_points:
+      - "Removal of intermediaries = faster settlement"
+      - "Real-time settlement improves customer satisfaction"
+      - "24/7 operation removes banking hours constraints"
+
+
+# Scoring Configuration
+scoring_config:
+  fit:
+    industry_match: 0.35        # Critical: Must be PSP/Fintech
+    company_size_match: 0.20
+    geography_match: 0.15       # CEMEA/APAC priority
+    tech_stack_match: 0.15
+    revenue_match: 0.15
+
+  intent:
+    expansion_signals: 0.30     # Geographic/product expansion
+    funding_signals: 0.25       # Fresh capital
+    hiring_signals: 0.20        # Building teams
+    regulatory_signals: 0.15    # Compliance needs
+    partnership_signals: 0.10   # Open to partnerships
+
+  reachability:
+    email_verified: 0.50
+    linkedin_accessible: 0.30
+    phone_available: 0.20
+
+  freshness:
+    excellent: 30   # days
+    good: 90
+    acceptable: 180
+    stale: 365
+
+
+# Data Source Priorities
+data_source_priority:
+  - "explorium"     # Primary for firmographics
+  - "apollo"        # Contact data
+  - "clearbit"      # Company intelligence
+  - "linkedin"      # Professional data
+  - "crunchbase"    # Funding data
+  - "builtwith"     # Tech stack
+
+
+# Notification Settings
+notifications:
+  high_value_lead_alert:
+    enabled: true
+    threshold: 0.80
+    channels: ["slack", "email"]
+    message_template: "🎯 High-value RTGS.global prospect: {{name}} at {{company}} (Score: {{score}})"
+
+  daily_digest:
+    enabled: true
+    time: "08:00"
+    timezone: "Europe/London"
+    include:
+      - "leads_discovered"
+      - "leads_enriched"
+      - "expansion_signals"
+      - "funding_announcements"
+
+  quality_alerts:
+    enabled: true
+    triggers:
+      - event: "low_data_quality"
+        threshold: 0.60
+      - event: "high_intent_signal"
+        threshold: 0.75

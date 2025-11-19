@@ -1,0 +1,67 @@
+{
+  "project": "RTGS Sales Automation",
+  "version": "2.0.0",
+  "description": "Dual-path outreach platform with structured templates and dynamic AI",
+  "current_phase": "Phase 6-7: Backend Foundation and Multi-Provider Outreach",
+  "timeline": {
+    "start_date": "2025-01-09",
+    "current_week": 1,
+    "total_weeks": 20,
+    "mvp_week": 8
+  },
+  "paths": {
+    "structured": {
+      "status": "in_development",
+      "timeline": "Weeks 1-8",
+      "target_metrics": {
+        "email_open_rate": "40-60%",
+        "email_reply_rate": "5-10%",
+        "linkedin_accept_rate": "30-40%",
+        "linkedin_reply_rate": "15-25%",
+        "meeting_booked_rate": "1-2%"
+      }
+    },
+    "dynamic_ai": {
+      "status": "planned",
+      "timeline": "Weeks 11-20",
+      "target_metrics": {
+        "email_reply_rate": "15-25%",
+        "positive_reply_rate": "60-70%",
+        "meeting_booked_rate": "5-8%",
+        "ai_confidence_score": ">0.8 for 80%+ messages"
+      }
+    }
+  },
+  "providers": {
+    "lemlist": {
+      "type": "PRIMARY",
+      "status": "ACTIVE",
+      "capabilities": ["email", "linkedin"],
+      "priority": 1
+    },
+    "postmark": {
+      "type": "SECONDARY",
+      "status": "INACTIVE",
+      "capabilities": ["email"],
+      "priority": 2
+    },
+    "phantombuster": {
+      "type": "SECONDARY",
+      "status": "INACTIVE",
+      "capabilities": ["linkedin"],
+      "priority": 3
+    }
+  },
+  "autonomous_execution": {
+    "enabled": true,
+    "quality_threshold": 0.9,
+    "review_required": true,
+    "max_parallel_tasks": 3
+  },
+  "agent_assignments": {
+    "backend_developer": ["Phase 6A", "Phase 6B", "Phase 7C", "Phase 7D", "Phase 7E", "Phase 7F"],
+    "qa_engineer": ["Testing", "Quality Assurance"],
+    "tech_lead": ["Architecture", "Code Review"],
+    "quality_guardian": ["Final Review", "Security Audit"]
+  }
+}

@@ -1,0 +1,352 @@
+{
+  "version": "1.0",
+  "description": "Automation hooks for sales automation plugin - proactive suggestions and background triggers",
+  "hooks": [
+    {
+      "name": "suggest-enrichment-on-hubspot-mention",
+      "description": "Suggest enrichment when user mentions HubSpot contacts that need data",
+      "event": "user-prompt-submit",
+      "filter": {
+        "pattern": "(hubspot|crm).*(contact|lead|company).*(enrich|update|incomplete|missing data)"
+      },
+      "action": {
+        "type": "suggest",
+        "message": "💡 I can enrich those HubSpot contacts with data from Explorium and Apollo. Use `/sales-enrich` to add firmographic, technographic, and behavioral intelligence.",
+        "commands": ["/sales-enrich"]
+      },
+      "throttle": {
+        "max_per_session": 2,
+        "min_interval_seconds": 300
+      }
+    },
+    {
+      "name": "suggest-discovery-on-lead-generation-mention",
+      "description": "Suggest lead discovery when user talks about finding prospects",
+      "event": "user-prompt-submit",
+      "filter": {
+        "pattern": "(find|discover|search|need).*(lead|prospect|contact|vp finance|cfo|customer)"
+      },
+      "action": {
+        "type": "suggest",
+        "message": "🔍 I can discover high-fit prospects matching your ICP from LinkedIn, Apollo, and intent data sources. Use `/sales-discover` to find qualified leads.",
+        "commands": ["/sales-discover"]
+      },
+      "throttle": {
+        "max_per_session": 2,
+        "min_interval_seconds": 300
+      }
+    },
+    {
+      "name": "suggest-outreach-after-enrichment",
+      "description": "Suggest launching outreach after enriching contacts",
+      "event": "tool-use",
+      "filter": {
+        "tool": "mcp__sales-automation__enrich_contact",
+        "result_pattern": "quality.*[89]\\d"
+      },
+      "action": {
+        "type": "prompt",
+        "message": "✅ Contact enriched with high quality score! Ready to launch personalized outreach? Use `/sales-outreach` to enroll in lemlist campaign."
+      },
+      "throttle": {
+        "max_per_session": 5,
+        "min_interval_seconds": 60
+      }
+    },
+    {
+      "name": "alert-high-value-lead",
+      "description": "Alert when discovering a very high-fit lead (score > 0.85)",
+      "event": "tool-use",
+      "filter": {
+        "tool": "mcp__sales-automation__discover_leads_icp",
+        "result_pattern": "composite.*0\\.[89]"
+      },
+      "action": {
+        "type": "prompt",
+        "message": "🎯 High-value lead detected (ICP score >0.85)! This prospect is an excellent fit. Recommend immediate enrichment and personalized outreach."
+      }
+    },
+    {
+      "name": "warn-api-quota-high",
+      "description": "Warn when API quotas are approaching limits",
+      "event": "tool-use",
+      "filter": {
+        "tool": "mcp__sales-automation__.*",
+        "error_pattern": "(rate limit|quota.*exceeded|429)"
+      },
+      "action": {
+        "type": "warning",
+        "message": "⚠️ API quota warning detected. Check `/sales-monitor system` to view current usage and limits."
+      },
+      "throttle": {
+        "max_per_session": 1,
+        "min_interval_seconds": 3600
+      }
+    },
+    {
+      "name": "session-start-daily-digest",
+      "description": "Show daily digest on first session of the day",
+      "event": "session-start",
+      "conditions": {
+        "file_exists": ".sales-automation/last_digest.txt",
+        "time_check": "is_new_day"
+      },
+      "action": {
+        "type": "command",
+        "command": "sales-monitor daily",
+        "display": "inline",
+        "message": "📊 Good morning! Here's your sales automation daily digest:"
+      },
+      "throttle": {
+        "max_per_session": 1
+      }
+    },
+    {
+      "name": "suggest-monitor-after-batch-job",
+      "description": "Remind user to check status after submitting batch job",
+      "event": "tool-use",
+      "filter": {
+        "tool": "mcp__sales-automation__enrich_batch",
+        "result_pattern": "job_id"
+      },
+      "action": {
+        "type": "prompt",
+        "message": "⏳ Batch job submitted! Track progress with `/sales-monitor <job_id>`. You'll be notified when it completes (~30-45 minutes)."
+      }
+    },
+    {
+      "name": "suggest-crm-sync-after-enrichment",
+      "description": "Suggest syncing to HubSpot after enrichment",
+      "event": "tool-use",
+      "filter": {
+        "tool": "mcp__sales-automation__enrich_contact",
+        "result_pattern": "enriched_at"
+      },
+      "action": {
+        "type": "suggest",
+        "message": "💾 Enrichment complete! Sync to HubSpot to create/update CRM records with this intelligence?",
+        "options": ["Yes, sync now", "No, review first"]
+      },
+      "throttle": {
+        "max_per_session": 10,
+        "min_interval_seconds": 30
+      }
+    },
+    {
+      "name": "alert-positive-reply",
+      "description": "Alert when a positive email reply is received",
+      "event": "webhook",
+      "filter": {
+        "source": "lemlist",
+        "event_type": "email_replied",
+        "sentiment": "positive"
+      },
+      "action": {
+        "type": "notification",
+        "priority": "high",
+        "message": "🎉 Positive reply from {{contact_name}} at {{company}}! A HubSpot deal has been created and the AE has been notified.",
+        "sound": true
+      }
+    },
+    {
+      "name": "alert-meeting-booked",
+      "description": "Alert when a meeting is booked",
+      "event": "webhook",
+      "filter": {
+        "source": "hubspot",
+        "event_type": "meeting_scheduled"
+      },
+      "action": {
+        "type": "notification",
+        "priority": "high",
+        "message": "📅 Meeting booked with {{contact_name}} at {{company}}! Calendar invite sent to {{owner_email}}.",
+        "sound": true
+      }
+    },
+    {
+      "name": "warn-deliverability-issue",
+      "description": "Warn when email bounce rate is high",
+      "event": "webhook",
+      "filter": {
+        "source": "lemlist",
+        "event_type": "campaign_stats",
+        "bounce_rate": ">0.05"
+      },
+      "action": {
+        "type": "warning",
+        "priority": "high",
+        "message": "⚠️ DELIVERABILITY ALERT: Bounce rate >5% detected in {{campaign_name}}. Campaign paused. Review email list quality immediately."
+      }
+    },
+    {
+      "name": "remind-pending-linkedin-tasks",
+      "description": "Remind about pending LinkedIn connection tasks",
+      "event": "session-start",
+      "conditions": {
+        "custom_check": "pending_linkedin_tasks_count > 5"
+      },
+      "action": {
+        "type": "reminder",
+        "message": "🔗 You have {{count}} pending LinkedIn connection tasks from outreach sequences. Review and action them for better engagement."
+      },
+      "throttle": {
+        "max_per_session": 1,
+        "min_interval_seconds": 86400
+      }
+    },
+    {
+      "name": "suggest-weekly-review",
+      "description": "Suggest reviewing weekly insights report on Mondays",
+      "event": "session-start",
+      "conditions": {
+        "day_of_week": "monday",
+        "time_range": "09:00-11:00"
+      },
+      "action": {
+        "type": "suggest",
+        "message": "📈 It's Monday! Review last week's performance and optimization insights with `/sales-monitor weekly`"
+      },
+      "throttle": {
+        "max_per_session": 1
+      }
+    },
+    {
+      "name": "auto-classify-replies",
+      "description": "Automatically classify and route email replies",
+      "event": "webhook",
+      "filter": {
+        "source": "lemlist",
+        "event_type": "email_replied"
+      },
+      "action": {
+        "type": "automation",
+        "workflow": [
+          {
+            "step": "classify_sentiment",
+            "using": "nlp_model"
+          },
+          {
+            "step": "update_hubspot",
+            "properties": {
+              "reply_sentiment": "{{sentiment}}",
+              "last_reply_date": "{{timestamp}}"
+            }
+          },
+          {
+            "step": "conditional_routing",
+            "if_positive": "create_deal_and_task",
+            "if_negative": "mark_unqualified",
+            "if_ooo": "pause_and_reschedule"
+          }
+        ]
+      }
+    },
+    {
+      "name": "auto-pause-on-unsubscribe",
+      "description": "Automatically stop all sequences and update CRM on unsubscribe",
+      "event": "webhook",
+      "filter": {
+        "source": "lemlist",
+        "event_type": "unsubscribed"
+      },
+      "action": {
+        "type": "automation",
+        "priority": "critical",
+        "workflow": [
+          {
+            "step": "stop_all_sequences",
+            "email": "{{email}}"
+          },
+          {
+            "step": "update_hubspot",
+            "properties": {
+              "hs_email_optout": true,
+              "hs_email_optout_date": "{{timestamp}}",
+              "lifecyclestage": "subscriber"
+            }
+          },
+          {
+            "step": "add_to_suppression_list",
+            "global": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "suggest-icp-optimization",
+      "description": "Suggest ICP optimization when patterns emerge in data",
+      "event": "scheduled",
+      "schedule": "weekly",
+      "day": "monday",
+      "time": "08:00",
+      "action": {
+        "type": "suggest",
+        "message": "💡 Based on last week's data, I've identified ICP optimization opportunities. Run `/sales-monitor weekly` to see actionable insights."
+      }
+    },
+    {
+      "name": "auto-update-stale-data",
+      "description": "Automatically re-enrich contacts with stale data (>90 days)",
+      "event": "scheduled",
+      "schedule": "daily",
+      "time": "02:00",
+      "conditions": {
+        "enabled_in_config": "auto_refresh_stale_data"
+      },
+      "action": {
+        "type": "automation",
+        "workflow": [
+          {
+            "step": "query_hubspot",
+            "filter": "data_enriched_date < 90_days_ago AND lifecyclestage IN [lead, mql, sql]"
+          },
+          {
+            "step": "submit_batch_enrichment",
+            "priority": "low",
+            "limit": 50
+          }
+        ]
+      }
+    },
+    {
+      "name": "backup-job-queue-database",
+      "description": "Backup job queue and enrichment cache daily",
+      "event": "scheduled",
+      "schedule": "daily",
+      "time": "03:00",
+      "action": {
+        "type": "automation",
+        "workflow": [
+          {
+            "step": "backup_database",
+            "path": ".sales-automation/backups/",
+            "retention_days": 30
+          }
+        ]
+      }
+    }
+  ],
+  "configuration": {
+    "enabled": true,
+    "log_all_triggers": true,
+    "log_path": ".sales-automation/logs/hooks.log",
+    "default_throttle": {
+      "max_per_session": 10,
+      "min_interval_seconds": 60
+    },
+    "webhook_endpoints": {
+      "lemlist": "https://hooks.lemlist.com/webhooks/...",
+      "hubspot": "https://api.hubspot.com/webhooks/..."
+    },
+    "notification_channels": {
+      "slack": {
+        "enabled": false,
+        "webhook_url": "https://hooks.slack.com/services/..."
+      },
+      "email": {
+        "enabled": true,
+        "recipients": ["sales-ops@company.com"]
+      }
+    }
+  }
+}

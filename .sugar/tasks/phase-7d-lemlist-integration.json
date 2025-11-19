@@ -1,0 +1,330 @@
+{
+  "id": "phase-7d",
+  "title": "Phase 7D: Lemlist Integration (PRIMARY - Multi-Channel)",
+  "description": "Implement Lemlist as PRIMARY provider for both email and LinkedIn with unified multi-channel orchestration",
+  "priority": "HIGH",
+  "complexity": "complex",
+  "estimated_hours": "16-20",
+  "status": "pending",
+  "phase": "Phase 7: Multi-Provider Outreach",
+  "week": "4",
+  "depends_on": ["phase-7c"],
+
+  "provider_status": "ACTIVE by default",
+  "capabilities": [
+    "Email sending and tracking",
+    "LinkedIn profile visits",
+    "LinkedIn connection requests",
+    "LinkedIn text and voice messages",
+    "Unified email + LinkedIn sequences",
+    "Conditional triggers (email -> LinkedIn fallback)",
+    "Webhook events for all channels",
+    "Dynamic personalization"
+  ],
+
+  "implementation_classes": [
+    {
+      "name": "LemlistEmailProvider",
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/lemlist-email-provider.js",
+      "implements": "EmailProvider",
+      "responsibilities": [
+        "Send emails via Lemlist API",
+        "Track opens, clicks, bounces",
+        "Handle email-specific webhooks",
+        "Manage email sequences",
+        "Variable substitution and personalization"
+      ],
+      "key_methods": [
+        "sendEmail(to, subject, body, options)",
+        "sendBatch(emails[])",
+        "sendTemplated(to, templateId, variables)",
+        "trackOpen(messageId)",
+        "trackClick(messageId)",
+        "handleWebhook(webhookData)",
+        "getDeliveryStatus(messageId)"
+      ],
+      "lemlist_api_endpoints": [
+        "POST /api/campaigns/{campaignId}/leads",
+        "GET /api/campaigns/{campaignId}/leads/{leadEmail}",
+        "DELETE /api/campaigns/{campaignId}/leads/{leadEmail}",
+        "GET /api/team",
+        "GET /api/activities"
+      ]
+    },
+    {
+      "name": "LemlistLinkedInProvider",
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/lemlist-linkedin-provider.js",
+      "implements": "LinkedInProvider",
+      "responsibilities": [
+        "LinkedIn profile visits",
+        "Connection requests with custom messages",
+        "Text and voice messages",
+        "Track connection acceptances",
+        "Handle LinkedIn-specific webhooks",
+        "Rate limiting (50/day recommended)"
+      ],
+      "key_methods": [
+        "visitProfile(profileUrl, options)",
+        "sendConnectionRequest(profileUrl, message, options)",
+        "sendMessage(profileUrl, message, options)",
+        "checkConnectionStatus(profileUrl)",
+        "getInboxMessages(profileUrl)",
+        "trackAcceptance(requestId)",
+        "handleWebhook(webhookData)"
+      ],
+      "lemlist_api_features": [
+        "LinkedIn sequences within campaigns",
+        "Conditional steps (if email not opened, send LinkedIn)",
+        "Unified inbox for all channels",
+        "LinkedIn-specific activity tracking"
+      ]
+    },
+    {
+      "name": "MultiChannelOrchestrator",
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/services/multi-channel-orchestrator.js",
+      "description": "Orchestrates email + LinkedIn sequences with conditional logic",
+      "responsibilities": [
+        "Execute multi-channel campaigns",
+        "Evaluate conditional triggers",
+        "Coordinate timing across channels",
+        "Handle channel priority and fallbacks",
+        "Track cross-channel performance"
+      ],
+      "key_methods": [
+        "executeSequence(enrollmentId, campaign)",
+        "evaluateCondition(condition, enrollmentData)",
+        "scheduleNextStep(enrollmentId, step)",
+        "handleChannelFailure(enrollmentId, channel, error)",
+        "getChannelPreference(contactId)"
+      ],
+      "conditional_logic": [
+        "If email not opened in 48h -> Send LinkedIn connection",
+        "If LinkedIn connection accepted -> Send LinkedIn message",
+        "If email replied -> Pause LinkedIn sequence",
+        "If email bounced -> Skip to LinkedIn-only sequence"
+      ]
+    }
+  ],
+
+  "webhook_handling": {
+    "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/webhooks/lemlist-webhook.js",
+    "supported_events": [
+      {
+        "event": "emailsSent",
+        "description": "Email was sent to lead",
+        "action": "Create campaign_event with type='sent'"
+      },
+      {
+        "event": "emailsOpened",
+        "description": "Lead opened email",
+        "action": "Create campaign_event with type='opened', update enrollment"
+      },
+      {
+        "event": "emailsClicked",
+        "description": "Lead clicked link in email",
+        "action": "Create campaign_event with type='clicked'"
+      },
+      {
+        "event": "emailsReplied",
+        "description": "Lead replied to email",
+        "action": "Create campaign_event with type='replied', pause enrollment, classify reply"
+      },
+      {
+        "event": "emailsBounced",
+        "description": "Email bounced",
+        "action": "Create campaign_event with type='bounced', update enrollment status"
+      },
+      {
+        "event": "emailsUnsubscribed",
+        "description": "Lead unsubscribed",
+        "action": "Create campaign_event with type='unsubscribed', stop all sequences"
+      },
+      {
+        "event": "linkedinVisited",
+        "description": "LinkedIn profile visited",
+        "action": "Create campaign_event with type='profile_visited'"
+      },
+      {
+        "event": "linkedinConnectionSent",
+        "description": "Connection request sent",
+        "action": "Create campaign_event with type='connection_sent'"
+      },
+      {
+        "event": "linkedinConnectionAccepted",
+        "description": "Connection request accepted",
+        "action": "Create campaign_event with type='connection_accepted', schedule next step"
+      },
+      {
+        "event": "linkedinMessageSent",
+        "description": "LinkedIn message sent",
+        "action": "Create campaign_event with type='linkedin_message_sent'"
+      },
+      {
+        "event": "linkedinMessageReplied",
+        "description": "Lead replied on LinkedIn",
+        "action": "Create campaign_event with type='linkedin_replied', pause enrollment"
+      }
+    ],
+    "webhook_endpoint": "POST /api/webhooks/lemlist",
+    "security": {
+      "method": "Verify webhook signature",
+      "header": "X-Lemlist-Signature",
+      "validation": "Compare HMAC signature with shared secret"
+    }
+  },
+
+  "data_mapping": {
+    "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/mappers/lemlist-mapper.js",
+    "description": "Maps between Lemlist API format and internal data structures",
+    "mappings": [
+      {
+        "internal": "CampaignEnrollment",
+        "lemlist": "Lead in Campaign",
+        "fields": {
+          "contact_id": "leadEmail",
+          "status": "status (contacted, in_conversation, closed)",
+          "current_step": "step",
+          "metadata": "customFields"
+        }
+      },
+      {
+        "internal": "CampaignEvent",
+        "lemlist": "Activity",
+        "fields": {
+          "event_type": "type",
+          "timestamp": "date",
+          "provider_event_id": "activityId",
+          "metadata": "Additional activity data"
+        }
+      },
+      {
+        "internal": "EmailSequence",
+        "lemlist": "Campaign Step (email)",
+        "fields": {
+          "subject": "subject",
+          "body": "message",
+          "delay_hours": "delay (converted to hours)"
+        }
+      },
+      {
+        "internal": "LinkedInSequence",
+        "lemlist": "Campaign Step (linkedin)",
+        "fields": {
+          "type": "linkedinAction (visit, connect, message)",
+          "message": "linkedinMessage",
+          "delay_hours": "delay (converted to hours)"
+        }
+      }
+    ]
+  },
+
+  "deliverables": [
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/lemlist-email-provider.js",
+      "description": "Lemlist email provider implementation",
+      "lines_of_code": "~300-400"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/lemlist-linkedin-provider.js",
+      "description": "Lemlist LinkedIn provider implementation",
+      "lines_of_code": "~250-350"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/services/multi-channel-orchestrator.js",
+      "description": "Multi-channel sequence orchestration",
+      "lines_of_code": "~400-500"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/webhooks/lemlist-webhook.js",
+      "description": "Webhook receiver and event processor",
+      "lines_of_code": "~200-250"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/mappers/lemlist-mapper.js",
+      "description": "Data mapping utilities",
+      "lines_of_code": "~150-200"
+    },
+    {
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/clients/lemlist-client.js",
+      "description": "UPDATE EXISTING: Add missing API methods",
+      "changes": [
+        "Add campaign creation",
+        "Add lead enrollment",
+        "Add activity tracking",
+        "Add webhook validation"
+      ]
+    }
+  ],
+
+  "testing_plan": [
+    {
+      "type": "Unit Tests",
+      "files": [
+        "lemlist-email-provider.test.js",
+        "lemlist-linkedin-provider.test.js",
+        "multi-channel-orchestrator.test.js"
+      ],
+      "coverage_target": "80%"
+    },
+    {
+      "type": "Integration Tests",
+      "scenarios": [
+        "Send email via Lemlist API",
+        "Send LinkedIn connection request",
+        "Process webhook events",
+        "Execute multi-channel sequence",
+        "Handle conditional triggers"
+      ]
+    },
+    {
+      "type": "Manual Testing",
+      "steps": [
+        "Create test campaign in Lemlist dashboard",
+        "Enroll 5 test contacts",
+        "Verify emails sent and tracked",
+        "Test LinkedIn profile visit",
+        "Validate webhook events stored correctly",
+        "Check conditional logic (email -> LinkedIn)"
+      ]
+    }
+  ],
+
+  "configuration": {
+    "env_variables": {
+      "EMAIL_PROVIDER": "lemlist",
+      "LINKEDIN_PROVIDER": "lemlist-linkedin",
+      "LEMLIST_API_KEY": "Your Lemlist API key",
+      "LEMLIST_WEBHOOK_SECRET": "Webhook signature secret",
+      "LEMLIST_TEAM_ID": "Team ID for multi-team accounts"
+    },
+    "default_settings": {
+      "maxEmailsPerDay": 200,
+      "maxLinkedInPerDay": 50,
+      "emailOpenTimeout": 48,
+      "linkedInDelayMinimum": 24
+    }
+  },
+
+  "success_criteria": [
+    "LemlistEmailProvider passes all interface tests",
+    "LemlistLinkedInProvider passes all interface tests",
+    "Can send 100 emails via Lemlist successfully",
+    "Can send LinkedIn connection requests",
+    "Webhook events processed and stored correctly",
+    "Multi-channel sequences execute in correct order",
+    "Conditional triggers work (email -> LinkedIn)",
+    "Real-time performance metrics update",
+    "Rate limiting enforced (50 LinkedIn/day)"
+  ],
+
+  "known_limitations": [
+    "Lemlist free tier: 100 leads/campaign",
+    "LinkedIn actions limited by Lemlist to 50/day (conservative)",
+    "Voice messages require premium Lemlist plan",
+    "Webhook delays: May take 2-5 minutes for some events"
+  ],
+
+  "agent_assignment": "Backend Developer",
+  "reviewer": "Tech Lead",
+  "qa_engineer": "QA Test Engineer"
+}

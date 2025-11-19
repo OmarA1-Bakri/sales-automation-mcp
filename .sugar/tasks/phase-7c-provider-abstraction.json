@@ -1,0 +1,336 @@
+{
+  "id": "phase-7c",
+  "title": "Phase 7C: Multi-Provider Abstraction Layer",
+  "description": "Design and implement provider abstraction interfaces for email and LinkedIn with configuration-driven provider selection",
+  "priority": "HIGH",
+  "complexity": "moderate",
+  "estimated_hours": "8-12",
+  "status": "pending",
+  "phase": "Phase 7: Multi-Provider Outreach",
+  "week": "3",
+  "depends_on": ["phase-6b"],
+
+  "architecture_overview": {
+    "pattern": "Factory Pattern with Strategy Pattern",
+    "purpose": "Enable switching between providers (Lemlist, Postmark, Phantombuster) without changing application code",
+    "benefits": [
+      "Easy provider switching via configuration",
+      "Consistent API regardless of provider",
+      "Support for multiple active providers",
+      "Provider-specific features accessible when needed",
+      "Easy to add new providers in future"
+    ]
+  },
+
+  "interfaces": [
+    {
+      "name": "EmailProvider",
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/email-provider.interface.js",
+      "methods": [
+        {
+          "name": "sendEmail",
+          "params": ["to", "subject", "body", "options"],
+          "returns": "Promise<{ messageId, status, metadata }>",
+          "description": "Send single email"
+        },
+        {
+          "name": "sendBatch",
+          "params": ["emails[]"],
+          "returns": "Promise<{ sent, failed, results[] }>",
+          "description": "Send batch of emails (provider-dependent max batch size)"
+        },
+        {
+          "name": "sendTemplated",
+          "params": ["to", "templateId", "variables", "options"],
+          "returns": "Promise<{ messageId, status }>",
+          "description": "Send email using provider template"
+        },
+        {
+          "name": "trackOpen",
+          "params": ["messageId"],
+          "returns": "Promise<boolean>",
+          "description": "Check if email was opened"
+        },
+        {
+          "name": "trackClick",
+          "params": ["messageId"],
+          "returns": "Promise<{ clicked, links[] }>",
+          "description": "Get click tracking data"
+        },
+        {
+          "name": "handleWebhook",
+          "params": ["webhookData"],
+          "returns": "Promise<{ eventType, messageId, metadata }>",
+          "description": "Process provider webhook events"
+        },
+        {
+          "name": "getDeliveryStatus",
+          "params": ["messageId"],
+          "returns": "Promise<{ status, timestamp, metadata }>",
+          "description": "Get delivery status"
+        },
+        {
+          "name": "validateConfiguration",
+          "params": [],
+          "returns": "Promise<{ valid, errors[] }>",
+          "description": "Validate API credentials and configuration"
+        }
+      ],
+      "properties": {
+        "name": "Provider name (lemlist, postmark)",
+        "capabilities": "Array of supported features",
+        "maxBatchSize": "Maximum batch send size",
+        "rateLimit": "Rate limiting configuration"
+      }
+    },
+    {
+      "name": "LinkedInProvider",
+      "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/linkedin-provider.interface.js",
+      "methods": [
+        {
+          "name": "visitProfile",
+          "params": ["profileUrl", "options"],
+          "returns": "Promise<{ success, timestamp }>",
+          "description": "Visit LinkedIn profile"
+        },
+        {
+          "name": "sendConnectionRequest",
+          "params": ["profileUrl", "message", "options"],
+          "returns": "Promise<{ requestId, status }>",
+          "description": "Send connection request with optional message"
+        },
+        {
+          "name": "sendMessage",
+          "params": ["profileUrl", "message", "options"],
+          "returns": "Promise<{ messageId, status }>",
+          "description": "Send message to existing connection"
+        },
+        {
+          "name": "checkConnectionStatus",
+          "params": ["profileUrl"],
+          "returns": "Promise<{ connected, pending, timestamp }>",
+          "description": "Check if connected or connection pending"
+        },
+        {
+          "name": "getInboxMessages",
+          "params": ["profileUrl", "options"],
+          "returns": "Promise<{ messages[] }>",
+          "description": "Retrieve messages from connection"
+        },
+        {
+          "name": "trackAcceptance",
+          "params": ["requestId"],
+          "returns": "Promise<{ accepted, timestamp }>",
+          "description": "Check if connection request was accepted"
+        },
+        {
+          "name": "handleWebhook",
+          "params": ["webhookData"],
+          "returns": "Promise<{ eventType, profileUrl, metadata }>",
+          "description": "Process provider webhook events"
+        },
+        {
+          "name": "validateConfiguration",
+          "params": [],
+          "returns": "Promise<{ valid, errors[] }>",
+          "description": "Validate API credentials and rate limits"
+        }
+      ],
+      "properties": {
+        "name": "Provider name (lemlist-linkedin, phantombuster)",
+        "capabilities": "Array of supported LinkedIn actions",
+        "dailyLimit": "Maximum daily actions",
+        "rateLimit": "Rate limiting configuration",
+        "minimumDelay": "Minimum delay between actions (hours)"
+      }
+    }
+  ],
+
+  "provider_factory": {
+    "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/provider-factory.js",
+    "description": "Factory for creating provider instances based on configuration",
+    "methods": [
+      {
+        "name": "createEmailProvider",
+        "params": ["providerName", "config"],
+        "returns": "EmailProvider instance",
+        "logic": "Switch on providerName (lemlist, postmark) and return appropriate implementation"
+      },
+      {
+        "name": "createLinkedInProvider",
+        "params": ["providerName", "config"],
+        "returns": "LinkedInProvider instance",
+        "logic": "Switch on providerName (lemlist-linkedin, phantombuster) and return appropriate implementation"
+      },
+      {
+        "name": "getActiveProviders",
+        "params": [],
+        "returns": "{ email: EmailProvider, linkedin: LinkedInProvider }",
+        "logic": "Read from config and return currently active providers"
+      },
+      {
+        "name": "switchProvider",
+        "params": ["providerType", "newProviderName"],
+        "returns": "Promise<{ success, provider }>",
+        "logic": "Dynamically switch between providers at runtime"
+      }
+    ]
+  },
+
+  "configuration_system": {
+    "file": "/home/omar/claude - sales_auto_skill/mcp-server/src/config/provider-config.js",
+    "env_variables": {
+      "EMAIL_PROVIDER": "lemlist | postmark (default: lemlist)",
+      "LINKEDIN_PROVIDER": "lemlist-linkedin | phantombuster (default: lemlist-linkedin)",
+      "PROVIDER_SWITCH_ENABLED": "true | false (allow runtime switching)",
+
+      "LEMLIST_API_KEY": "API key for Lemlist",
+      "POSTMARK_API_KEY": "Server API token for Postmark",
+      "PHANTOMBUSTER_API_KEY": "API key for Phantombuster"
+    },
+    "config_object": {
+      "providers": {
+        "lemlist": {
+          "type": "PRIMARY",
+          "status": "ACTIVE",
+          "capabilities": ["email", "linkedin"],
+          "config": {
+            "apiKey": "process.env.LEMLIST_API_KEY",
+            "maxBatchSize": 100,
+            "rateLimit": {
+              "email": "1000/hour",
+              "linkedin": "50/day"
+            }
+          }
+        },
+        "postmark": {
+          "type": "SECONDARY",
+          "status": "INACTIVE",
+          "capabilities": ["email"],
+          "config": {
+            "apiKey": "process.env.POSTMARK_API_KEY",
+            "maxBatchSize": 500,
+            "rateLimit": "10000/hour"
+          }
+        },
+        "phantombuster": {
+          "type": "SECONDARY",
+          "status": "INACTIVE",
+          "capabilities": ["linkedin"],
+          "config": {
+            "apiKey": "process.env.PHANTOMBUSTER_API_KEY",
+            "dailyLimit": 20,
+            "minimumDelay": 24
+          }
+        }
+      }
+    }
+  },
+
+  "capability_matrix": {
+    "file": "/home/omar/claude - sales_auto_skill/docs/technical/provider-capabilities.md",
+    "content": "Markdown table showing feature support across providers",
+    "features": [
+      {
+        "feature": "Single Email Send",
+        "lemlist": "YES",
+        "postmark": "YES"
+      },
+      {
+        "feature": "Batch Email Send",
+        "lemlist": "YES (100 max)",
+        "postmark": "YES (500 max)"
+      },
+      {
+        "feature": "Email Templates",
+        "lemlist": "YES",
+        "postmark": "YES"
+      },
+      {
+        "feature": "Open Tracking",
+        "lemlist": "YES",
+        "postmark": "YES"
+      },
+      {
+        "feature": "Click Tracking",
+        "lemlist": "YES",
+        "postmark": "YES"
+      },
+      {
+        "feature": "Webhooks",
+        "lemlist": "YES (all events)",
+        "postmark": "YES (bounce, delivery, open, click, spam)"
+      },
+      {
+        "feature": "LinkedIn Profile Visit",
+        "lemlist_linkedin": "YES",
+        "phantombuster": "YES"
+      },
+      {
+        "feature": "LinkedIn Connection Request",
+        "lemlist_linkedin": "YES",
+        "phantombuster": "YES"
+      },
+      {
+        "feature": "LinkedIn Messaging",
+        "lemlist_linkedin": "YES (text + voice)",
+        "phantombuster": "YES (text only)"
+      },
+      {
+        "feature": "Multi-Channel Sequences",
+        "lemlist": "YES (email + LinkedIn unified)",
+        "postmark_phantombuster": "NO (separate orchestration required)"
+      },
+      {
+        "feature": "Conditional Triggers",
+        "lemlist": "YES",
+        "others": "NO (app-level orchestration)"
+      }
+    ]
+  },
+
+  "deliverables": [
+    {
+      "path": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/email-provider.interface.js",
+      "description": "Email provider interface definition"
+    },
+    {
+      "path": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/linkedin-provider.interface.js",
+      "description": "LinkedIn provider interface definition"
+    },
+    {
+      "path": "/home/omar/claude - sales_auto_skill/mcp-server/src/providers/provider-factory.js",
+      "description": "Factory for creating provider instances"
+    },
+    {
+      "path": "/home/omar/claude - sales_auto_skill/mcp-server/src/config/provider-config.js",
+      "description": "Provider configuration management"
+    },
+    {
+      "path": "/home/omar/claude - sales_auto_skill/docs/technical/provider-capabilities.md",
+      "description": "Feature comparison matrix"
+    },
+    {
+      "path": "/home/omar/claude - sales_auto_skill/docs/technical/provider-switching-guide.md",
+      "description": "Guide for switching between providers"
+    }
+  ],
+
+  "success_criteria": [
+    "EmailProvider and LinkedInProvider interfaces defined",
+    "Provider factory creates correct provider instances",
+    "Configuration loaded from environment variables",
+    "Can switch providers via config without code changes",
+    "Capability matrix documented",
+    "All interfaces properly typed/documented"
+  ],
+
+  "next_steps": [
+    "Phase 7D: Implement LemlistEmailProvider and LemlistLinkedInProvider",
+    "Phase 7E: Implement PostmarkEmailProvider",
+    "Phase 7F: Implement PhantombusterLinkedInProvider"
+  ],
+
+  "agent_assignment": "Backend Developer",
+  "reviewer": "Tech Lead"
+}

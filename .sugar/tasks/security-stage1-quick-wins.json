@@ -1,0 +1,286 @@
+{
+  "id": "security-stage1-quick-wins",
+  "title": "Stage 1: Security Quick Wins - CORS, Encryption, Circuit Breakers",
+  "type": "feature",
+  "priority": 5,
+  "status": "pending",
+  "created_at": "2025-01-17T00:00:00Z",
+  "estimated_effort_hours": 20,
+
+  "context": "Stage 1 of the 4-stage security-first acceleration plan to improve code quality from C+ (75/100) to A- (88/100). This stage focuses on quick security wins that provide immediate value: localStorage encryption (P3.4), circuit breakers for API resilience (P3.6), CORS vulnerability fix (T2.7), Helmet.js security headers, and code quality improvements (ESLint/Prettier configuration, complexity reduction).",
+
+  "business_context": "Critical security improvements that eliminate immediate vulnerabilities and establish coding standards foundation for remaining stages. These are high-impact, low-effort fixes that create a solid security baseline before the comprehensive Security Blitz in Stage 2. Success here unblocks Stage 2 and demonstrates progress on the remediation exercise.",
+
+  "security_vulnerabilities_addressed": [
+    {
+      "id": "P3.4",
+      "severity": "HIGH",
+      "issue": "API keys stored in plain text in localStorage",
+      "risk": "XSS attacks can steal API keys, unauthorized API usage",
+      "fix": "Implement Electron safeStorage encryption for all API keys"
+    },
+    {
+      "id": "T2.7",
+      "severity": "CRITICAL",
+      "issue": "CORS bypass vulnerability causes 500 errors on invalid origins",
+      "risk": "Server crashes on malformed requests, poor error handling",
+      "fix": "Add proper error handling to CORS middleware, return 403 instead of 500"
+    }
+  ],
+
+  "resilience_improvements": [
+    {
+      "id": "P3.6",
+      "component": "External API Clients",
+      "issue": "No circuit breakers - cascading failures when APIs down",
+      "fix": "Implement opossum circuit breakers for HubSpot, Lemlist, Explorium",
+      "thresholds": "50% error rate over 10 requests triggers open, 30s timeout"
+    }
+  ],
+
+  "code_quality_improvements": [
+    {
+      "task": "ESLint Configuration",
+      "actions": [
+        "Install and configure ESLint with strict rules",
+        "Add Prettier for consistent formatting",
+        "Configure pre-commit hooks to enforce linting",
+        "Fix all existing ESLint errors"
+      ]
+    },
+    {
+      "task": "Code Smell Remediation",
+      "actions": [
+        "Reduce cyclomatic complexity from >20 to <10",
+        "Extract magic numbers to named constants",
+        "Improve variable and function naming consistency",
+        "Remove dead code and unused imports"
+      ]
+    }
+  ],
+
+  "technical_requirements": [
+    "Use Electron safeStorage API for localStorage encryption (desktop-app/src/pages/SettingsPage.jsx)",
+    "Install opossum library and configure circuit breakers with proper thresholds",
+    "Fix CORS middleware in mcp-server/src/api-server.js (lines 280-350)",
+    "Install and configure Helmet.js for Express security headers",
+    "Configure ESLint with airbnb-base rules + Prettier integration",
+    "Use ESLint autofix where safe, manual review for complex issues",
+    "Target cyclomatic complexity <10, extract constants for magic numbers",
+    "Maintain backward compatibility - no breaking changes to APIs"
+  ],
+
+  "files_to_modify": [
+    {
+      "path": "desktop-app/src/pages/SettingsPage.jsx",
+      "changes": [
+        "Replace localStorage.setItem() with IPC calls to main process",
+        "Add IPC handlers in electron/main.js for safeStorage operations",
+        "Migrate existing localStorage keys to encrypted storage",
+        "Add fallback for platforms where safeStorage unavailable"
+      ],
+      "estimated_hours": 6
+    },
+    {
+      "path": "mcp-server/src/clients/hubspot-client.js",
+      "changes": [
+        "Import circuitBreaker from 'opossum'",
+        "Wrap all API calls in circuit breaker",
+        "Configure thresholds: errorThresholdPercentage=50, timeout=30000",
+        "Add fallback handlers for open circuit state",
+        "Add circuit breaker events logging (open, close, halfOpen)"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/lemlist/lemlist-client.js",
+      "changes": ["Same circuit breaker pattern as HubSpot client"],
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/clients/explorium-client.js",
+      "changes": ["Same circuit breaker pattern as HubSpot client"],
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/api-server.js",
+      "changes": [
+        "Add try-catch to CORS origin callback (lines 280-350)",
+        "Return 403 Forbidden instead of crashing on invalid origin",
+        "Add logger.error() for CORS errors",
+        "Test with invalid origin to verify 403 response"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "path": "mcp-server/src/api-server.js",
+      "changes": [
+        "Import helmet from 'helmet'",
+        "Add helmet() middleware before CORS",
+        "Configure CSP, HSTS, frameGuard, XSS protection",
+        "Verify security headers in HTTP responses"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "path": ".eslintrc.js",
+      "changes": [
+        "Create ESLint config with airbnb-base",
+        "Add Prettier integration",
+        "Configure complexity rules (max 10)",
+        "Add no-magic-numbers rule with exceptions"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "path": "Various files with code smells",
+      "changes": [
+        "Run ESLint --fix to auto-fix issues",
+        "Manually fix remaining complexity issues",
+        "Extract magic numbers to constants",
+        "Improve naming consistency"
+      ],
+      "estimated_hours": 3
+    }
+  ],
+
+  "agent_assignments": {
+    "security_specialist": {
+      "responsibility": "Lead CORS fixes, Helmet.js configuration, validate all security improvements",
+      "agent": "compounding-engineering:security-sentinel",
+      "tasks": [
+        "Audit CORS middleware for vulnerabilities",
+        "Implement CORS error handling fix",
+        "Configure Helmet.js with appropriate policies",
+        "Validate all security headers in responses",
+        "Final security review before Stage 2"
+      ]
+    },
+    "backend_developer": {
+      "responsibility": "Implement circuit breakers with proper configuration and monitoring",
+      "agent": "compounding-engineering:performance-oracle",
+      "tasks": [
+        "Install opossum library",
+        "Implement circuit breakers for all 3 API clients",
+        "Configure thresholds based on API SLAs",
+        "Add circuit breaker metrics and logging",
+        "Test circuit breaker behavior under failure conditions"
+      ]
+    },
+    "frontend_developer": {
+      "responsibility": "Implement Electron safeStorage for localStorage encryption",
+      "agent": "compounding-engineering:kieran-typescript-reviewer",
+      "tasks": [
+        "Research Electron safeStorage API",
+        "Implement IPC handlers for encrypted storage",
+        "Migrate existing localStorage API keys",
+        "Add error handling for unsupported platforms",
+        "Test on Windows/Mac/Linux"
+      ]
+    },
+    "qa_engineer": {
+      "responsibility": "Validate all implementations, test security improvements",
+      "agent": "sugar:quality-guardian",
+      "tasks": [
+        "Test CORS with valid and invalid origins",
+        "Test circuit breakers with simulated API failures",
+        "Test localStorage encryption on multiple platforms",
+        "Verify Helmet.js security headers",
+        "Run ESLint and verify zero errors"
+      ]
+    },
+    "code_quality_specialist": {
+      "responsibility": "ESLint configuration and code smell remediation",
+      "agent": "compounding-engineering:code-simplicity-reviewer",
+      "tasks": [
+        "Configure ESLint with strict rules",
+        "Run ESLint across codebase",
+        "Fix or suppress warnings appropriately",
+        "Reduce complexity in high-complexity functions",
+        "Extract magic numbers to constants"
+      ]
+    }
+  },
+
+  "success_criteria": [
+    "Grade improvement: 75/100 → 79/100 (+4 points)",
+    "P3.4 Complete: All API keys encrypted with Electron safeStorage, tested on 3 platforms",
+    "P3.6 Complete: Circuit breakers operational on all 3 API clients (HubSpot, Lemlist, Explorium)",
+    "T2.7 Complete: CORS returns 403 on invalid origins (not 500), error handling validated",
+    "Helmet.js Complete: All security headers present in HTTP responses",
+    "ESLint Complete: Zero ESLint errors, Prettier formatting applied to all files",
+    "Complexity Complete: All functions have complexity <10, magic numbers extracted",
+    "Quality Gate Passed: sugar:quality-guardian approves Stage 1 for Stage 2 progression"
+  ],
+
+  "acceptance_tests": [
+    {
+      "test": "localStorage Encryption",
+      "action": "Save API key in Settings, inspect Electron secure storage",
+      "expected": "API key encrypted, not visible in plain text"
+    },
+    {
+      "test": "Circuit Breaker - Success",
+      "action": "Make successful API calls to HubSpot/Lemlist/Explorium",
+      "expected": "Circuit breaker stays closed, all requests succeed"
+    },
+    {
+      "test": "Circuit Breaker - Failure",
+      "action": "Simulate API failure (50% error rate over 10 requests)",
+      "expected": "Circuit breaker opens, subsequent requests fail fast"
+    },
+    {
+      "test": "Circuit Breaker - Recovery",
+      "action": "After circuit opens, wait 30s, send request",
+      "expected": "Circuit enters half-open, test request sent, circuit closes on success"
+    },
+    {
+      "test": "CORS - Valid Origin",
+      "action": "Send request from http://localhost:3000",
+      "expected": "200 OK with CORS headers"
+    },
+    {
+      "test": "CORS - Invalid Origin",
+      "action": "Send request from http://malicious.com",
+      "expected": "403 Forbidden (not 500 error)"
+    },
+    {
+      "test": "Helmet.js Headers",
+      "action": "Inspect HTTP response headers",
+      "expected": "CSP, HSTS, X-Frame-Options, X-XSS-Protection headers present"
+    },
+    {
+      "test": "ESLint",
+      "action": "Run npm run lint",
+      "expected": "Zero errors, all warnings justified or suppressed"
+    },
+    {
+      "test": "Code Complexity",
+      "action": "Run complexity analysis tool",
+      "expected": "All functions <10 complexity, magic numbers replaced with constants"
+    }
+  ],
+
+  "dependencies": [
+    "npm install complete (axios-retry, opossum, helmet, eslint, prettier)",
+    "Desktop app can access Electron APIs (safeStorage)",
+    "HubSpot, Lemlist, Explorium API credentials available for testing"
+  ],
+
+  "deliverables": [
+    "Encrypted API key storage in Electron safeStorage",
+    "Circuit breakers on all 3 external API clients",
+    "CORS vulnerability fixed with proper error handling",
+    "Helmet.js security headers applied",
+    "ESLint + Prettier configured and all code compliant",
+    "Code complexity reduced, magic numbers extracted",
+    "Quality gate review completed and passed"
+  ],
+
+  "stage_progression": {
+    "current_stage": "Stage 1: Quick Wins",
+    "next_stage": "Stage 2: Security Blitz (48 hours)",
+    "blocker_status": "NONE - Ready to proceed on completion",
+    "grade_progression": "75 → 79 (+4 points)"
+  }
+}
