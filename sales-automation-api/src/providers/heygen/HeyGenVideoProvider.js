@@ -1,0 +1,469 @@
+/**
+ * HeyGen Video Provider
+ * Implementation of VideoProvider interface for HeyGen AI video generation
+ *
+ * Docs: https://docs.heygen.com/
+ * API Version: v2
+ */
+
+import { VideoProvider } from '../interfaces/VideoProvider.js';
+import { createLogger } from '../../utils/logger.js';
+import crypto from 'crypto';
+import fs from 'fs';
+import https from 'https';
+import { providerConfig } from '../../config/provider-config.js';
+
+const logger = createLogger('HeyGenVideoProvider');
+
+export class HeyGenVideoProvider extends VideoProvider {
+  constructor() {
+    super();
+
+    const config = providerConfig.getProviderConfig('heygen');
+    this.apiKey = config?.apiKey;
+    this.webhookSecret = config?.webhookSecret;
+    this.apiUrl = config?.apiUrl || 'https://api.heygen.com';
+
+    if (!this.apiKey) {
+      logger.warn('HeyGen API key not configured');
+    }
+  }
+
+  get name() {
+    return 'heygen';
+  }
+
+  /**
+   * Make authenticated API request to HeyGen
+   */
+  async _makeRequest(endpoint, method = 'GET', body = null) {
+    const url = `${this.apiUrl}${endpoint}`;
+
+    const options = {
+      method,
+      headers: {
+        'X-Api-Key': this.apiKey,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    logger.debug('HeyGen API request', { method, endpoint });
+
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+
+      if (!response.ok) {
+        logger.error('HeyGen API error', {
+          status: response.status,
+          endpoint,
+          error: data
+        });
+
+        throw new Error(
+          data.error?.message ||
+          data.message ||
+          `HeyGen API error: ${response.status}`
+        );
+      }
+
+      return data;
+    } catch (error) {
+      logger.error('HeyGen API request failed', {
+        endpoint,
+        error: error.message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a personalized video
+   */
+  async generateVideo(params) {
+    const {
+      avatarId,
+      voiceId,
+      script,
+      variables = {},
+      options = {},
+      campaignId,
+      enrollmentId,
+      metadata = {}
+    } = params;
+
+    // Replace variables in script
+    let personalizedScript = script;
+    Object.entries(variables).forEach(([key, value]) => {
+      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+      personalizedScript = personalizedScript.replace(regex, value || '');
+    });
+
+    // Build HeyGen API request
+    const requestBody = {
+      video_inputs: [{
+        character: {
+          type: 'avatar',
+          avatar_id: avatarId,
+          avatar_style: 'normal'
+        },
+        voice: {
+          type: 'text',
+          input_text: personalizedScript,
+          voice_id: voiceId
+        }
+      }],
+      dimension: {
+        width: options.dimensions?.width || 1280,
+        height: options.dimensions?.height || 720
+      },
+      test: false
+    };
+
+    // Add background if specified
+    if (options.background) {
+      requestBody.video_inputs[0].background = {
+        type: options.background.startsWith('#') ? 'color' : 'image',
+        value: options.background
+      };
+    }
+
+    // Add captions if requested
+    if (options.captions) {
+      requestBody.caption = true;
+    }
+
+    // Add callback URL for webhook if configured
+    if (process.env.API_SERVER_URL) {
+      requestBody.callback_id = `${campaignId}:${enrollmentId}`;
+    }
+
+    logger.info('Generating HeyGen video', {
+      campaignId,
+      enrollmentId,
+      avatarId,
+      voiceId,
+      scriptLength: personalizedScript.length
+    });
+
+    try {
+      const response = await this._makeRequest('/v2/video/generate', 'POST', requestBody);
+
+      return {
+        videoId: response.data.video_id,
+        status: this._normalizeStatus(response.data.status),
+        metadata: {
+          ...metadata,
+          heygenVideoId: response.data.video_id,
+          campaignId,
+          enrollmentId
+        }
+      };
+    } catch (error) {
+      logger.error('Failed to generate HeyGen video', {
+        error: error.message,
+        campaignId,
+        enrollmentId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get video generation status
+   * IMPORTANT: HeyGen video URLs expire - this endpoint regenerates them
+   */
+  async getVideoStatus(videoId) {
+    try {
+      const response = await this._makeRequest(
+        `/v1/video_status.get?video_id=${videoId}`,
+        'GET'
+      );
+
+      const data = response.data;
+      const status = this._normalizeStatus(data.status);
+
+      const result = {
+        videoId,
+        status,
+        progress: this._calculateProgress(data.status)
+      };
+
+      // Add URLs when completed
+      if (status === 'completed' && data.video_url) {
+        result.videoUrl = data.video_url;
+        result.thumbnailUrl = data.thumbnail_url;
+        result.gifUrl = data.gif_url;
+        result.captionUrl = data.caption_url;
+        result.duration = data.duration;
+      }
+
+      // Add error if failed
+      if (status === 'failed' && data.error) {
+        result.error = data.error.message || 'Video generation failed';
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to get HeyGen video status', {
+        videoId,
+        error: error.message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Download video file
+   */
+  async downloadVideo(videoUrl, destinationPath) {
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(destinationPath);
+
+      https.get(videoUrl, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Failed to download video: ${response.statusCode}`));
+          return;
+        }
+
+        response.pipe(file);
+
+        file.on('finish', () => {
+          file.close();
+          logger.info('Video downloaded successfully', { destinationPath });
+          resolve(destinationPath);
+        });
+      }).on('error', (error) => {
+        fs.unlink(destinationPath, () => {});
+        logger.error('Failed to download video', { error: error.message });
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * List available avatars
+   */
+  async listAvatars() {
+    try {
+      const response = await this._makeRequest('/v2/avatars', 'GET');
+
+      return response.data.avatars.map(avatar => ({
+        id: avatar.avatar_id,
+        name: avatar.avatar_name,
+        gender: avatar.gender,
+        previewUrl: avatar.preview_image_url,
+        supportedLanguages: avatar.supported_languages || []
+      }));
+    } catch (error) {
+      logger.error('Failed to list HeyGen avatars', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * List available voices
+   */
+  async listVoices() {
+    try {
+      const response = await this._makeRequest('/v2/voices', 'GET');
+
+      return response.data.voices.map(voice => ({
+        id: voice.voice_id,
+        name: voice.display_name,
+        language: voice.language,
+        gender: voice.gender,
+        accent: voice.accent,
+        sampleUrl: voice.preview_audio_url
+      }));
+    } catch (error) {
+      logger.error('Failed to list HeyGen voices', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Verify webhook signature
+   * HeyGen uses HMAC-SHA256 signature verification
+   */
+  verifyWebhookSignature(req, secret) {
+    const signature = req.headers['x-heygen-signature'];
+
+    if (!signature) {
+      logger.warn('Missing HeyGen webhook signature');
+      return false;
+    }
+
+    // HeyGen sends: timestamp,signature
+    const [timestamp, receivedSignature] = signature.split(',');
+
+    if (!timestamp || !receivedSignature) {
+      logger.warn('Invalid HeyGen signature format');
+      return false;
+    }
+
+    // Verify timestamp is within 5 minutes
+    const now = Math.floor(Date.now() / 1000);
+    const timestampInt = parseInt(timestamp, 10);
+
+    if (Math.abs(now - timestampInt) > 300) {
+      logger.warn('HeyGen webhook timestamp too old', { timestamp, now });
+      return false;
+    }
+
+    // Calculate expected signature
+    const payload = `${timestamp}.${req.rawBody || JSON.stringify(req.body)}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
+
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(receivedSignature),
+      Buffer.from(expectedSignature)
+    );
+
+    if (!isValid) {
+      logger.warn('Invalid HeyGen webhook signature');
+    }
+
+    return isValid;
+  }
+
+  /**
+   * Parse webhook payload into normalized event format
+   */
+  parseWebhookEvent(payload) {
+    const { event_type, data } = payload;
+
+    // Map HeyGen event types to our normalized types
+    const eventTypeMap = {
+      'video.completed': 'video.completed',
+      'video.failed': 'video.failed',
+      'video.started': 'video.processing'
+    };
+
+    return {
+      type: eventTypeMap[event_type] || event_type,
+      providerEventId: data.video_id,
+      videoId: data.video_id,
+      timestamp: new Date(data.timestamp || Date.now()),
+      data: {
+        status: data.status,
+        videoUrl: data.video_url,
+        thumbnailUrl: data.thumbnail_url,
+        duration: data.duration,
+        error: data.error,
+        callbackId: data.callback_id
+      }
+    };
+  }
+
+  /**
+   * Get provider capabilities
+   */
+  getCapabilities() {
+    return {
+      supportsCustomAvatars: true,
+      supportsCustomVoices: false,
+      supportsCaptions: true,
+      supportsBackgrounds: true,
+      maxVideoDuration: 300, // 5 minutes for standard plan
+      maxVideoWidth: 1920,
+      maxVideoHeight: 1080,
+      supportedFormats: ['mp4']
+    };
+  }
+
+  /**
+   * Get quota status
+   */
+  async getQuotaStatus() {
+    try {
+      // HeyGen doesn't have a direct quota endpoint
+      // We can check remaining credits indirectly through account info
+      const response = await this._makeRequest('/v2/user/remaining_quota', 'GET');
+
+      return {
+        remaining: response.data.remaining_quota,
+        total: response.data.total_quota,
+        used: response.data.total_quota - response.data.remaining_quota,
+        resetsAt: new Date(response.data.reset_date)
+      };
+    } catch (error) {
+      logger.warn('Failed to get HeyGen quota status', { error: error.message });
+
+      // Return unknown if endpoint not available
+      return {
+        remaining: -1,
+        total: -1,
+        used: -1,
+        resetsAt: null
+      };
+    }
+  }
+
+  /**
+   * Validate configuration
+   */
+  async validateConfig() {
+    if (!this.apiKey) {
+      throw new Error('HEYGEN_API_KEY not configured');
+    }
+
+    try {
+      // Test API key by fetching avatars
+      await this.listAvatars();
+      logger.info('HeyGen configuration validated successfully');
+      return true;
+    } catch (error) {
+      logger.error('HeyGen configuration validation failed', { error: error.message });
+      throw new Error(`Invalid HeyGen API key: ${error.message}`);
+    }
+  }
+
+  /**
+   * Cancel video generation
+   */
+  async cancelVideo(videoId) {
+    // HeyGen doesn't support cancellation via API
+    // Once a video is generating, it must complete
+    logger.warn('HeyGen does not support video cancellation', { videoId });
+    return false;
+  }
+
+  /**
+   * Helper: Normalize HeyGen status to our standard statuses
+   */
+  _normalizeStatus(heygenStatus) {
+    const statusMap = {
+      'pending': 'pending',
+      'processing': 'processing',
+      'completed': 'completed',
+      'failed': 'failed',
+      'error': 'failed'
+    };
+
+    return statusMap[heygenStatus] || 'pending';
+  }
+
+  /**
+   * Helper: Calculate progress percentage based on status
+   */
+  _calculateProgress(status) {
+    const progressMap = {
+      'pending': 0,
+      'processing': 50,
+      'completed': 100,
+      'failed': 0
+    };
+
+    return progressMap[status] || 0;
+  }
+}
+
+export default HeyGenVideoProvider;
