@@ -21,9 +21,9 @@ cleanup() {
     echo ""
     echo -e "${YELLOW}Shutting down...${NC}"
 
-    if [ ! -z "$MCP_PID" ]; then
-        kill $MCP_PID 2>/dev/null
-        echo "Stopped MCP Server"
+    if [ ! -z "$API_SERVER_PID" ]; then
+        kill $API_SERVER_PID 2>/dev/null
+        echo "Stopped API Server"
     fi
 
     if [ ! -z "$APP_PID" ]; then
@@ -37,15 +37,15 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-# Start MCP Server
-echo "Starting MCP Server..."
-cd mcp-server
-npm run api-server > ../logs/mcp-server.log 2>&1 &
-MCP_PID=$!
+# Start API Server
+echo "Starting API Server..."
+cd sales-automation-api
+npm start > ../logs/sales-automation-api.log 2>&1 &
+API_SERVER_PID=$!
 cd ..
-echo -e "${GREEN}✓ MCP Server started (PID: $MCP_PID)${NC}"
+echo -e "${GREEN}✓ API Server started (PID: $API_SERVER_PID)${NC}"
 
-# Wait for MCP server to be ready
+# Wait for API server to be ready
 sleep 2
 
 # Start Desktop App
@@ -61,14 +61,14 @@ echo -e "${GREEN}✅ RTGS Sales Automation is running!${NC}"
 echo ""
 echo "Access points:"
 echo "  🌐 Desktop App:  http://localhost:5173"
-echo "  🔌 MCP Server:   http://localhost:3456"
+echo "  🔌 API Server:   http://localhost:3456"
 echo ""
 echo "Logs:"
-echo "  📋 MCP Server:   tail -f logs/mcp-server.log"
+echo "  📋 API Server:   tail -f logs/sales-automation-api.log"
 echo "  📋 Desktop App:  tail -f logs/desktop-app.log"
 echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""
 
 # Wait for processes
-wait $MCP_PID $APP_PID
+wait $API_SERVER_PID $APP_PID

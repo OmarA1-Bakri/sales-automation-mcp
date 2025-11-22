@@ -1,22 +1,22 @@
 {
-  "name": "sales-automation-mcp-server",
+  "name": "sales-automation-api",
   "version": "1.0.0",
-  "description": "MCP server for sales automation plugin - orchestrates HubSpot, Explorium, lemlist, and enrichment APIs",
+  "description": "Sales Automation API - HTTP REST API orchestrating HubSpot, Explorium, lemlist integrations with B-mad workflows. Includes optional MCP server for AI agent access.",
   "type": "module",
   "main": "src/server.js",
   "bin": {
-    "sales-automation-mcp": "./src/server.js"
+    "sales-automation-api": "./src/server.js"
   },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "yolo": "node src/server.js --yolo",
+    "mcp": "node src/mcp-server.js",
+    "mcp:dev": "node --watch src/mcp-server.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:bmad": "tsx test-bmad.ts",
-    "api-server": "node src/api-server.js",
-    "api-server:yolo": "node src/api-server.js --yolo",
-    "api-server:dev": "node --watch src/api-server.js",
     "db:migrate": "npx sequelize-cli db:migrate",
     "db:migrate:undo": "npx sequelize-cli db:migrate:undo",
     "db:migrate:status": "npx sequelize-cli db:migrate:status"

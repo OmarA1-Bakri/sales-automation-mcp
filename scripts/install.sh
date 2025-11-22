@@ -63,19 +63,19 @@ echo -e "${GREEN}✓ npm ${NPM_VERSION}${NC}"
 echo ""
 
 # =============================================================================
-# 2. Install MCP Server Dependencies
+# 2. Install API Server Dependencies
 # =============================================================================
 
-echo -e "${BLUE}[2/7] Installing MCP Server dependencies...${NC}"
+echo -e "${BLUE}[2/7] Installing API Server dependencies...${NC}"
 echo "-------------------------------------------"
 
-cd mcp-server
+cd sales-automation-api
 if [ -d "node_modules" ]; then
     echo -e "${YELLOW}⚠  Dependencies already installed, skipping...${NC}"
 else
     echo "Installing 173 packages (this may take a minute)..."
     npm install --quiet
-    echo -e "${GREEN}✓ MCP Server dependencies installed${NC}"
+    echo -e "${GREEN}✓ API Server dependencies installed${NC}"
 fi
 cd ..
 
@@ -132,7 +132,7 @@ cat > rtgs-sales-automation.sh << 'LAUNCHER_EOF'
 #!/bin/bash
 
 # RTGS Sales Automation Launcher
-# Starts both MCP server and Desktop app
+# Starts both API server and Desktop app
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
@@ -152,9 +152,9 @@ cleanup() {
     echo ""
     echo -e "${YELLOW}Shutting down...${NC}"
 
-    if [ ! -z "$MCP_PID" ]; then
-        kill $MCP_PID 2>/dev/null
-        echo "Stopped MCP Server"
+    if [ ! -z "$API_SERVER_PID" ]; then
+        kill $API_SERVER_PID 2>/dev/null
+        echo "Stopped API Server"
     fi
 
     if [ ! -z "$APP_PID" ]; then
@@ -168,15 +168,15 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-# Start MCP Server
-echo "Starting MCP Server..."
-cd mcp-server
-npm run api-server > ../logs/mcp-server.log 2>&1 &
-MCP_PID=$!
+# Start API Server
+echo "Starting API Server..."
+cd sales-automation-api
+npm start > ../logs/sales-automation-api.log 2>&1 &
+API_SERVER_PID=$!
 cd ..
-echo -e "${GREEN}✓ MCP Server started (PID: $MCP_PID)${NC}"
+echo -e "${GREEN}✓ API Server started (PID: $API_SERVER_PID)${NC}"
 
-# Wait for MCP server to be ready
+# Wait for API server to be ready
 sleep 2
 
 # Start Desktop App
@@ -192,17 +192,17 @@ echo -e "${GREEN}✅ RTGS Sales Automation is running!${NC}"
 echo ""
 echo "Access points:"
 echo "  🌐 Desktop App:  http://localhost:5173"
-echo "  🔌 MCP Server:   http://localhost:3456"
+echo "  🔌 API Server:   http://localhost:3456"
 echo ""
 echo "Logs:"
-echo "  📋 MCP Server:   tail -f logs/mcp-server.log"
+echo "  📋 API Server:   tail -f logs/sales-automation-api.log"
 echo "  📋 Desktop App:  tail -f logs/desktop-app.log"
 echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""
 
 # Wait for processes
-wait $MCP_PID $APP_PID
+wait $API_SERVER_PID $APP_PID
 LAUNCHER_EOF
 
 chmod +x rtgs-sales-automation.sh
@@ -216,7 +216,7 @@ echo -e "${GREEN}✓ Created logs directory${NC}"
 cat > stop.sh << 'STOP_EOF'
 #!/bin/bash
 echo "Stopping RTGS Sales Automation..."
-pkill -f "api-server.js"
+pkill -f "sales-automation-api/src/server.js"
 pkill -f "vite"
 echo "All services stopped"
 STOP_EOF
@@ -341,14 +341,14 @@ echo ""
 echo -e "${BOLD}Useful Commands:${NC}"
 echo "  Start:  ${GREEN}./rtgs-sales-automation.sh${NC}"
 echo "  Stop:   ${GREEN}./stop.sh${NC}"
-echo "  Logs:   ${GREEN}tail -f logs/mcp-server.log${NC}"
+echo "  Logs:   ${GREEN}tail -f logs/sales-automation-api.log${NC}"
 echo "  Test:   ${GREEN}./test-local.sh${NC}"
 echo ""
 
 echo -e "${BOLD}Documentation:${NC}"
-echo "  📚 MCP Server:    mcp-server/README.md"
+echo "  📚 API Server:    sales-automation-api/README.md"
 echo "  📚 Desktop App:   desktop-app/README.md"
-echo "  📚 YOLO Mode:     YOLO_MODE_IMPLEMENTATION.md"
+echo "  📚 Architecture:  ARCHITECTURE.md"
 echo "  📚 Testing:       TESTING_SUMMARY.md"
 echo ""
 

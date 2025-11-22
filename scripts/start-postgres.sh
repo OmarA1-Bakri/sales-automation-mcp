@@ -44,7 +44,7 @@ else
         -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -v rtgs-postgres-data:/var/lib/postgresql/data \
-        -v "$(pwd)/mcp-server/src/db/init:/docker-entrypoint-initdb.d" \
+        -v "$(pwd)/sales-automation-api/src/db/init:/docker-entrypoint-initdb.d" \
         -p ${POSTGRES_PORT}:5432 \
         --restart unless-stopped \
         postgres:${POSTGRES_VERSION}

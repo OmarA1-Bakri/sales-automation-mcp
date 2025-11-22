@@ -55,9 +55,9 @@ function createWindow() {
   });
 }
 
-// Start MCP server in background
+// Start API server in background
 function startMCPServer() {
-  const serverPath = path.join(__dirname, '../../mcp-server/src/api-server.js');
+  const serverPath = path.join(__dirname, '../../sales-automation-api/src/server.js');
 
   mcpServerProcess = spawn('node', [serverPath], {
     stdio: 'pipe',

@@ -83,6 +83,8 @@ export class WorkflowStateManager {
    * Mark workflow as failed and record error
    */
   async failWorkflow(workflowId, failedStep, error) {
+    const transaction = await sequelize.transaction();
+
     try {
       // Update workflow_states
       await sequelize.query(`
@@ -90,7 +92,8 @@ export class WorkflowStateManager {
         SET status = 'failed', error = $1, completed_at = NOW()
         WHERE id = $2
       `, {
-        bind: [error.message || String(error), workflowId]
+        bind: [error.message || String(error), workflowId],
+        transaction
       });
 
       // Record in workflow_failures for detailed analysis
@@ -102,8 +105,11 @@ export class WorkflowStateManager {
         FROM workflow_states
         WHERE id = $1
       `, {
-        bind: [workflowId]
+        bind: [workflowId],
+        transaction
       });
+
+      await transaction.commit();
 
       logger.error('Workflow failed', {
         workflowId,
@@ -111,6 +117,8 @@ export class WorkflowStateManager {
         error: error.message
       });
     } catch (err) {
+      await transaction.rollback();
+
       logger.error('Failed to record workflow failure', {
         workflowId,
         error: err.message
@@ -192,10 +200,10 @@ export class WorkflowStateManager {
           AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) as avg_duration_seconds
         FROM workflow_states
         WHERE workflow_name = $1
-          AND started_at > NOW() - INTERVAL '${days} days'
+          AND started_at > NOW() - INTERVAL '$2 days'
         GROUP BY status
       `, {
-        bind: [workflowName]
+        bind: [workflowName, days]
       });
 
       return results || [];

@@ -3,20 +3,22 @@
 /**
  * Sales Automation API Server
  *
- * Standalone server that runs the sales automation plugin using Claude API
- * instead of Claude Code. Enables headless autonomous operation.
+ * Main HTTP REST API for sales automation platform.
+ * Orchestrates HubSpot, Explorium, lemlist integrations with B-mad workflows.
  *
  * Features:
  * - REST API for triggering workflows
  * - WebSocket for real-time updates
  * - Scheduled jobs (discovery, enrichment, outreach)
- * - Dashboard for monitoring
+ * - Campaign management endpoints
  * - YOLO Mode support (fully autonomous)
+ * - B-mad workflow engine (declarative YAML workflows)
  *
  * Usage:
- *   npm run api-server
- *   npm run api-server -- --port 3000
- *   npm run api-server -- --yolo
+ *   npm start                    # Production mode
+ *   npm run dev                  # Development (auto-reload)
+ *   npm run yolo                 # With YOLO mode enabled
+ *   npm start -- --port 3000     # Custom port
  */
 
 import express from 'express';

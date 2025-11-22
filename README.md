@@ -263,8 +263,8 @@ Open http://localhost:5173 in your browser.
 
 ### Launch API Server Only
 ```bash
-cd mcp-server
-npm run api-server
+cd sales-automation-api
+npm start
 ```
 
 ### Development Mode
@@ -280,7 +280,7 @@ npm run dev
 
 ### View Logs
 ```bash
-tail -f logs/mcp-server.log
+tail -f logs/sales-automation-api.log
 tail -f logs/desktop-app.log
 ```
 

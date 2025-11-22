@@ -592,7 +592,7 @@ function SettingsPage() {
             <p className="text-sm text-amber-400">
               <strong>Note:</strong> Integration keys saved here are stored in your browser's localStorage.
               To apply these changes to the server, you must update the <code className="bg-slate-700 px-1 rounded">.env</code> file
-              in the <code className="bg-slate-700 px-1 rounded">mcp-server</code> directory and restart the API server.
+              in the <code className="bg-slate-700 px-1 rounded">sales-automation-api</code> directory and restart the API server.
             </p>
           </div>
         </div>
@@ -605,7 +605,7 @@ function SettingsPage() {
               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-bold mr-3 mt-0.5">1</span>
               <div>
                 <p className="font-medium">Enter your API Key</p>
-                <p className="text-sm text-slate-400">Get your API key from the .env file in the mcp-server directory</p>
+                <p className="text-sm text-slate-400">Get your API key from the .env file in the sales-automation-api directory</p>
               </div>
             </div>
             <div className="flex items-start">
