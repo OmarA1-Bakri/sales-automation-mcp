@@ -25,13 +25,14 @@ import { createCircuitBreaker } from '../utils/circuit-breaker.js';
 
 export class HubSpotClient {
   constructor(config = {}) {
-    const apiKey = config.apiKey || process.env.HUBSPOT_API_KEY;
+    const apiKey = config.apiKey || process.env.HUBSPOT_API_TOKEN || process.env.HUBSPOT_API_KEY;
 
     if (!apiKey) {
-      throw new Error('HUBSPOT_API_KEY is required for HubSpot integration');
+      throw new Error('HUBSPOT_API_TOKEN is required for HubSpot integration');
     }
 
     this.apiKey = apiKey;
+    this.clientSecret = config.clientSecret || process.env.HUBSPOT_CLIENT_SECRET;
     this.baseURL = 'https://api.hubapi.com';
 
     // SECURITY FIX: Phase 2, T2.4 - Use secure logger with PII redaction
@@ -818,14 +819,14 @@ export class HubSpotClient {
    */
   async healthCheck() {
     try {
-      // Test API key by fetching account details
-      const response = await this._makeRequest('get', '/settings/v3/users/me');
+      // Test API key by fetching contacts (requires only basic CRM scopes)
+      const response = await this._makeRequest('get', '/crm/v3/objects/contacts?limit=1');
 
       return {
         success: true,
         status: 'healthy',
         message: 'HubSpot API connection successful',
-        user: response.data,
+        contactsAccessible: response.data?.results?.length >= 0,
       };
     } catch (error) {
       return {

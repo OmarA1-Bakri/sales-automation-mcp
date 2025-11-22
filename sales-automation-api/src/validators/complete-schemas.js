@@ -709,7 +709,7 @@ export const ChatMessageSchema = z.object({
       taskType: z.enum(['discovery', 'enrichment', 'outreach', 'analysis', 'general']).optional()
     }).optional(),
     conversationId: UUIDSchema.optional(),
-    model: z.enum(['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229']).default('claude-3-5-sonnet-20241022')
+    model: z.enum(['claude-4-5-haiku', 'claude-4-5-sonnet']).default('claude-4-5-haiku')
   })
 });
 

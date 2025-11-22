@@ -12,10 +12,11 @@ function SettingsPage() {
   const [connectionStatus, setConnectionStatus] = useState(null);
 
   // Integration API keys
-  const [hubspotKey, setHubspotKey] = useState('');
-  const [lemlistKey, setLemlistKey] = useState('');
-  const [exploriumKey, setExploriumKey] = useState('');
   const [integrationStatus, setIntegrationStatus] = useState(null);
+
+  // AI Configuration
+  const [aiProvider, setAiProvider] = useState('anthropic');
+  const [aiModel, setAiModel] = useState('haiku');
 
   // PHASE 3 FIX (P3.4): Load saved settings from secure encrypted storage
   useEffect(() => {
@@ -37,37 +38,21 @@ function SettingsPage() {
             setApiKey(apiKeyResult.value);
             api.setApiKey(apiKeyResult.value);
           }
-
-          // Load integration keys
-          const hubspotResult = await window.electron.retrieveCredential('hubspotKey');
-          if (hubspotResult.success && hubspotResult.value) {
-            setHubspotKey(hubspotResult.value);
-          }
-
-          const lemlistResult = await window.electron.retrieveCredential('lemlistKey');
-          if (lemlistResult.success && lemlistResult.value) {
-            setLemlistKey(lemlistResult.value);
-          }
-
-          const exploriumResult = await window.electron.retrieveCredential('exploriumKey');
-          if (exploriumResult.success && exploriumResult.value) {
-            setExploriumKey(exploriumResult.value);
-          }
         } else {
           // Fallback to localStorage in browser mode
           const savedApiKey = localStorage.getItem('apiKey');
-          const savedHubspot = localStorage.getItem('hubspotKey');
-          const savedLemlist = localStorage.getItem('lemlistKey');
-          const savedExplorium = localStorage.getItem('exploriumKey');
 
           if (savedApiKey) {
             setApiKey(savedApiKey);
             api.setApiKey(savedApiKey);
           }
-          if (savedHubspot) setHubspotKey(savedHubspot);
-          if (savedLemlist) setLemlistKey(savedLemlist);
-          if (savedExplorium) setExploriumKey(savedExplorium);
         }
+
+        // Load AI configuration
+        const savedAiProvider = localStorage.getItem('aiProvider');
+        const savedAiModel = localStorage.getItem('aiModel');
+        if (savedAiProvider) setAiProvider(savedAiProvider);
+        if (savedAiModel) setAiModel(savedAiModel);
 
         // Load integration status
         loadIntegrationStatus();
@@ -92,16 +77,15 @@ function SettingsPage() {
 
   // PHASE 3 FIX (P3.4): Save API key to encrypted storage
   const handleSave = async () => {
-    if (!apiKey.trim()) {
-      toast.error('Please enter an API key');
-      return;
-    }
-
-    // SECURITY FIX: Phase 2, T2.5 - Validate URL before saving (SSRF prevention)
-    const validation = isValidApiUrl(apiUrl);
-    if (!validation.valid) {
-      toast.error(`Invalid API URL: ${validation.error}`);
-      return;
+    // Allow saving with empty API key (to clear integrations)
+    // Only validate API URL if an API key is provided
+    if (apiKey.trim()) {
+      // SECURITY FIX: Phase 2, T2.5 - Validate URL before saving (SSRF prevention)
+      const validation = isValidApiUrl(apiUrl);
+      if (!validation.valid) {
+        toast.error(`Invalid API URL: ${validation.error}`);
+        return;
+      }
     }
 
     try {
@@ -132,6 +116,10 @@ function SettingsPage() {
 
       // Update store
       updateApiKeys({ salesAutomation: apiKey });
+
+      // Save AI configuration
+      localStorage.setItem('aiProvider', aiProvider);
+      localStorage.setItem('aiModel', aiModel);
 
       toast.success('Settings saved successfully');
     } catch (error) {
@@ -257,58 +245,6 @@ function SettingsPage() {
     setApiUrl(newUrl);
   };
 
-  // PHASE 3 FIX (P3.4): Save integration keys to encrypted storage
-  const handleSaveIntegrations = async () => {
-    try {
-      let saveCount = 0;
-
-      // Save integration keys to encrypted storage
-      if (window.electron?.storeCredential) {
-        if (hubspotKey.trim()) {
-          const result = await window.electron.storeCredential('hubspotKey', hubspotKey);
-          if (result.success) saveCount++;
-        }
-        if (lemlistKey.trim()) {
-          const result = await window.electron.storeCredential('lemlistKey', lemlistKey);
-          if (result.success) saveCount++;
-        }
-        if (exploriumKey.trim()) {
-          const result = await window.electron.storeCredential('exploriumKey', exploriumKey);
-          if (result.success) saveCount++;
-        }
-      } else {
-        // Fallback to localStorage in browser mode
-        if (hubspotKey.trim()) {
-          localStorage.setItem('hubspotKey', hubspotKey);
-          saveCount++;
-        }
-        if (lemlistKey.trim()) {
-          localStorage.setItem('lemlistKey', lemlistKey);
-          saveCount++;
-        }
-        if (exploriumKey.trim()) {
-          localStorage.setItem('exploriumKey', exploriumKey);
-          saveCount++;
-        }
-      }
-
-      // Update store
-      updateApiKeys({
-        hubspot: hubspotKey,
-        lemlist: lemlistKey,
-        explorium: exploriumKey,
-      });
-
-      if (saveCount > 0) {
-        toast.success('Integration settings saved securely. Restart the API server to apply changes.');
-      } else {
-        toast.error('No integration keys to save');
-      }
-    } catch (error) {
-      console.error('Failed to save integration settings:', error);
-      toast.error('Failed to save integration settings');
-    }
-  };
 
   const getStatusColor = (status) => {
     if (status === 'healthy') return 'text-green-400';
@@ -476,42 +412,120 @@ function SettingsPage() {
           </div>
         </div>
 
-        {/* Integration Management */}
+        {/* AI Configuration */}
         <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-slate-700">
-          <h2 className="text-xl font-semibold text-white mb-4">Integration API Keys</h2>
+          <h2 className="text-xl font-semibold text-white mb-4">AI Configuration</h2>
           <p className="text-slate-400 mb-6">
-            Configure API keys for third-party integrations. These are stored in localStorage and must be set in the server's .env file to take effect.
+            Configure AI model preferences for chat and automation features.
           </p>
 
-          {/* Integration Status */}
+          {/* AI Provider Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              AI Provider
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setAiProvider('anthropic')}
+                className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                  aiProvider === 'anthropic'
+                    ? 'border-blue-500 bg-blue-500/20 text-white'
+                    : 'border-slate-600 bg-slate-700 text-slate-300 hover:border-slate-500'
+                }`}
+              >
+                <div className="font-medium">Anthropic Claude</div>
+                <div className="text-xs text-slate-400 mt-1">Advanced reasoning</div>
+              </button>
+              <button
+                onClick={() => setAiProvider('gemini')}
+                className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                  aiProvider === 'gemini'
+                    ? 'border-blue-500 bg-blue-500/20 text-white'
+                    : 'border-slate-600 bg-slate-700 text-slate-300 hover:border-slate-500'
+                }`}
+              >
+                <div className="font-medium">Google Gemini</div>
+                <div className="text-xs text-slate-400 mt-1">Multimodal AI</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Claude Model Selection (only if anthropic is selected) */}
+          {aiProvider === 'anthropic' && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Claude Model
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setAiModel('haiku')}
+                  className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                    aiModel === 'haiku'
+                      ? 'border-blue-500 bg-blue-500/20 text-white'
+                      : 'border-slate-600 bg-slate-700 text-slate-300 hover:border-slate-500'
+                  }`}
+                >
+                  <div className="font-medium">Claude 4.5 Haiku</div>
+                  <div className="text-xs text-slate-400 mt-1">Fast & efficient</div>
+                </button>
+                <button
+                  onClick={() => setAiModel('sonnet')}
+                  className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                    aiModel === 'sonnet'
+                      ? 'border-blue-500 bg-blue-500/20 text-white'
+                      : 'border-slate-600 bg-slate-700 text-slate-300 hover:border-slate-500'
+                  }`}
+                >
+                  <div className="font-medium">Claude 4.5 Sonnet</div>
+                  <div className="text-xs text-slate-400 mt-1">Balanced performance</div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="p-3 bg-slate-700/50 border border-slate-600 rounded-lg">
+            <p className="text-sm text-slate-400">
+              <strong>Note:</strong> AI provider and model selections are saved in your browser.
+              The actual AI provider used by the server is configured in the <code className="bg-slate-700 px-1 rounded">.env</code> file.
+            </p>
+          </div>
+        </div>
+
+        {/* Integration Status */}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-slate-700">
+          <h2 className="text-xl font-semibold text-white mb-4">Integration Status</h2>
+          <p className="text-slate-400 mb-6">
+            Current status of third-party integrations configured in your <code className="bg-slate-700 px-1 rounded">.env</code> file.
+          </p>
+
+          {/* Integration Status Display */}
           {integrationStatus && (
-            <div className="mb-6 p-4 bg-slate-700/50 rounded-lg">
-              <h3 className="text-sm font-medium text-slate-300 mb-3">Current Status</h3>
+            <div className="mb-4 p-4 bg-slate-700/50 rounded-lg">
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className={`text-2xl font-bold mb-1 ${getStatusColor(integrationStatus.hubspot)}`}>
+                  <div className={`text-3xl font-bold mb-2 ${getStatusColor(integrationStatus.hubspot)}`}>
                     {getStatusIcon(integrationStatus.hubspot)}
                   </div>
-                  <div className="text-sm text-slate-400">HubSpot</div>
-                  <div className={`text-xs ${getStatusColor(integrationStatus.hubspot)}`}>
+                  <div className="text-sm font-medium text-white">HubSpot</div>
+                  <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.hubspot)}`}>
                     {integrationStatus.hubspot}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className={`text-2xl font-bold mb-1 ${getStatusColor(integrationStatus.lemlist)}`}>
+                  <div className={`text-3xl font-bold mb-2 ${getStatusColor(integrationStatus.lemlist)}`}>
                     {getStatusIcon(integrationStatus.lemlist)}
                   </div>
-                  <div className="text-sm text-slate-400">Lemlist</div>
-                  <div className={`text-xs ${getStatusColor(integrationStatus.lemlist)}`}>
+                  <div className="text-sm font-medium text-white">Lemlist</div>
+                  <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.lemlist)}`}>
                     {integrationStatus.lemlist}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className={`text-2xl font-bold mb-1 ${getStatusColor(integrationStatus.explorium)}`}>
+                  <div className={`text-3xl font-bold mb-2 ${getStatusColor(integrationStatus.explorium)}`}>
                     {getStatusIcon(integrationStatus.explorium)}
                   </div>
-                  <div className="text-sm text-slate-400">Explorium</div>
-                  <div className={`text-xs ${getStatusColor(integrationStatus.explorium)}`}>
+                  <div className="text-sm font-medium text-white">Explorium</div>
+                  <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.explorium)}`}>
                     {integrationStatus.explorium}
                   </div>
                 </div>
@@ -519,79 +533,9 @@ function SettingsPage() {
             </div>
           )}
 
-          {/* HubSpot Key */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              HubSpot API Key
-            </label>
-            <input
-              type="password"
-              value={hubspotKey}
-              onChange={(e) => setHubspotKey(e.target.value)}
-              placeholder="pat-na1-..."
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="mt-2 text-sm text-slate-400">
-              Get from HubSpot → Settings → Integrations → Private Apps
-            </p>
-            {integrationStatus?.hubspot === 'unhealthy' && (
-              <p className="mt-2 text-sm text-red-400 flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                Current API key is invalid or expired. Please update.
-              </p>
-            )}
-          </div>
-
-          {/* Lemlist Key */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Lemlist API Key
-            </label>
-            <input
-              type="password"
-              value={lemlistKey}
-              onChange={(e) => setLemlistKey(e.target.value)}
-              placeholder="..."
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="mt-2 text-sm text-slate-400">
-              Get from Lemlist → Settings → Integrations → API
-            </p>
-          </div>
-
-          {/* Explorium Key */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Explorium API Key
-            </label>
-            <input
-              type="password"
-              value={exploriumKey}
-              onChange={(e) => setExploriumKey(e.target.value)}
-              placeholder="..."
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="mt-2 text-sm text-slate-400">
-              Contact Explorium support for API access
-            </p>
-          </div>
-
-          <button
-            onClick={handleSaveIntegrations}
-            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-            </svg>
-            Save Integration Keys
-          </button>
-
-          <div className="mt-4 p-3 bg-amber-900/30 border border-amber-700 rounded-lg">
-            <p className="text-sm text-amber-400">
-              <strong>Note:</strong> Integration keys saved here are stored in your browser's localStorage.
-              To apply these changes to the server, you must update the <code className="bg-slate-700 px-1 rounded">.env</code> file
+          <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
+            <p className="text-sm text-blue-400">
+              <strong>Configuration:</strong> To configure integration API keys, edit the <code className="bg-slate-700 px-1 rounded">.env</code> file
               in the <code className="bg-slate-700 px-1 rounded">sales-automation-api</code> directory and restart the API server.
             </p>
           </div>

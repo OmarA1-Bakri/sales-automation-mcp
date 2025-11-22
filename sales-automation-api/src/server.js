@@ -261,8 +261,8 @@ class SalesAutomationAPIServer {
 
     // Model configuration
     this.models = {
-      haiku: 'claude-3-5-haiku-20241022',    // Fast, efficient for most tasks
-      sonnet: 'claude-3-5-sonnet-20241022',   // High intelligence for content creation
+      haiku: 'claude-4-5-haiku',    // Fast, efficient for most tasks (default)
+      sonnet: 'claude-4-5-sonnet',   // High intelligence for content creation
     };
 
     this.setupMiddleware();
@@ -1429,7 +1429,7 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
 
         // Call Claude API
         const response = await this.anthropic.messages.create({
-          model: 'claude-3-5-haiku-20241022',
+          model: 'claude-4-5-haiku',
           max_tokens: 2048,
           system: systemPrompt,
           messages: messages
@@ -1449,7 +1449,7 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
           message: assistantMessage,
           conversationId: finalConversationId,
           metadata: {
-            model: 'claude-3-5-haiku-20241022',
+            model: 'claude-4-5-haiku',
             tokens: response.usage
           }
         });

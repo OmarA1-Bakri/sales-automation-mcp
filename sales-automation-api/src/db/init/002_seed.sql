@@ -81,7 +81,7 @@ INSERT INTO campaign_templates (
     'RAG-powered ultra-personalized messages (15-25% reply rate target)',
     'email',
     'dynamic_ai',
-    '{"email_provider": "lemlist", "ai_model": "claude-sonnet-4", "research_depth": "deep", "personalization_level": "ultra"}',
+    '{"email_provider": "lemlist", "ai_model": "claude-4-5-haiku", "research_depth": "deep", "personalization_level": "ultra"}',
     'system',
     false  -- Not active yet (Phase 10-12)
 ) ON CONFLICT (id) DO NOTHING;
