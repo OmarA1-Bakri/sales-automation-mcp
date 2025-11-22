@@ -73,10 +73,15 @@ class OrphanedEventQueue {
    * Ensure Redis is initialized (lazy initialization)
    * @private
    */
-  _ensureInitialized() {
+  async _ensureInitialized() {
+    logger.debug('[_ensureInitialized] Called', { initialized: this.initialized, redisConnected: this.redisConnected });
     if (!this.initialized) {
-      this._initializeRedis();
+      logger.debug('[_ensureInitialized] Not initialized yet, calling _initializeRedis');
+      await this._initializeRedis();
       this.initialized = true;
+      logger.debug('[_ensureInitialized] Initialization complete', { redisConnected: this.redisConnected });
+    } else {
+      logger.debug('[_ensureInitialized] Already initialized, skipping', { redisConnected: this.redisConnected });
     }
   }
 
@@ -84,11 +89,13 @@ class OrphanedEventQueue {
    * Initialize Redis connection with retry logic
    * @private
    */
-  _initializeRedis() {
+  async _initializeRedis() {
     try {
-      const redisConfig = process.env.REDIS_URL
-        ? process.env.REDIS_URL
-        : { host: 'localhost', port: 6379 };
+      const redisConfig = process.env.REDIS_URL || {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+        ...(process.env.REDIS_PASSWORD && { password: process.env.REDIS_PASSWORD })
+      };
 
       this.redis = new Redis(redisConfig, {
         retryStrategy: (times) => {
@@ -98,17 +105,37 @@ class OrphanedEventQueue {
         },
         maxRetriesPerRequest: 3,
         enableReadyCheck: true,
-        lazyConnect: false
+        lazyConnect: true
       });
 
-      this.redis.on('connect', () => {
-        this.redisConnected = true;
-        logger.info('Redis connected successfully', {
-          host: this.redis.options.host,
-          port: this.redis.options.port
+      // Set up event handlers BEFORE connecting
+      const connectionPromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Redis connection timeout'));
+        }, 5000);
+
+        this.redis.once('ready', () => {
+          clearTimeout(timeout);
+          this.redisConnected = true;
+          logger.info('[_initializeRedis] Redis connected successfully, setting redisConnected=true', {
+            host: this.redis.options.host,
+            port: this.redis.options.port,
+            redisConnected: this.redisConnected
+          });
+          resolve();
+        });
+
+        this.redis.once('error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
         });
       });
 
+      // Now connect
+      await this.redis.connect();
+      await connectionPromise;
+
+      // Set up ongoing event listeners after connection established
       this.redis.on('error', (error) => {
         this.redisConnected = false;
         logger.error('Redis connection error', {
@@ -116,7 +143,6 @@ class OrphanedEventQueue {
           code: error.code
         });
 
-        // FIX #5: Metrics for Redis errors
         metrics.counter('orphaned_queue.redis_errors', 1, {
           error_type: error.code || 'unknown'
         });
@@ -134,6 +160,7 @@ class OrphanedEventQueue {
     } catch (error) {
       logger.error('Failed to initialize Redis', { error: error.message });
       this.redisConnected = false;
+      throw error;
     }
   }
 
@@ -146,7 +173,7 @@ class OrphanedEventQueue {
    * @returns {Promise<Object>} Queue entry metadata
    */
   async enqueue(eventData) {
-    this._ensureInitialized();
+    await this._ensureInitialized();
 
     if (!this.redisConnected) {
       logger.warn('Redis not connected - falling back to in-memory queue (NOT PRODUCTION SAFE)', {
@@ -242,7 +269,7 @@ class OrphanedEventQueue {
    * @returns {Promise<Object>} Processing results
    */
   async processQueue(eventProcessor) {
-    this._ensureInitialized();
+    await this._ensureInitialized();
 
     if (!this.redisConnected) {
       logger.warn('Cannot process queue: Redis not connected');
@@ -545,14 +572,28 @@ class OrphanedEventQueue {
    * @returns {Promise<Object>} Queue metrics
    */
   async getStatus() {
-    this._ensureInitialized();
+    logger.debug('[getStatus] Start', { initialized: this.initialized, redisConnected: this.redisConnected });
+    try {
+      await this._ensureInitialized();
+    } catch (error) {
+      logger.error('Failed to initialize Redis for health check', { error: error.message });
+      return {
+        healthy: false,
+        error: `Initialization failed: ${error.message}`
+      };
+    }
+
+    logger.debug('[getStatus] After _ensureInitialized', { initialized: this.initialized, redisConnected: this.redisConnected });
 
     if (!this.redisConnected) {
+      logger.warn('[getStatus] Redis not connected!', { initialized: this.initialized, redisConnected: this.redisConnected });
       return {
         healthy: false,
         error: 'Redis not connected'
       };
     }
+
+    logger.debug('[getStatus] Redis is connected, proceeding with status check');
 
     try {
       const now = Date.now();
@@ -578,7 +619,7 @@ class OrphanedEventQueue {
 
       const healthy = staleEvents.length === 0 && queueSize < 5000;
 
-      return {
+      const result = {
         healthy,
         queueSize,
         processing: this.processing,
@@ -591,12 +632,17 @@ class OrphanedEventQueue {
         batchSize: this.batchSize
       };
 
+      logger.debug('[getStatus] Returning success result', { healthy, queueSize, redisConnected: this.redisConnected });
+      return result;
+
     } catch (error) {
-      logger.error('Failed to get queue status', { error: error.message });
-      return {
+      logger.error('[getStatus] Exception in try block', { error: error.message, stack: error.stack });
+      const errorResult = {
         healthy: false,
         error: error.message
       };
+      logger.debug('[getStatus] Returning error result', errorResult);
+      return errorResult;
     }
   }
 

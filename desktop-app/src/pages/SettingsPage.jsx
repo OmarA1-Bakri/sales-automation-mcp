@@ -168,7 +168,7 @@ function SettingsPage() {
       // Test connection
       const health = await api.testConnection();
 
-      if (health.status === 'healthy') {
+      if (health.status === 'ok' || health.status === 'healthy') {
         setConnectionStatus({
           success: true,
           message: 'Connection successful',

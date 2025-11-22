@@ -58,3 +58,4 @@ mcp-server/logs/
 test-xss-sanitization.js
 SECURITY-VALIDATION-REPORT.md
 PHASE-3.1-XSS-SANITIZATION-REPORT.md
+.env*

@@ -119,7 +119,10 @@ class CSRFProtection {
       '/health',
       '/metrics',
       '/api/auth/login',
-      '/api/csrf-token'
+      '/api/csrf-token',
+      '/api/chat',  // Chat endpoint (protected by API key)
+      '/api/execute',  // Execute endpoint (protected by API key)
+      '/api/import',  // Import endpoints (protected by API key)
     ];
     return exemptPaths.some(e => path.startsWith(e));
   }

@@ -261,8 +261,8 @@ class SalesAutomationAPIServer {
 
     // Model configuration
     this.models = {
-      haiku: 'claude-haiku-4-5-20250617',    // Fast, efficient for most tasks
-      sonnet: 'claude-sonnet-4-5-20250929',   // High intelligence for content creation
+      haiku: 'claude-3-5-haiku-20241022',    // Fast, efficient for most tasks
+      sonnet: 'claude-3-5-sonnet-20241022',   // High intelligence for content creation
     };
 
     this.setupMiddleware();
@@ -604,6 +604,8 @@ class SalesAutomationAPIServer {
         );
         const queueStatus = await Promise.race([queueStatusPromise, queueTimeout]);
 
+        logger.debug('[Health Endpoint] Queue status received', { queueStatus });
+
         // Get auth health with timeout protection
         const authHealthPromise = checkAuthHealth();
         const authTimeout = new Promise((resolve) =>
@@ -611,10 +613,18 @@ class SalesAutomationAPIServer {
         );
         const authHealth = await Promise.race([authHealthPromise, authTimeout]);
 
+        logger.debug('[Health Endpoint] Auth health received', { authHealth });
+
         const overallHealthy = queueStatus.healthy && authHealth.status === 'healthy';
 
-        res.json({
-          status: overallHealthy ? 'healthy' : 'degraded',
+        logger.debug('[Health Endpoint] Computed health', { 
+          queueHealthy: queueStatus.healthy,
+          authStatus: authHealth.status,
+          overallHealthy 
+        });
+
+        const responseObj = {
+          status: overallHealthy ? 'ok' : 'degraded',
           service: 'sales-automation-api',
           version: '1.0.0',
           yoloMode: this.yoloMode,
@@ -623,7 +633,11 @@ class SalesAutomationAPIServer {
             orphanedQueue: queueStatus,
             authentication: authHealth
           }
-        });
+        };
+
+        logger.debug('[Health Endpoint] SENDING RESPONSE', responseObj);
+
+        res.json(responseObj);
       } catch (error) {
         res.status(503).json({
           status: 'unhealthy',
@@ -1342,7 +1356,7 @@ class SalesAutomationAPIServer {
     });
 
     // Chat endpoint - AI assistant for sales automation
-    this.app.post('/api/chat', authenticate, chatLimiter, async (req, res) => {
+    this.app.post('/api/chat', authenticateDb, chatLimiter, async (req, res) => {
       try {
         const { message, conversationId = null } = req.body;
 
@@ -1415,7 +1429,7 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
 
         // Call Claude API
         const response = await this.anthropic.messages.create({
-          model: 'claude-haiku-4-5-20250617',
+          model: 'claude-3-5-haiku-20241022',
           max_tokens: 2048,
           system: systemPrompt,
           messages: messages
@@ -1435,7 +1449,7 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
           message: assistantMessage,
           conversationId: finalConversationId,
           metadata: {
-            model: 'claude-haiku-4-5-20250617',
+            model: 'claude-3-5-haiku-20241022',
             tokens: response.usage
           }
         });

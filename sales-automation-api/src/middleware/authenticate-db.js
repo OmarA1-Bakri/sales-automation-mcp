@@ -7,7 +7,7 @@
  * Replaces plaintext .env authentication with enterprise-grade security.
  */
 
-import { ApiKey } from '../models/index.js';
+import { ApiKey, sequelize } from '../models/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('Auth-DB');
@@ -305,6 +305,8 @@ export function requireScope(requiredScopes) {
  */
 export async function checkAuthHealth() {
   try {
+    await sequelize.authenticate();
+
     const activeKeys = await ApiKey.count({
       where: { status: 'active' }
     });
@@ -316,6 +318,8 @@ export async function checkAuthHealth() {
       hashAlgorithm: 'Argon2id'
     };
   } catch (error) {
+    logger.warn('Database health check failed', { error: error.message });
+
     return {
       status: 'unhealthy',
       error: error.message,
