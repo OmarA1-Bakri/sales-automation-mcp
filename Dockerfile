@@ -1,12 +1,12 @@
 # Multi-stage Dockerfile for RTGS Sales Automation
-# Builds and runs MCP server + Desktop app in container
+# Builds and runs Sales Automation API + Desktop app in container
 
 FROM node:20-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
-    sqlite3 \
+    postgresql-client \
     python3 \
     make \
     g++ \
@@ -17,12 +17,12 @@ RUN apt-get update && apt-get install -y \
 # Create app directory
 WORKDIR /app
 
-# Copy MCP server files
-COPY mcp-server/package*.json ./mcp-server/
-WORKDIR /app/mcp-server
+# Copy API server files
+COPY sales-automation-api/package*.json ./sales-automation-api/
+WORKDIR /app/sales-automation-api
 RUN npm install
 
-COPY mcp-server/ ./
+COPY sales-automation-api/ ./
 
 # Copy desktop app files
 WORKDIR /app/desktop-app
@@ -31,46 +31,48 @@ RUN npm install
 
 COPY desktop-app/ ./
 
-# Create data directory for SQLite
+# Create data directory
 RUN mkdir -p /app/.sales-automation
 
 # Expose ports
-# 3456 - MCP API Server HTTP (redirects to HTTPS)
-# 3457 - MCP API Server HTTPS
+# 3000 - Sales Automation API (HTTP)
+# 3456 - Sales Automation API (alternate port)
 # 5173 - Vite dev server (desktop app)
-EXPOSE 3456 3457 5173
+EXPOSE 3000 3456 5173
 
 # Set working directory
 WORKDIR /app
 
-# Copy SSL certificates (will be generated in container)
-RUN mkdir -p /app/mcp-server/ssl
+# Copy SSL certificates (will be generated in container if needed)
+RUN mkdir -p /app/sales-automation-api/ssl
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
 echo "🚀 Starting RTGS Sales Automation Production Environment"\n\
 echo ""\n\
 \n\
-# Generate SSL certificates if they do not exist\n\
-if [ ! -f /app/mcp-server/ssl/privkey.pem ]; then\n\
-  echo "Generating self-signed SSL certificate..."\n\
-  openssl req -x509 -newkey rsa:4096 -nodes \\\n\
-    -keyout /app/mcp-server/ssl/privkey.pem \\\n\
-    -out /app/mcp-server/ssl/fullchain.pem \\\n\
-    -days 365 \\\n\
-    -subj "/C=US/ST=State/L=City/O=SalesAutomation/CN=localhost"\n\
-  chmod 600 /app/mcp-server/ssl/privkey.pem\n\
-  chmod 644 /app/mcp-server/ssl/fullchain.pem\n\
-  echo "✓ SSL certificate generated"\n\
-  echo ""\n\
+# Generate SSL certificates if they do not exist and SSL is enabled\n\
+if [ -n "$SSL_KEY_PATH" ] && [ -n "$SSL_CERT_PATH" ]; then\n\
+  if [ ! -f /app/sales-automation-api/ssl/privkey.pem ]; then\n\
+    echo "Generating self-signed SSL certificate..."\n\
+    openssl req -x509 -newkey rsa:4096 -nodes \\\n\
+      -keyout /app/sales-automation-api/ssl/privkey.pem \\\n\
+      -out /app/sales-automation-api/ssl/fullchain.pem \\\n\
+      -days 365 \\\n\
+      -subj "/C=US/ST=State/L=City/O=SalesAutomation/CN=localhost"\n\
+    chmod 600 /app/sales-automation-api/ssl/privkey.pem\n\
+    chmod 644 /app/sales-automation-api/ssl/fullchain.pem\n\
+    echo "✓ SSL certificate generated"\n\
+    echo ""\n\
+  fi\n\
 fi\n\
 \n\
-echo "Starting MCP Server (HTTP: 3456, HTTPS: 3457)..."\n\
-cd /app/mcp-server && node src/api-server.js --port=3456 &\n\
-MCP_PID=$!\n\
-echo "MCP Server started with PID: $MCP_PID"\n\
+echo "Starting Sales Automation API Server..."\n\
+cd /app/sales-automation-api && npm start &\n\
+API_PID=$!\n\
+echo "API Server started with PID: $API_PID"\n\
 echo ""\n\
-echo "Waiting for MCP server to be ready..."\n\
+echo "Waiting for API server to be ready..."\n\
 sleep 5\n\
 echo ""\n\
 echo "Starting Desktop App Dev Server on port 5173..."\n\
@@ -81,8 +83,7 @@ echo ""\n\
 echo "✅ All services started!"\n\
 echo ""\n\
 echo "Access points:"\n\
-echo "  - MCP Server HTTP: http://localhost:3456 (redirects to HTTPS)"\n\
-echo "  - MCP Server HTTPS: https://localhost:3457"\n\
+echo "  - API Server: http://localhost:${PORT:-3000}"\n\
 echo "  - Desktop App UI: http://localhost:5173"\n\
 echo ""\n\
 echo "Press Ctrl+C to stop all services"\n\
