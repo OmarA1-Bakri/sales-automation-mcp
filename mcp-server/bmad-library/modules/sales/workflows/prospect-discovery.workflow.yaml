@@ -1,0 +1,395 @@
+workflow:
+  metadata:
+    name: prospect-discovery
+    title: "Autonomous Prospect Discovery & Qualification"
+    description: "Full pipeline from ICP definition to qualified prospect list"
+    version: "1.0.0"
+    track: method
+    phases:
+      - discover
+      - enrich
+      - qualify
+      - prepare
+    module: sales
+    execution_mode: sequential  # Steps execute in order
+
+  agents:
+    - role: sales-strategist
+      module: sales
+      when: "Define ICP and set quality thresholds"
+
+    - role: engagement-analyst
+      module: sales
+      when: "Score prospects and validate quality"
+
+    - role: outreach-orchestrator
+      module: sales
+      when: "Prepare campaigns and systems"
+
+  steps:
+    # Phase 1: DISCOVER
+    - id: define-icp
+      phase: discover
+      agent: sales-strategist
+      action: create_icp_profile
+      description: "Define ideal customer profile with precise criteria"
+      inputs:
+        market_segment:
+          - industry: array  # ["SaaS", "FinTech", "Healthcare"]
+          - geography: array  # ["United Kingdom", "Ireland"]
+          - company_size: range  # "50-500 employees"
+          - revenue_range: range  # "$5M-$50M ARR"
+        target_personas:
+          - titles: array  # ["CTO", "VP Engineering", "Head of Product"]
+          - seniority: array  # ["VP", "Director", "C-Level"]
+          - departments: array  # ["Engineering", "Product", "IT"]
+        signals:
+          - tech_stack: array  # ["AWS", "Kubernetes", "Microservices"]
+          - recent_funding: boolean
+          - growth_indicators: array  # ["Hiring", "New offices"]
+      outputs:
+        icp_profile:
+          firmographic_criteria: object
+          technographic_criteria: object
+          behavioral_criteria: object
+          scoring_weights: object
+        quality_thresholds:
+          auto_approve: 85  # ICP score >= 85
+          review_queue: 70   # 70-84
+          disqualify: 70     # < 70
+      validation:
+        - criteria_completeness: "All required fields defined"
+        - scoring_logic: "Weights sum to 100%"
+
+    - id: search-companies
+      phase: discover
+      agent: outreach-orchestrator
+      action: execute_company_search
+      description: "Search Explorium for matching companies"
+      inputs:
+        icp_profile: from_previous_step
+        data_sources:
+          - explorium  # Primary discovery source
+          - hubspot_existing  # Check for existing companies
+        search_params:
+          max_results: 1000
+          exclude_existing_customers: true
+          exclude_active_prospects: false
+      outputs:
+        company_list: array
+        company_metadata:
+          - company_name
+          - domain
+          - industry
+          - employee_count
+          - revenue_estimate
+          - location
+          - tech_stack
+          - recent_news
+        duplicate_check:
+          duplicates_found: number
+          duplicates_merged: number
+      quality_gates:
+        - min_companies_found: 50
+        - max_duplicate_rate: 0.1  # 10%
+        - data_completeness: "> 80%"
+
+    # Phase 2: ENRICH
+    - id: find-decision-makers
+      phase: enrich
+      agent: outreach-orchestrator
+      action: extract_contacts
+      description: "Find decision-makers at target companies using Explorium"
+      inputs:
+        company_list: from_previous_step
+        data_source: explorium
+        target_criteria:
+          titles: from_icp_profile
+          seniority: from_icp_profile
+          departments: from_icp_profile
+        per_company_limit: 3  # Max 3 contacts per company
+      outputs:
+        contact_list: array
+        contact_metadata:
+          - first_name
+          - last_name
+          - title
+          - email
+          - linkedin_url
+          - phone
+          - company
+          - seniority_level
+      quality_gates:
+        - min_contacts_found: 100
+        - email_format_valid: "> 95%"
+        - no_generic_emails: true  # No info@, contact@, etc.
+
+    - id: enrich-contacts
+      phase: enrich
+      agent: outreach-orchestrator
+      action: enrich_with_explorium
+      description: "Enhance contact data with Explorium"
+      inputs:
+        contact_list: from_previous_step
+        enrichment_fields:
+          - verify_email
+          - find_linkedin
+          - get_phone_number
+          - extract_bio
+          - find_social_profiles
+          - get_recent_activity
+      outputs:
+        enriched_contacts: array
+        enrichment_stats:
+          email_verified: number
+          linkedin_found: number
+          phone_found: number
+          full_profile_complete: number
+      quality_gates:
+        - email_verification_rate: "> 70%"
+        - linkedin_match_rate: "> 60%"
+        - overall_enrichment: "> 65%"
+      on_failure:
+        action: flag_for_manual_review
+        continue: true  # Don't stop workflow
+
+    # Phase 3: QUALIFY
+    - id: score-icp-fit
+      phase: qualify
+      agent: engagement-analyst
+      action: calculate_icp_score
+      description: "Score each contact's fit against ICP"
+      inputs:
+        enriched_contacts: from_previous_step
+        icp_profile: from_step_define-icp
+        scoring_model:
+          firmographic_weight: 40%
+          technographic_weight: 30%
+          behavioral_weight: 20%
+          intent_signals_weight: 10%
+      scoring_criteria:
+        firmographic:
+          company_size_match: 15
+          industry_match: 15
+          revenue_match: 10
+        technographic:
+          tech_stack_match: 20
+          cloud_platform_match: 10
+        behavioral:
+          recent_funding: 10
+          hiring_activity: 5
+          new_office_opened: 5
+        intent_signals:
+          visited_website: 5
+          content_consumed: 5
+      outputs:
+        scored_contacts: array
+        score_distribution:
+          auto_approve: number  # >= 85
+          review_queue: number  # 70-84
+          disqualified: number  # < 70
+        average_score: number
+      quality_gates:
+        - min_auto_approve: 20  # At least 20 auto-approved
+        - avg_score: "> 60"
+
+    - id: segment-by-score
+      phase: qualify
+      agent: engagement-analyst
+      action: segment_prospects
+      description: "Segment prospects into action buckets"
+      inputs:
+        scored_contacts: from_previous_step
+        thresholds: from_icp_profile.quality_thresholds
+      outputs:
+        auto_approve_list: array  # Score >= 85
+        review_queue: array       # Score 70-84
+        disqualified: array       # Score < 70
+        segment_stats:
+          total_prospects: number
+          auto_approved: number
+          needs_review: number
+          disqualified: number
+          approval_rate: percentage
+
+    - id: validate-quality
+      phase: qualify
+      agent: sales-strategist
+      action: quality_assurance_check
+      description: "Final quality validation before campaign prep"
+      inputs:
+        auto_approve_list: from_previous_step
+        review_queue: from_previous_step
+      checks:
+        data_quality:
+          - all_have_email: true
+          - all_have_company: true
+          - all_have_name: true
+          - no_duplicates: true
+        relevance:
+          - titles_match_icp: "> 90%"
+          - companies_match_criteria: "> 85%"
+        deliverability:
+          - valid_email_format: "100%"
+          - no_role_based_emails: true
+          - mx_records_valid: "> 95%"
+      outputs:
+        quality_passed: boolean
+        quality_score: number
+        issues_found: array
+      on_quality_fail:
+        action: pause_and_alert_human
+        message: "Quality thresholds not met - manual review required"
+
+    # Phase 4: PREPARE
+    - id: prepare-campaigns
+      phase: prepare
+      agent: outreach-orchestrator
+      action: setup_lemlist_campaign
+      description: "Create campaigns and prepare for outreach"
+      inputs:
+        auto_approve_list: from_segment-by-score
+        campaign_config:
+          name: "{{icp_description}} - {{month_year}}"
+          sequence_type: "multi_touch_4_step"
+          daily_send_limit: 50
+      steps:
+        - create_lemlist_campaign
+        - upload_prospects_to_lemlist
+        - configure_sequences
+        - set_tracking_parameters
+        - schedule_campaign_start
+      outputs:
+        campaign_id: string
+        prospects_enrolled: number
+        campaign_start_date: date
+        estimated_completion_date: date
+
+    - id: sync-to-hubspot
+      phase: prepare
+      agent: outreach-orchestrator
+      action: sync_contacts_to_crm
+      description: "Sync all qualified prospects to HubSpot CRM"
+      inputs:
+        auto_approve_list: from_segment-by-score
+        review_queue: from_segment-by-score
+      sync_details:
+        contact_properties:
+          - icp_score
+          - discovery_date
+          - data_source
+          - enrichment_status
+          - campaign_id
+        company_properties:
+          - icp_fit_score
+          - discovery_date
+        create_tasks:
+          - for_review_queue: "Manual review required"
+          - for_auto_approved: "Enrolled in campaign {{campaign_id}}"
+      outputs:
+        contacts_synced: number
+        companies_created: number
+        tasks_created: number
+        sync_errors: array
+
+    - id: generate-report
+      phase: prepare
+      agent: sales-strategist
+      action: create_discovery_summary
+      description: "Generate comprehensive discovery report"
+      inputs:
+        all_workflow_data: from_all_previous_steps
+      report_sections:
+        executive_summary:
+          - total_companies_searched
+          - contacts_discovered
+          - icp_match_rate
+          - auto_approved_count
+          - campaign_ready_count
+        data_quality:
+          - enrichment_success_rate
+          - email_verification_rate
+          - completeness_score
+        next_steps:
+          - campaign_launch_date
+          - expected_reply_rate
+          - estimated_meetings
+      outputs:
+        report_url: string
+        report_pdf: file
+        summary_email: string
+
+  # Workflow-level guardrails
+  guardrails:
+    data_quality:
+      min_email_verification: 0.70
+      min_company_match: 0.85
+      max_generic_emails: 0.05
+
+    volume_limits:
+      max_companies_per_run: 1000
+      max_contacts_per_company: 3
+      max_campaign_size: 500
+
+    cost_controls:
+      max_explorium_credits: 2000
+      alert_on_overage: true
+
+    safety_checks:
+      verify_no_customers: true
+      verify_no_blacklist: true
+      verify_gdpr_compliance: true
+
+  # Failure handling
+  error_handling:
+    on_api_failure:
+      action: retry_with_backoff
+      max_retries: 3
+      fallback: skip_and_continue
+
+    on_quality_gate_failure:
+      action: pause_workflow
+      notify: sales_strategist
+      allow_manual_override: true
+
+    on_rate_limit:
+      action: pause_and_resume
+      resume_after: "API rate limit reset"
+
+  # Success criteria
+  success_criteria:
+    minimum:
+      - auto_approved_prospects: 20
+      - email_verification_rate: 0.70
+      - icp_match_rate: 0.60
+    target:
+      - auto_approved_prospects: 100
+      - email_verification_rate: 0.85
+      - icp_match_rate: 0.75
+    stretch:
+      - auto_approved_prospects: 200
+      - email_verification_rate: 0.90
+      - icp_match_rate: 0.85
+
+  # Performance tracking
+  metrics:
+    track:
+      - time_to_complete
+      - prospects_discovered_per_hour
+      - cost_per_qualified_prospect
+      - enrichment_success_rate
+      - campaign_ready_rate
+
+  menu:
+    - trigger: /discover-prospects
+      label: "Start Prospect Discovery"
+      workflow: prospect-discovery
+      description: "Full pipeline from ICP to campaign-ready prospects"
+
+    - trigger: /discover-uk-saas
+      label: "Discover UK SaaS CTOs"
+      workflow: prospect-discovery
+      preset:
+        industry: ["SaaS"]
+        geography: ["United Kingdom"]
+        titles: ["CTO", "VP Engineering"]

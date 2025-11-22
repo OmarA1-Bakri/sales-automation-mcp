@@ -1,0 +1,395 @@
+workflow:
+  metadata:
+    name: re-engagement
+    title: "Re-engage Cold Leads"
+    description: "Bring dormant prospects back to life with fresh value"
+    version: "1.0.0"
+    track: quick_flow
+    phases:
+      - identify
+      - analyze
+      - re_engage
+      - monitor
+    module: sales
+    execution_mode: sequential
+
+  agents:
+    - role: engagement-analyst
+      module: sales
+      when: "Identify cold leads and analyze what went wrong"
+
+    - role: conversation-strategist
+      module: sales
+      when: "Craft fresh messaging angles"
+
+    - role: outreach-orchestrator
+      module: sales
+      when: "Execute re-engagement campaigns"
+
+    - role: sales-strategist
+      module: sales
+      when: "Determine re-engagement strategy"
+
+  steps:
+    # Phase 1: IDENTIFY
+    - id: identify-cold-leads
+      phase: identify
+      agent: engagement-analyst
+      action: query_cold_prospects
+      description: "Find prospects who went cold and are worth re-engaging"
+      inputs:
+        criteria:
+          last_contacted: "> 90 days ago"
+          status: ["contacted", "engaged"]
+          reply_rate: 0
+          open_rate: "> 0"  # They opened at least once
+          icp_score: "> 70"  # Still a good fit
+          exclude_statuses:
+            - "unsubscribed"
+            - "hard_bounced"
+            - "spam_complaint"
+            - "not_interested_explicit"
+        filters:
+          min_original_touches: 2  # At least 2 previous attempts
+          company_still_exists: true
+          contact_still_at_company: true
+      outputs:
+        cold_lead_list: array
+        cold_lead_stats:
+          total_cold: number
+          avg_days_since_contact: number
+          original_campaign: array
+          avg_icp_score: number
+
+    - id: analyze-original-campaign
+      phase: analyze
+      agent: engagement-analyst
+      action: retrospective_analysis
+      description: "Understand why they went cold"
+      inputs:
+        cold_lead_list: from_previous_step
+      analysis:
+        engagement_patterns:
+          - opened_count: number
+          - clicked_count: number
+          - last_engagement_type: string
+          - engagement_drop_off_point: string
+        messaging_review:
+          - original_value_prop: string
+          - messaging_angle: string
+          - offer_type: string
+        timing_analysis:
+          - time_of_year_contacted: string
+          - season_considerations: string
+          - quarter_end_proximity: boolean
+      outputs:
+        insights:
+          likely_reasons_for_cold: array
+          what_worked: array
+          what_didnt_work: array
+        recommendations:
+          new_messaging_angle: string
+          different_timing: string
+          new_value_prop: string
+
+    - id: validate-still-relevant
+      phase: analyze
+      agent: sales-strategist
+      action: check_current_relevance
+      description: "Verify prospects are still worth pursuing"
+      inputs:
+        cold_lead_list: from_identify-cold-leads
+      checks:
+        company_health:
+          - still_in_business: boolean
+          - recent_funding: boolean
+          - layoffs_announced: boolean
+          - growth_indicators: array
+        contact_validity:
+          - still_at_company: boolean
+          - title_changed: boolean
+          - promoted: boolean
+        market_fit:
+          - icp_still_matches: boolean
+          - new_pain_points: array
+          - competitive_landscape_changed: boolean
+      outputs:
+        validated_leads: array
+        disqualified_leads: array
+        enriched_context:
+          - recent_company_news: array
+          - contact_updates: array
+          - new_opportunities: array
+      quality_gates:
+        - min_validated_leads: 10
+
+    # Phase 2: RE-ENGAGE
+    - id: craft-re-engagement-strategy
+      phase: re_engage
+      agent: sales-strategist
+      action: design_re_engagement_approach
+      description: "Determine best re-engagement strategy per segment"
+      inputs:
+        validated_leads: from_previous_step
+        insights: from_analyze-original-campaign
+      segmentation:
+        high_engagement_never_replied:
+          criteria:
+            - opened_emails: "> 3"
+            - never_replied: true
+          strategy: "Direct ask with new angle"
+          messaging: "Reference past engagement, new value"
+
+        low_engagement_timing_issue:
+          criteria:
+            - opened_emails: "1-2"
+            - timing_objection: true
+          strategy: "New timing, new value prop"
+          messaging: "Fresh approach, different angle"
+
+        engaged_then_ghosted:
+          criteria:
+            - replied_initially: true
+            - then_stopped_responding: true
+          strategy: "Acknowledge gap, provide update"
+          messaging: "What's changed since we last spoke"
+
+        competitor_switched:
+          criteria:
+            - mentioned_competitor: true
+          strategy: "New differentiation, switch stories"
+          messaging: "What's new, why customers switch"
+      outputs:
+        segmented_strategies: object
+        personalization_variables: object
+
+    - id: create-fresh-messaging
+      phase: re_engage
+      agent: conversation-strategist
+      action: craft_re_engagement_messages
+      description: "Write compelling re-engagement emails"
+      inputs:
+        validated_leads: from_validate-still-relevant
+        strategies: from_craft-re-engagement-strategy
+      message_principles:
+        - acknowledge_time_gap: true
+        - provide_new_value: true
+        - reference_context: true  # Company news, market changes
+        - make_it_easy_to_respond: true
+        - no_guilt_trip: true
+      templates:
+        high_engagement_template: |
+          {{first_name}} - I reached out a few months back about {{original_topic}}.
+
+          You checked it out but we never connected. Totally understandable - timing wasn't right.
+
+          Since then, we've {{new_development}} which might be more relevant given {{company_news}}.
+
+          Worth a quick 10-min call?
+
+          {{calendar_link}} | {{not_interested_link}}
+
+        timing_objection_template: |
+          Hi {{first_name}},
+
+          {{months_ago}} months back wasn't the right time.
+
+          Things that have changed since:
+          - {{change_1}}
+          - {{change_2}}
+          - {{change_3}}
+
+          Given {{company_recent_news}}, might be worth revisiting?
+
+          {{one_click_yes}} | {{one_click_later}}
+
+        engaged_then_ghosted_template: |
+          {{first_name}} - we were in touch {{months_ago}} months ago about {{topic}}.
+
+          Last thing you mentioned was {{last_concern}}.
+
+          Quick update that might matter:
+          {{relevant_update}}
+
+          {{similar_company}} saw {{specific_result}} with this.
+
+          Curious if this changes the equation for you?
+
+        competitor_switched_template: |
+          Hi {{first_name}},
+
+          I know you went with {{competitor}} back in {{timeframe}}.
+
+          {{number}} customers have switched from {{competitor}} to us in the past quarter.
+
+          Main reason? {{key_differentiator}}.
+
+          Here's what changed: {{whats_new_link}}
+
+          Worth exploring?
+      outputs:
+        message_variants: object
+        subject_lines: array
+        personalization_data: object
+
+    - id: setup-re-engagement-campaign
+      phase: re_engage
+      agent: outreach-orchestrator
+      action: create_lemlist_re_engagement
+      description: "Set up targeted re-engagement campaign"
+      inputs:
+        validated_leads: from_validate-still-relevant
+        messages: from_create-fresh-messaging
+      campaign_config:
+        name: "Re-engagement {{month_year}}"
+        sequence_length: 2  # Keep it short - 2 touches max
+        touch_spacing: 5_days
+        send_time_optimization: true
+      touches:
+        touch_1:
+          type: email
+          template: from_create-fresh-messaging
+          track:
+            - opens
+            - clicks
+            - replies
+        touch_2:
+          type: email
+          condition: "opened touch_1 but no reply"
+          template: gentle_reminder
+          content: |
+            {{first_name}} - just wanted to make sure this didn't get buried.
+
+            {{one_line_value_prop}}
+
+            {{yes_link}} | {{no_thanks_link}}
+      outputs:
+        campaign_id: string
+        enrolled_count: number
+        campaign_start_date: date
+
+    # Phase 3: MONITOR
+    - id: track-re-engagement-performance
+      phase: monitor
+      agent: engagement-analyst
+      action: monitor_campaign_performance
+      description: "Track how re-engagement is performing"
+      inputs:
+        campaign_id: from_setup-re-engagement-campaign
+      track_metrics:
+        - open_rate
+        - reply_rate
+        - positive_reply_rate
+        - unsubscribe_rate
+        - meeting_booked_rate
+      compare_to:
+        original_campaign: true
+        cold_outreach_baseline: true
+      outputs:
+        performance_report:
+          total_sent: number
+          open_rate: percentage
+          reply_rate: percentage
+          positive_replies: number
+          meetings_booked: number
+          vs_original_campaign: object
+      alerts:
+        if_reply_rate_exceeds: 0.10  # 10%+ reply rate
+          action: alert_sales_team
+          message: "Re-engagement performing exceptionally well"
+        if_unsubscribe_rate_exceeds: 0.05  # 5%+
+          action: pause_campaign
+          message: "High unsubscribe rate - review messaging"
+
+    - id: handle-responses
+      phase: monitor
+      agent: conversation-strategist
+      action: route_responses
+      description: "Handle re-engagement replies appropriately"
+      inputs:
+        campaign_replies: real_time_stream
+      routing_logic:
+        positive_reply:
+          action: trigger_accelerate_to_demo_flow
+          notify: account_executive
+        timing_objection:
+          action: add_to_long_term_nurture
+          schedule_check_in: "+ 6 months"
+        not_interested:
+          action: graceful_exit
+          update_status: "not_interested"
+        competitor_happy:
+          action: annual_check_in
+          schedule: "+ 12 months"
+        context_changed:
+          action: custom_response
+          escalate_to: conversation_strategist
+
+    - id: identify-winners
+      phase: monitor
+      agent: sales-strategist
+      action: analyze_successful_re_engagements
+      description: "Learn from what worked"
+      inputs:
+        campaign_results: from_track-re-engagement-performance
+      analysis:
+        successful_patterns:
+          - which_messaging_angles_worked
+          - which_segments_responded
+          - what_new_context_mattered
+          - timing_of_re_engagement
+        unsuccessful_patterns:
+          - what_didnt_resonate
+          - who_unsubscribed
+          - what_timing_was_wrong
+      outputs:
+        learnings: array
+        recommendations_for_next_time: array
+        update_icp_criteria: boolean
+
+  # Guardrails
+  guardrails:
+    safety:
+      - verify_not_unsubscribed: true
+      - verify_no_spam_complaints: true
+      - respect_previous_objections: true
+
+    timing:
+      - min_days_since_last_contact: 90
+      - max_days_since_last_contact: 365
+      - optimal_time_window: "90-180 days"
+
+    volume:
+      - max_re_engagement_per_week: 100
+      - max_touches_in_re_engagement: 2
+
+    quality:
+      - min_icp_score: 70
+      - must_have_company_validation: true
+      - must_have_contact_validation: true
+
+  # Success criteria
+  success_criteria:
+    minimum:
+      - reply_rate: "> 5%"  # Better than cold outreach
+      - positive_replies: "> 2"
+    target:
+      - reply_rate: "> 10%"
+      - meetings_booked: "> 5"
+    stretch:
+      - reply_rate: "> 15%"
+      - meetings_booked: "> 10"
+      - closed_deals: "> 1"
+
+  menu:
+    - trigger: /re-engage-cold-leads
+      label: "Re-engage Cold Prospects"
+      workflow: re-engagement
+      description: "Bring dormant leads back to life with fresh approach"
+
+    - trigger: /re-engage-competitor
+      label: "Re-engage Competitor Users"
+      workflow: re-engagement
+      preset:
+        segment: competitor_switched
+        messaging_angle: differentiation

@@ -34,6 +34,8 @@ import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { createLogger } from './utils/logger.js';
 import { prototypePollutionMiddleware, freezeBuiltins } from './utils/prototype-protection.js';
+import { AnthropicProvider } from './ai/AnthropicProvider.js';
+import { GeminiProvider } from './ai/GeminiProvider.js';
 
 // Load environment variables
 dotenv.config();
@@ -170,11 +172,34 @@ class SalesAutomationAPIServer {
     const wsServer = this.enableHttps && this.httpsServer ? this.httpsServer : this.server;
     this.wss = new WebSocketServer({ server: wsServer });
 
-    // Initialize Claude API client
-    if (process.env.ANTHROPIC_API_KEY) {
-      this.anthropic = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-      });
+    // Initialize AI Provider
+    const aiProviderType = process.env.AI_PROVIDER || 'anthropic';
+
+    if (aiProviderType === 'gemini') {
+      if (!process.env.GEMINI_API_KEY) {
+        logger.warn('GEMINI_API_KEY not set, Gemini integration disabled');
+      } else {
+        this.aiProvider = new GeminiProvider({
+          apiKey: process.env.GEMINI_API_KEY
+        });
+        logger.info('Using Gemini AI Provider');
+      }
+    } else {
+      // Default to Anthropic
+      if (!process.env.ANTHROPIC_API_KEY) {
+        logger.warn('ANTHROPIC_API_KEY not set, Claude integration disabled');
+      } else {
+        this.aiProvider = new AnthropicProvider({
+          apiKey: process.env.ANTHROPIC_API_KEY
+        });
+        logger.info('Using Anthropic AI Provider');
+      }
+    }
+
+    // Keep this.anthropic for backward compatibility if needed elsewhere, 
+    // but ideally we should remove it. For now, we'll map it to the provider's client if it's Anthropic
+    if (aiProviderType === 'anthropic' && this.aiProvider) {
+      this.anthropic = this.aiProvider.client;
     } else {
       console.warn('⚠️  ANTHROPIC_API_KEY not set - Claude AI features disabled');
       this.anthropic = null;
@@ -1698,9 +1723,9 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
 
   async processJobAsync(jobId, type, params) {
     try {
-      // Check if Claude API is configured
-      if (!this.anthropic) {
-        throw new Error('Claude AI service not configured. Please set ANTHROPIC_API_KEY environment variable.');
+      // Check if AI service is configured
+      if (!this.aiProvider) {
+        throw new Error('AI service not configured. Please set ANTHROPIC_API_KEY or GEMINI_API_KEY environment variable.');
       }
 
       // Update status
@@ -1718,23 +1743,19 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
 
       // Select appropriate model for this task
       const model = this.selectModel(type);
-      logger.info(`[Job ${jobId}] Using model: ${model}`);
 
-      // Call Claude API
-      const response = await this.anthropic.messages.create({
+      // Get tools for this workflow
+      const tools = this.getToolDefinitions(type);
+
+      // Execute via AI Provider
+      const response = await this.aiProvider.generateText(
+        agentPrompt,
+        JSON.stringify(params), // User prompt is the params
         model,
-        max_tokens: 8096,
-        system: agentPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: JSON.stringify(params),
-          },
-        ],
-        tools: this.getToolDefinitions(type),
-      });
+        tools
+      );
 
-      // Process tool calls
+      // Process tool calls from response
       const result = await this.processToolCalls(response, type, params);
 
       // Update job with result
@@ -2062,10 +2083,10 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
               where: eventData.provider_event_id
                 ? { provider_event_id: eventData.provider_event_id }
                 : {
-                    enrollment_id: eventData.enrollment_id,
-                    event_type: eventData.event_type,
-                    timestamp: eventData.timestamp
-                  },
+                  enrollment_id: eventData.enrollment_id,
+                  event_type: eventData.event_type,
+                  timestamp: eventData.timestamp
+                },
               defaults: eventData,
               transaction: t
             });

@@ -1,0 +1,510 @@
+workflow:
+  metadata:
+    name: dynamic-outreach
+    title: "Dynamic Adaptive Outreach"
+    description: "Event-driven workflow that responds intelligently to prospect behavior"
+    version: "1.0.0"
+    track: method
+    phases:
+      - outreach
+      - engagement
+      - conversion
+    module: sales
+    execution_mode: reactive  # Event-driven, not sequential
+
+  agents:
+    - role: engagement-analyst
+      module: sales
+      when: "Analyze all prospect interactions"
+
+    - role: conversation-strategist
+      module: sales
+      when: "Craft responses and determine next actions"
+
+    - role: outreach-orchestrator
+      module: sales
+      when: "Execute sends and monitor engagement"
+
+    - role: sales-strategist
+      module: sales
+      when: "Strategic decisions and escalations"
+
+  # Event triggers - workflow reacts to these events
+  triggers:
+    - event: prospect_reply_received
+      priority: critical
+      handler: analyze-and-respond-flow
+      description: "Prospect sent a reply - analyze and respond appropriately"
+
+    - event: email_opened_3_times
+      priority: high
+      handler: high-intent-sequence
+      description: "Strong engagement signal - send direct ask"
+
+    - event: link_clicked
+      priority: high
+      handler: content-engagement-flow
+      description: "Content interest - provide related resources"
+
+    - event: pricing_page_visited
+      priority: critical
+      handler: pricing-interest-flow
+      description: "Hot signal - accelerate to demo"
+
+    - event: out_of_office_detected
+      priority: medium
+      handler: pause-and-reschedule
+      description: "Temporarily unavailable - pause sequence"
+
+    - event: objection_detected
+      priority: high
+      handler: objection-handling-flow
+      description: "Address concern appropriately"
+
+    - event: positive_signal_detected
+      priority: critical
+      handler: accelerate-to-demo
+      description: "Buying signals present - book meeting"
+
+    - event: negative_response
+      priority: high
+      handler: graceful-exit-flow
+      description: "Not interested - respect and exit"
+
+    - event: competitor_mentioned
+      priority: high
+      handler: competitive-differentiation-flow
+      description: "Competitor in play - send comparison"
+
+  # Reusable workflow flows
+  flows:
+    # Main response analysis and decision flow
+    analyze-and-respond-flow:
+      description: "Analyze prospect reply and determine intelligent next action"
+      steps:
+        - id: analyze-reply
+          agent: engagement-analyst
+          action: classify_response
+          inputs:
+            - reply_content
+            - sender_email
+            - conversation_history
+            - engagement_metrics
+          outputs:
+            sentiment: string  # positive, neutral, negative, objection
+            intent: string     # interested, not_interested, need_info, timing
+            buying_signals: array
+            urgency_score: number  # 0-100
+            objection_type: string  # if applicable
+            escalation_needed: boolean
+          quality_gates:
+            - confidence_threshold: 0.7
+
+        - id: strategic-decision
+          agent: conversation-strategist
+          action: determine_next_action
+          inputs:
+            - analysis_from_previous_step
+            - prospect_context
+            - campaign_strategy
+          decision_logic: |
+            // High urgency + positive = immediate demo
+            if (urgency_score > 70 && sentiment === 'positive') {
+              return 'accelerate-to-demo';
+            }
+
+            // Objection handling
+            if (sentiment === 'objection') {
+              return 'objection-handling-flow';
+            }
+
+            // Competitor mentioned
+            if (buying_signals.includes('competitor_mentioned')) {
+              return 'competitive-differentiation-flow';
+            }
+
+            // Needs more info
+            if (intent === 'need_info') {
+              return 'provide-educational-content';
+            }
+
+            // Timing concern
+            if (intent === 'timing') {
+              return 'nurture-long-term';
+            }
+
+            // Not interested
+            if (sentiment === 'negative' || intent === 'not_interested') {
+              return 'graceful-exit-flow';
+            }
+
+            // Default: contextual follow-up
+            return 'neutral-engagement-flow';
+          outputs:
+            recommended_flow: string
+            confidence: number
+            reasoning: string
+
+        - id: execute-flow
+          agent: outreach-orchestrator
+          action: route_to_flow
+          inputs:
+            - recommended_flow
+            - prospect_data
+          outputs:
+            flow_executed: string
+            next_touch_scheduled: timestamp
+
+    # High-intent sequence (opened 3+ times)
+    high-intent-sequence:
+      description: "Prospect showing high engagement - send direct ask"
+      steps:
+        - id: detect-pattern
+          agent: engagement-analyst
+          action: analyze_engagement_pattern
+          inputs:
+            - open_count
+            - time_spent_per_open
+            - clicks
+          outputs:
+            engagement_level: high
+            recommended_action: direct_ask
+
+        - id: craft-direct-ask
+          agent: conversation-strategist
+          action: create_low_friction_message
+          template: |
+            {{first_name}} - I noticed you've checked this out a few times.
+
+            Worth a quick 10-min call to see if there's a fit?
+
+            {{calendar_link}}
+
+            If timing's off, just let me know and I'll circle back later.
+          personalization:
+            - reference_content_viewed
+            - mention_engagement_level
+            - reduce_friction
+          outputs:
+            message: string
+            send_timing: "immediate"
+
+        - id: send-and-track
+          agent: outreach-orchestrator
+          action: send_with_tracking
+          inputs:
+            - message
+            - prospect_email
+          track_events:
+            - calendar_clicked: → accelerate-to-demo
+            - replied_yes: → accelerate-to-demo
+            - replied_later: → pause-and-reschedule
+            - no_response_72h: → pause-sequence
+          outputs:
+            sent: true
+            tracking_enabled: true
+
+    # Accelerate to demo (hot prospect)
+    accelerate-to-demo:
+      description: "Fast-track to calendar booking"
+      steps:
+        - id: send-calendar-link
+          agent: outreach-orchestrator
+          action: send_priority_email
+          timing: "within 30 minutes"
+          template: |
+            Hi {{first_name}},
+
+            Great to hear this resonates! Based on {{pain_point_mentioned}},
+            I think a 15-min call could be really valuable.
+
+            Here's my calendar: {{calendly_link}}
+
+            Looking forward to it!
+
+        - id: monitor-booking
+          agent: engagement-analyst
+          action: track_calendar_events
+          conditions:
+            if_booked:
+              - notify_sales_team
+              - add_to_crm_with_high_priority
+              - send_confirmation_email
+            if_not_booked_48h:
+              - trigger: gentle-reminder-flow
+
+        - id: escalate-to-sales
+          agent: sales-strategist
+          action: notify_account_executive
+          priority: high
+          message: |
+            HOT LEAD: {{prospect_name}} at {{company_name}}
+            - Urgency score: {{urgency_score}}
+            - Buying signals: {{buying_signals}}
+            - Next step: {{next_step}}
+
+    # Objection handling flow
+    objection-handling-flow:
+      description: "Address objections with appropriate strategy"
+      steps:
+        - id: classify-objection
+          agent: engagement-analyst
+          action: categorize_objection
+          categories:
+            price: "cost, expensive, budget"
+            timing: "not now, later, busy"
+            authority: "need approval, check with team"
+            competitor: "using X, happy with Y"
+            not_fit: "not relevant, wrong company"
+          outputs:
+            objection_category: string
+            severity: string  # mild, moderate, strong
+
+        - id: select-strategy
+          agent: conversation-strategist
+          action: choose_objection_response
+          strategies:
+            price:
+              approach: roi_justification
+              content:
+                - ROI calculator
+                - Payment plan options
+                - Scaled-down version
+                - Customer success stories
+            timing:
+              approach: acknowledge_and_nurture
+              content:
+                - Respect timeline
+                - Add to 6-month follow-up
+                - Offer valuable content
+            authority:
+              approach: facilitate_internal_buy_in
+              content:
+                - Shareable deck
+                - Request decision-maker intro
+                - Stakeholder-specific materials
+            competitor:
+              approach: differentiation
+              content:
+                - Comparison guide
+                - Switch stories
+                - Unique value props
+            not_fit:
+              approach: graceful_exit
+              content:
+                - Acknowledge mismatch
+                - Request referral
+                - Annual check-in
+
+        - id: execute-response
+          agent: outreach-orchestrator
+          action: send_objection_response
+          inputs:
+            - selected_strategy
+            - objection_context
+          monitor:
+            - further_engagement
+            - content_consumption
+            - reply_sentiment_change
+
+    # Content engagement flow
+    content-engagement-flow:
+      description: "Prospect clicked content - provide progressive value"
+      steps:
+        - id: identify-content
+          agent: engagement-analyst
+          action: analyze_click_behavior
+          track:
+            - content_type: case_study | pricing | demo_video | blog
+            - time_on_page: number
+            - scroll_depth: percentage
+          outputs:
+            interest_area: string
+            engagement_depth: string
+
+        - id: recommend-next-content
+          agent: conversation-strategist
+          action: content_progression_strategy
+          logic: |
+            if (content_type === 'pricing' && time_on_page > 60) {
+              return 'send_roi_calculator';
+            }
+            if (content_type === 'case_study' && industry_match) {
+              return 'send_similar_case_study';
+            }
+            if (content_type === 'demo_video' && watch_percentage > 80) {
+              return 'offer_live_demo';
+            }
+            return 'continue_educational_nurture';
+          outputs:
+            next_content: string
+            messaging_angle: string
+
+        - id: send-contextual-follow-up
+          agent: outreach-orchestrator
+          action: send_personalized_follow_up
+          personalization:
+            - reference_specific_content
+            - offer_related_resource
+            - include_soft_cta
+          timing: "4-6 hours after click"
+
+    # Pause and reschedule (out of office)
+    pause-and-reschedule:
+      description: "Respect prospect availability"
+      steps:
+        - id: detect-return-date
+          agent: engagement-analyst
+          action: parse_ooo_message
+          extract:
+            - return_date
+            - backup_contact
+
+        - id: pause-sequence
+          agent: outreach-orchestrator
+          action: pause_all_touches
+          duration: "until return_date + 2 days"
+
+        - id: schedule-resume
+          agent: conversation-strategist
+          action: plan_re_engagement
+          message: |
+            Welcome back, {{first_name}}! Hope you had a great {{vacation/conference}}.
+
+            Quick refresh on what we discussed before you were away...
+          timing: "return_date + 2 business days"
+
+    # Graceful exit
+    graceful-exit-flow:
+      description: "Respect negative responses and exit professionally"
+      steps:
+        - id: verify-intent
+          agent: engagement-analyst
+          action: confirm_negative_intent
+          check_for:
+            - explicit_unsubscribe
+            - strong_negative_language
+            - request_to_stop
+
+        - id: send-exit-message
+          agent: conversation-strategist
+          action: craft_professional_exit
+          template: |
+            Thanks for letting me know, {{first_name}}. I appreciate your time.
+
+            If anything changes, feel free to reach out anytime.
+
+            All the best!
+          tone: "gracious and professional"
+
+        - id: cleanup-actions
+          agent: outreach-orchestrator
+          actions:
+            - remove_from_active_campaign
+            - add_to_do_not_contact_list
+            - update_crm_status: "not_interested"
+            - cancel_all_scheduled_touches
+
+    # Competitive differentiation
+    competitive-differentiation-flow:
+      description: "Handle competitor mentions strategically"
+      steps:
+        - id: identify-competitor
+          agent: engagement-analyst
+          action: extract_competitor_name
+          outputs:
+            competitor: string
+            satisfaction_level: string  # "happy", "fairly happy", "issues"
+
+        - id: research-competitor
+          agent: sales-strategist
+          action: get_competitive_intel
+          inputs:
+            - competitor_name
+          outputs:
+            - key_differentiators: array
+            - switch_stories: array
+            - comparison_points: object
+
+        - id: craft-differentiation
+          agent: conversation-strategist
+          action: create_competitor_response
+          strategy: |
+            1. Acknowledge competitor strength
+            2. Highlight 1-2 key differentiators
+            3. Share relevant switch story
+            4. Offer comparison guide (no pressure)
+          template: |
+            {{competitor}} is a solid choice - {{acknowledge_strength}}.
+
+            The main reason customers switch to us? {{key_differentiator}}.
+
+            {{similar_company}} was in your position and saw {{specific_result}}
+            after making the switch.
+
+            If you're curious: {{comparison_link}}
+
+            No pressure either way!
+
+        - id: send-and-monitor
+          agent: outreach-orchestrator
+          action: send_with_engagement_tracking
+          track_for:
+            - comparison_guide_downloaded
+            - case_study_read
+            - reply_with_questions
+            - no_further_interest
+
+  # Quality gates and guardrails
+  guardrails:
+    rate_limits:
+      max_touches_per_week: 3
+      min_hours_between_touches: 48
+
+    quality_checks:
+      - email_deliverability: "> 95%"
+      - sentiment_confidence: "> 0.7"
+      - personalization_score: "> 0.6"
+
+    escalation_rules:
+      - urgency_score: "> 85" → notify_sales_immediately
+      - negative_sentiment: "→ pause_and_review"
+      - spam_complaint: "→ emergency_stop"
+
+    auto_stop_conditions:
+      - prospect_replied: true
+      - unsubscribe_requested: true
+      - bounce_type: "hard"
+      - spam_complaint: true
+
+  # Performance tracking
+  metrics:
+    track:
+      - reply_rate
+      - positive_reply_rate
+      - meeting_booking_rate
+      - time_to_response
+      - objection_resolution_rate
+      - escalation_to_close_rate
+
+    goals:
+      reply_rate: "> 15%"
+      positive_reply_rate: "> 8%"
+      meeting_booking_rate: "> 3%"
+      objection_resolution: "> 40%"
+
+  menu:
+    - trigger: /start-dynamic-outreach
+      label: "Launch Adaptive Outreach Campaign"
+      workflow: dynamic-outreach
+      description: "Start event-driven outreach that adapts to prospect behavior"
+
+    - trigger: /handle-reply
+      label: "Process Prospect Reply"
+      workflow: dynamic-outreach
+      flow: analyze-and-respond-flow
+
+    - trigger: /high-intent
+      label: "Engage High-Intent Prospect"
+      workflow: dynamic-outreach
+      flow: high-intent-sequence
