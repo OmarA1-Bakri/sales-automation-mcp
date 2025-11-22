@@ -47,4 +47,23 @@ global.testHelpers = {
   }
 };
 
+// Global afterAll hook to cleanup resources after all tests
+// This prevents "Cannot log after tests are done" errors
+afterAll(async () => {
+  try {
+    // Disconnect OrphanedEventQueue to prevent Redis reconnection attempts
+    const { default: orphanedEventQueue } = await import('../src/services/OrphanedEventQueue.js');
+    await orphanedEventQueue.disconnect();
+    console.log('[Global Teardown] OrphanedEventQueue disconnected');
+  } catch (error) {
+    // Ignore errors if OrphanedEventQueue was never imported
+    if (error.code !== 'MODULE_NOT_FOUND') {
+      console.warn('[Global Teardown] Failed to disconnect OrphanedEventQueue:', error.message);
+    }
+  }
+
+  // Give a small delay for any pending operations to complete
+  await new Promise(resolve => setTimeout(resolve, 100));
+});
+
 console.log('Test environment initialized');

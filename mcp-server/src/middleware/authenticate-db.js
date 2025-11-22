@@ -15,13 +15,16 @@ const logger = createLogger('Auth-DB');
 /**
  * Public endpoints that don't require authentication
  * Webhooks use signature validation instead of API keys
+ *
+ * NOTE: When middleware is mounted at /api, req.path is relative to mount point
+ * So /api/campaigns/events/webhook becomes /campaigns/events/webhook
  */
 const PUBLIC_ENDPOINTS = [
   '/health',
   '/dashboard',
   '/',
-  '/api/campaigns/events/webhook',  // Webhook endpoint with signature validation
-  '/api/campaigns/v2/events/webhook',  // V2 webhook endpoint
+  '/campaigns/events/webhook',  // Webhook endpoint with signature validation (relative to /api mount)
+  '/campaigns/v2/events/webhook',  // V2 webhook endpoint (relative to /api mount)
 ];
 
 /**

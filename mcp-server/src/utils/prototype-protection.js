@@ -96,7 +96,7 @@ export function validateNoPollution(obj) {
     return;
   }
 
-  // Check current level
+  // Check current level using Object.keys (enumerable properties)
   for (const key of Object.keys(obj)) {
     if (isDangerousKey(key)) {
       throw new Error(`Prototype pollution attempt detected: key "${key}" is forbidden`);
@@ -105,6 +105,19 @@ export function validateNoPollution(obj) {
     // Recursively check nested objects
     if (typeof obj[key] === 'object' && obj[key] !== null) {
       validateNoPollution(obj[key]);
+    }
+  }
+
+  // Also check for __proto__ using hasOwnProperty (catches non-enumerable attempts)
+  if (obj.hasOwnProperty('__proto__')) {
+    throw new Error(`Prototype pollution attempt detected: key "__proto__" is forbidden`);
+  }
+
+  // Check for constructor property manipulation
+  if (obj.hasOwnProperty('constructor') && obj.constructor !== Object) {
+    // Allow legitimate constructor, but check if it's being polluted
+    if (typeof obj.constructor === 'object' && obj.constructor !== null) {
+      validateNoPollution(obj.constructor);
     }
   }
 }

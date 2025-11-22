@@ -117,13 +117,20 @@ function getApiKeys() {
 /**
  * Public endpoints that don't require authentication
  * Webhooks use signature validation instead of API keys
+ *
+ * NOTE: When middleware is mounted at /api, req.path is relative to mount point
+ * So we need to check both absolute paths and relative paths (without /api prefix)
  */
 const PUBLIC_ENDPOINTS = [
   '/health',
   '/dashboard',
   '/',
-  '/api/campaigns/events/webhook',  // Webhook endpoint with signature validation
-  '/api/campaigns/v2/events/webhook',  // V2 webhook endpoint
+  '/api/campaigns/events/webhook',  // Webhook endpoint with signature validation (absolute)
+  '/campaigns/events/webhook',      // Webhook endpoint (relative to /api mount)
+  '/api/campaigns/v2/events/webhook',  // V2 webhook endpoint (absolute)
+  '/campaigns/v2/events/webhook',      // V2 webhook endpoint (relative to /api mount)
+  '/api/csrf-token',  // CSRF token generation (must be public to avoid chicken-egg problem)
+  '/csrf-token',      // CSRF token (relative to /api mount)
 ];
 
 /**

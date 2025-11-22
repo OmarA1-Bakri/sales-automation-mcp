@@ -36,6 +36,7 @@ class OrphanedEventQueue {
     this.maxAttempts = 6;
     this.maxQueueSize = parseInt(process.env.ORPHANED_QUEUE_MAX_SIZE) || 10000;
     this.batchSize = parseInt(process.env.ORPHANED_QUEUE_BATCH_SIZE) || 50; // FIX #2
+    this.initialized = false;
 
     // Redis keys
     this.queueKey = 'campaign:orphaned_events';
@@ -52,20 +53,31 @@ class OrphanedEventQueue {
       3600000    // 1 hour (final attempt)
     ];
 
-    // Initialize Redis connection
-    this._initializeRedis();
+    // LAZY INITIALIZATION: Don't connect Redis on import
+    // Only connect when first used (prevents test pollution)
+    // this._initializeRedis();
 
-    logger.info('OrphanedEventQueue initialized', {
+    logger.info('OrphanedEventQueue created (lazy initialization)', {
       maxAttempts: this.maxAttempts,
       maxQueueSize: this.maxQueueSize,
       batchSize: this.batchSize,
-      redisUrl: process.env.REDIS_URL ? 'configured' : 'using default (localhost:6379)',
       retryDelays: this.retryDelays.map(ms => {
         if (ms < 60000) return `${ms/1000}s`;
         if (ms < 3600000) return `${ms/60000}m`;
         return `${ms/3600000}h`;
       })
     });
+  }
+
+  /**
+   * Ensure Redis is initialized (lazy initialization)
+   * @private
+   */
+  _ensureInitialized() {
+    if (!this.initialized) {
+      this._initializeRedis();
+      this.initialized = true;
+    }
   }
 
   /**
@@ -134,6 +146,8 @@ class OrphanedEventQueue {
    * @returns {Promise<Object>} Queue entry metadata
    */
   async enqueue(eventData) {
+    this._ensureInitialized();
+
     if (!this.redisConnected) {
       logger.warn('Redis not connected - falling back to in-memory queue (NOT PRODUCTION SAFE)', {
         email: eventData.email,
@@ -228,6 +242,8 @@ class OrphanedEventQueue {
    * @returns {Promise<Object>} Processing results
    */
   async processQueue(eventProcessor) {
+    this._ensureInitialized();
+
     if (!this.redisConnected) {
       logger.warn('Cannot process queue: Redis not connected');
       return { skipped: true, reason: 'redis_disconnected' };
@@ -529,6 +545,8 @@ class OrphanedEventQueue {
    * @returns {Promise<Object>} Queue metrics
    */
   async getStatus() {
+    this._ensureInitialized();
+
     if (!this.redisConnected) {
       return {
         healthy: false,
@@ -674,12 +692,38 @@ class OrphanedEventQueue {
   }
 
   /**
-   * Disconnect Redis (for graceful shutdown)
+   * Disconnect Redis (for graceful shutdown and test cleanup)
+   * Removes all event listeners to prevent memory leaks
    */
   async disconnect() {
     if (this.redis) {
-      await this.redis.quit();
-      logger.info('Redis connection closed gracefully');
+      try {
+        // Remove all event listeners to prevent "Cannot log after tests are done" errors
+        this.redis.removeAllListeners('connect');
+        this.redis.removeAllListeners('error');
+        this.redis.removeAllListeners('close');
+        this.redis.removeAllListeners('reconnecting');
+
+        // Disconnect Redis connection
+        await this.redis.quit();
+
+        // Reset state
+        this.redis = null;
+        this.redisConnected = false;
+        this.initialized = false;
+
+        logger.info('Redis connection closed gracefully');
+      } catch (error) {
+        logger.warn('Error during Redis disconnect', { error: error.message });
+
+        // Force disconnect if quit() fails
+        if (this.redis) {
+          this.redis.disconnect();
+          this.redis = null;
+          this.redisConnected = false;
+          this.initialized = false;
+        }
+      }
     }
   }
 

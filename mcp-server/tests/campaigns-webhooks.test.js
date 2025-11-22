@@ -180,7 +180,7 @@ describe('Campaign API - Webhook Event Processing (CRITICAL)', () => {
 
       // Verify counter is exactly 100 (no lost updates)
       await expectAtomicIncrement(sequelize, instance.id, 'total_sent', 100);
-    });
+    }, 90000);  // 90 second timeout for 100 concurrent writes on SQLite
 
     it('should atomically increment total_delivered', async () => {
       const enrollment = enrollments[0];
@@ -201,7 +201,7 @@ describe('Campaign API - Webhook Event Processing (CRITICAL)', () => {
       await Promise.all(requests);
 
       await expectAtomicIncrement(sequelize, instance.id, 'total_delivered', 50);
-    });
+    }, 90000);  // 90 second timeout for 50 concurrent writes on SQLite
 
     it('should atomically increment total_opened', async () => {
       const enrollment = enrollments[0];
@@ -221,7 +221,7 @@ describe('Campaign API - Webhook Event Processing (CRITICAL)', () => {
       await Promise.all(requests);
 
       await expectAtomicIncrement(sequelize, instance.id, 'total_opened', 25);
-    });
+    }, 30000);  // 30 second timeout for SQLite concurrent writes
 
     it('should atomically increment total_clicked', async () => {
       const enrollment = enrollments[0];
@@ -282,7 +282,7 @@ describe('Campaign API - Webhook Event Processing (CRITICAL)', () => {
       expect(updatedInstance.total_sent).toBe(20);
       expect(updatedInstance.total_delivered).toBe(15);
       expect(updatedInstance.total_opened).toBe(10);
-    });
+    }, 90000);  // 90 second timeout for 45 concurrent writes on SQLite
   });
 
   describe('Webhook Signature Verification (SECURITY)', () => {

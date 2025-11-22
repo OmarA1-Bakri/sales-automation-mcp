@@ -14,36 +14,74 @@ import Sequelize from 'sequelize';
 import { createRequire } from 'module';
 
 /**
- * Create PostgreSQL test database connection
- * Uses separate database from production for complete isolation
+ * Create test database connection
+ * Uses SQLite in-memory for tests (respects DATABASE_URL from tests/setup.js)
+ * Falls back to PostgreSQL if DATABASE_URL is not :memory:
  */
 export async function createTestDatabase() {
-  // CRITICAL: Use test database name, not production!
-  const testDbName = 'rtgs_sales_automation_test';
+  let sequelize;
 
-  const sequelize = new Sequelize(
-    testDbName,  // ← TEST DATABASE (isolated from production)
-    process.env.POSTGRES_USER || 'rtgs_user',
-    process.env.POSTGRES_PASSWORD || 'rtgs_password_dev',
-    {
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT || '5432'),
-      dialect: 'postgres',
-      logging: process.env.TEST_SQL_LOGGING === 'true' ? console.log : false, // Enable with TEST_SQL_LOGGING=true
-
+  // Check if tests/setup.js configured SQLite in-memory
+  if (process.env.DATABASE_URL === ':memory:' || process.env.NODE_ENV === 'test') {
+    // Use SQLite in-memory for fast, isolated tests
+    // IMPORTANT: SQLite in-memory databases with multiple connections each get their own database
+    // We MUST use a single connection to ensure all transactions see the same data
+    sequelize = new Sequelize({
+      dialect: 'sqlite',
+      storage: ':memory:',
+      logging: process.env.TEST_SQL_LOGGING === 'true' ? console.log : false,
       pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
+        max: 1,  // CRITICAL: Single connection for in-memory SQLite
+        min: 1,
+        idle: 10000,
+        acquire: 120000  // Long timeout for queued transactions
+      },
+      retry: {
+        max: 30  // Aggressive retries for SQLITE_BUSY errors
+      },
+      // SQLite-specific query optimization
+      define: {
+        timestamps: false  // Disable automatic timestamps to reduce write load
       }
-    }
-  );
+    });
+    console.log('[Test DB] Using SQLite in-memory database (single connection)');
+  } else {
+    // Fall back to PostgreSQL test database
+    const testDbName = 'rtgs_sales_automation_test';
+
+    sequelize = new Sequelize(
+      testDbName,
+      process.env.POSTGRES_USER || 'rtgs_user',
+      process.env.POSTGRES_PASSWORD || 'rtgs_password_dev',
+      {
+        host: process.env.POSTGRES_HOST || 'localhost',
+        port: parseInt(process.env.POSTGRES_PORT || '5432'),
+        dialect: 'postgres',
+        logging: process.env.TEST_SQL_LOGGING === 'true' ? console.log : false,
+        pool: {
+          max: 5,
+          min: 0,
+          acquire: 30000,
+          idle: 10000
+        }
+      }
+    );
+    console.log(`[Test DB] Using PostgreSQL test database: ${testDbName}`);
+  }
 
   // Test connection
   try {
     await sequelize.authenticate();
-    console.log(`[Test DB] Connected to PostgreSQL test database: ${testDbName}`);
+    console.log('[Test DB] Database connection established');
+
+    // Enable WAL mode for SQLite to improve concurrent access
+    if (sequelize.options.dialect === 'sqlite') {
+      await sequelize.query('PRAGMA journal_mode = WAL;');
+      await sequelize.query('PRAGMA synchronous = NORMAL;');  // Faster writes
+      await sequelize.query('PRAGMA cache_size = -64000;');  // 64MB cache
+      await sequelize.query('PRAGMA busy_timeout = 60000;');  // 60s wait for locks
+      console.log('[Test DB] SQLite optimized (WAL mode, 60s busy timeout)');
+    }
   } catch (error) {
     console.error('[Test DB] Failed to connect:', error.message);
     throw error;
@@ -237,6 +275,15 @@ export async function createTestServer(options = {}) {
 
     // Close database connection
     await sequelize.close();
+
+    // Disconnect OrphanedEventQueue (prevents Redis reconnection attempts)
+    try {
+      const { default: orphanedEventQueue } = await import('../../src/services/OrphanedEventQueue.js');
+      await orphanedEventQueue.disconnect();
+      console.log('[Test Server] OrphanedEventQueue disconnected');
+    } catch (error) {
+      console.warn('[Test Server] Failed to disconnect OrphanedEventQueue:', error.message);
+    }
 
     // Restore original environment
     Object.keys(process.env).forEach(key => {

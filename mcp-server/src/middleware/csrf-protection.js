@@ -49,11 +49,27 @@ class CSRFProtection {
       if (this.redis && this.redis.status === 'ready') {
         await this.redis.setex(key, ttlSeconds, token);
       } else {
+        // Warn about in-memory fallback if Redis is not ready
+        if (this.redis && process.env.NODE_ENV === 'production') {
+          const now = Date.now();
+          if (now - this._lastFallbackWarning > 60000) { // Throttle warnings to once per minute
+            logger.warn('[CSRF] Redis not ready, using in-memory store. WARNING: Multi-server deployments will have CSRF token mismatch issues!');
+            this._lastFallbackWarning = now;
+          }
+        }
         this.memoryStore.set(key, { token, expiresAt: Date.now() + this.tokenTTL });
         this.cleanupExpiredTokens();
       }
     } catch (err) {
       logger.error('[CSRF] Token storage failed:', err);
+      // Warn about fallback on error
+      if (process.env.NODE_ENV === 'production') {
+        const now = Date.now();
+        if (now - this._lastFallbackWarning > 60000) { // Throttle warnings to once per minute
+          logger.warn('[CSRF] Redis unavailable, falling back to in-memory store. WARNING: Multi-server deployments will have CSRF token mismatch issues!');
+          this._lastFallbackWarning = now;
+        }
+      }
       this.memoryStore.set(key, { token, expiresAt: Date.now() + this.tokenTTL });
     }
   }
@@ -96,7 +112,16 @@ class CSRFProtection {
   }
 
   isExemptPath(path) {
-    return ['/api/webhooks', '/health', '/metrics', '/api/auth/login', '/api/csrf-token'].some(e => path.startsWith(e));
+    const exemptPaths = [
+      '/api/webhooks',
+      '/api/campaigns/events/webhook',  // Campaign webhook endpoint
+      '/api/campaigns/v2/events/webhook',  // V2 webhook endpoint
+      '/health',
+      '/metrics',
+      '/api/auth/login',
+      '/api/csrf-token'
+    ];
+    return exemptPaths.some(e => path.startsWith(e));
   }
 
   middleware() {

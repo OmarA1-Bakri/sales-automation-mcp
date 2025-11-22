@@ -49,5 +49,21 @@ export default {
   clearMocks: true,
 
   // Verbose output
-  verbose: true
+  verbose: true,
+
+  // Force exit after tests complete (prevents hanging on open handles)
+  forceExit: true,
+
+  // Detect open handles (helpful for debugging resource leaks)
+  // detectOpenHandles: true,  // Uncomment to debug open handles
+
+  // Allow ESM modules in node_modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(isomorphic-dompurify|dompurify|jsdom)/)'
+  ],
+
+  // Module name mapper for ESM compatibility
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  }
 };

@@ -1245,8 +1245,16 @@ async function deleteEnrollment(req, res) {
  * Create campaign event (webhook receiver)
  */
 async function createEvent(req, res) {
-  const eventData = req.validatedBody;
+  const eventData = req.body;
   const userId = req.user?.id || 'webhook';
+
+  // Use test database in test environment (dependency injection)
+  const dbSequelize = req.app?.locals?.sequelize || sequelize;
+  const models = req.app?.locals?.models || {
+    CampaignEnrollment,
+    CampaignInstance,
+    CampaignEvent
+  };
 
   logger.info('Event creation requested', {
     userId,
@@ -1286,11 +1294,15 @@ async function createEvent(req, res) {
   // SELECT FOR UPDATE prevents concurrent counter modifications without serialization failures
   // ============================================================================
   try {
-    const event = await sequelize.transaction({
-      isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.READ_COMMITTED  // Optimal for atomic increments
-    }, async (t) => {
+    // SQLite doesn't support READ_COMMITTED isolation level
+    // Use default (SERIALIZABLE for SQLite, READ_COMMITTED for PostgreSQL)
+    const transactionOptions = dbSequelize.options.dialect === 'sqlite'
+      ? {}
+      : { isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.READ_COMMITTED };
+
+    const event = await dbSequelize.transaction(transactionOptions, async (t) => {
       // Verify enrollment exists
-      const enrollment = await CampaignEnrollment.findByPk(eventData.enrollment_id, {
+      const enrollment = await models.CampaignEnrollment.findByPk(eventData.enrollment_id, {
         transaction: t,
         attributes: ['id', 'instance_id', 'status']
       });
@@ -1314,7 +1326,7 @@ async function createEvent(req, res) {
       // This prevents concurrent counter updates and ensures atomicity
       // All concurrent transactions queue behind this lock (no rollbacks)
       // ============================================================================
-      const instance = await CampaignInstance.findByPk(enrollment.instance_id, {
+      const instance = await models.CampaignInstance.findByPk(enrollment.instance_id, {
         transaction: t,
         lock: t.LOCK.UPDATE  // SELECT FOR UPDATE - exclusive row lock
       });
@@ -1329,7 +1341,7 @@ async function createEvent(req, res) {
 
       // Use findOrCreate for idempotent event creation
       // If provider_event_id is provided, this prevents duplicate events from webhooks
-      const [newEvent, created] = await CampaignEvent.findOrCreate({
+      const [newEvent, created] = await models.CampaignEvent.findOrCreate({
         where: eventData.provider_event_id
           ? { provider_event_id: eventData.provider_event_id }
           : {

@@ -188,11 +188,12 @@ describe('Base Schemas', () => {
     });
 
     it('should reject objects with dangerous keys', async () => {
+      // Use JSON.parse to simulate real API input where __proto__ becomes a real property
       const dangerousObjects = [
-        { __proto__: { admin: true } },
-        { constructor: { name: 'evil' } },
-        { prototype: { inject: 'malicious' } },
-        { nested: { __proto__: { polluted: true } } }
+        JSON.parse('{"__proto__": {"admin": true}}'),
+        JSON.parse('{"constructor": {"name": "evil"}}'),
+        JSON.parse('{"prototype": {"inject": "malicious"}}'),
+        JSON.parse('{"nested": {"__proto__": {"polluted": true}}}')
       ];
 
       for (const obj of dangerousObjects) {
@@ -335,9 +336,7 @@ describe('Campaign Schemas', () => {
           name: 'Test Campaign',
           type: 'email',
           path_type: 'structured',
-          settings: {
-            __proto__: { admin: true }
-          }
+          settings: JSON.parse('{"__proto__": {"admin": true}}')
         }
       };
 
@@ -806,10 +805,10 @@ describe('XSS Prevention', () => {
 
 describe('Prototype Pollution Prevention', () => {
   it('should reject __proto__ pollution attempts', async () => {
+    // Use JSON.parse to simulate real API input where __proto__ becomes a real property
     const pollutionAttempts = [
-      { __proto__: { admin: true } },
-      { ['__proto__']: { admin: true } },
-      { constructor: { prototype: { admin: true } } }
+      JSON.parse('{"__proto__": {"admin": true}}'),
+      JSON.parse('{"constructor": {"prototype": {"admin": true}}}')
     ];
 
     for (const malicious of pollutionAttempts) {
@@ -818,13 +817,7 @@ describe('Prototype Pollution Prevention', () => {
   });
 
   it('should reject nested __proto__ pollution', async () => {
-    const nestedPollution = {
-      settings: {
-        nested: {
-          __proto__: { polluted: true }
-        }
-      }
-    };
+    const nestedPollution = JSON.parse('{"settings": {"nested": {"__proto__": {"polluted": true}}}}');
 
     await expect(SafeJSONBSchema.parseAsync(nestedPollution)).rejects.toThrow(/forbidden keys/);
   });
