@@ -1,0 +1,45 @@
+[dotenv@17.2.3] injecting env (43) from ../../.env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+[2025-11-23T08:51:10.990Z] [CircuitBreaker] Creating circuit breaker for HubSpot API { timeout: 10000, errorThreshold: 50, resetTimeout: 30000 }
+[2025-11-23T08:51:10.991Z] [CircuitBreaker] Creating circuit breaker for Explorium API { timeout: 30000, errorThreshold: 40, resetTimeout: 60000 }
+[2025-11-23T08:51:10.992Z] [CircuitBreaker] Creating circuit breaker for Lemlist API { timeout: 15000, errorThreshold: 60, resetTimeout: 45000 }
+(node:93341) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/omar/claude%20-%20sales_auto_skill/tests/integration/test-full-pipeline.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/omar/claude - sales_auto_skill/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+======================================================================
+FULL PIPELINE INTEGRATION TEST
+======================================================================
+
+1. Creating test CSV file...
+   ✅ Created: /home/omar/claude - sales_auto_skill/tests/integration/test-contacts.csv
+
+2. Importing CSV...
+[Import] Reading CSV file: /home/omar/claude - sales_auto_skill/tests/integration/test-contacts.csv
+[Import] Found 3 records in CSV
+[Import] 3 valid contacts after validation
+[Import] Skipping existing contact in database: patrick@stripe.com
+[Import] Skipping existing contact in database: john@stripe.com
+[Import] Skipping existing contact in database: tobi@shopify.com
+[Import] 0 unique contacts after deduplication
+[Import] Stored 0 contacts in database
+   Imported: 0 contacts
+   Skipped: 3 contacts
+
+   ⚠️  No contacts imported, skipping enrichment and sync
+
+======================================================================
+TEST SUMMARY
+======================================================================
+Contacts Imported: 0
+Contacts Enriched: 0
+Contacts Synced: 0
+Errors: 0
+Total Time: 0.00s
+
+5. Cleaning up...
+   ✅ Deleted: /home/omar/claude - sales_auto_skill/tests/integration/test-contacts.csv
+
+======================================================================
+⚠️  FULL PIPELINE TEST PARTIAL SUCCESS
+   Some steps did not complete as expected
+======================================================================

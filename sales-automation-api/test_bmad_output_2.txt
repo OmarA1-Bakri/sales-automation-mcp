@@ -1,0 +1,427 @@
+
+> sales-automation-api@1.0.0 test:bmad
+> tsx test-bmad.ts
+
+[2025-11-23T15:51:45.511Z] [ProviderConfig] Provider configuration warnings: {
+  errors: [ 'heygen video provider is active but API key not configured' ]
+}
+═══════════════════════════════════════════════════════
+  B-MAD WORKFLOW ENGINE - INTEGRATION TEST
+═══════════════════════════════════════════════════════
+
+[2025-11-23T15:51:46.477Z] [ToolRegistry] Explorium API key not configured. Explorium actions will use mock data.
+[2025-11-23T15:51:46.477Z] [ToolRegistry] Lemlist API key not configured. Lemlist actions will use mock data.
+[2025-11-23T15:51:46.477Z] [ToolRegistry] HubSpot API key not configured. HubSpot actions will use mock data.
+[2025-11-23T15:51:46.477Z] [ToolRegistry] No AI provider configured. Message generation will use templates.
+Testing Workflow: prospect-discovery
+
+[2025-11-23T15:51:46.478Z] [WorkflowEngine] Starting workflow {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  workflowName: 'prospect-discovery',
+  inputKeys: [ 'market_segment' ]
+}
+[2025-11-23T15:51:46.531Z] [WorkflowStateManager] Workflow created {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  workflowName: 'prospect-discovery'
+}
+[2025-11-23T15:51:46.537Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'define-icp',
+  agent: 'sales-strategist',
+  action: 'create_icp_profile'
+}
+[2025-11-23T15:51:46.538Z] [ToolRegistry] Creating ICP profile {
+  market_segment: {
+    '0': { industry: 'array' },
+    '1': { geography: 'array' },
+    '2': { company_size: 'range' },
+    '3': { revenue_range: 'range' }
+  }
+}
+[2025-11-23T15:51:46.547Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'define-icp'
+}
+[2025-11-23T15:51:46.547Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'define-icp',
+  durationMs: 1,
+  resultKeys: [ 'icp_profile', 'quality_thresholds' ]
+}
+[2025-11-23T15:51:46.548Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'search-companies',
+  agent: 'outreach-orchestrator',
+  action: 'execute_company_search'
+}
+[2025-11-23T15:51:46.548Z] [ToolRegistry] Executing company search {
+  icp_profile: {},
+  data_sources: [ 'explorium', 'hubspot_existing' ],
+  limit: 1000
+}
+[2025-11-23T15:51:46.548Z] [ToolRegistry] Using mock data for company search (Explorium not configured)
+[2025-11-23T15:51:46.550Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'search-companies'
+}
+[2025-11-23T15:51:46.550Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'search-companies',
+  durationMs: 0,
+  resultKeys: [ '0', '1' ]
+}
+[2025-11-23T15:51:46.550Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'find-decision-makers',
+  agent: 'outreach-orchestrator',
+  action: 'extract_contacts'
+}
+[2025-11-23T15:51:46.551Z] [ToolRegistry] Extracting contacts { company_count: 2 }
+[2025-11-23T15:51:46.551Z] [ToolRegistry] Using mock data for contact extraction (Explorium not configured)
+[2025-11-23T15:51:46.552Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'find-decision-makers'
+}
+[2025-11-23T15:51:46.552Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'find-decision-makers',
+  durationMs: 1,
+  resultKeys: [ '0', '1' ]
+}
+[2025-11-23T15:51:46.553Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'enrich-contacts',
+  agent: 'outreach-orchestrator',
+  action: 'enrich_with_explorium'
+}
+[2025-11-23T15:51:46.553Z] [ToolRegistry] Enriching contacts { contact_count: 2 }
+[2025-11-23T15:51:46.553Z] [ToolRegistry] Using mock data for contact enrichment (Explorium not configured)
+[2025-11-23T15:51:46.555Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'enrich-contacts'
+}
+[2025-11-23T15:51:46.555Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'enrich-contacts',
+  durationMs: 0,
+  resultKeys: [ '0', '1' ]
+}
+[2025-11-23T15:51:46.555Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'score-icp-fit',
+  agent: 'engagement-analyst',
+  action: 'calculate_icp_score'
+}
+[2025-11-23T15:51:46.555Z] [ToolRegistry] Calculating ICP scores { contact_count: 2 }
+[2025-11-23T15:51:46.557Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'score-icp-fit'
+}
+[2025-11-23T15:51:46.557Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'score-icp-fit',
+  durationMs: 0,
+  resultKeys: [ '0', '1' ]
+}
+[2025-11-23T15:51:46.557Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'segment-by-score',
+  agent: 'engagement-analyst',
+  action: 'segment_prospects'
+}
+[2025-11-23T15:51:46.557Z] [ToolRegistry] Segmenting prospects by score { scored_count: 2 }
+[2025-11-23T15:51:46.557Z] [ToolRegistry] Segmentation complete {
+  total_prospects: 2,
+  auto_approved: 1,
+  needs_review: 1,
+  disqualified: 0
+}
+[2025-11-23T15:51:46.559Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'segment-by-score'
+}
+[2025-11-23T15:51:46.559Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'segment-by-score',
+  durationMs: 0,
+  resultKeys: [
+    'auto_approve_list',
+    'review_queue',
+    'disqualified',
+    'segment_stats'
+  ]
+}
+[2025-11-23T15:51:46.559Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'validate-quality',
+  agent: 'sales-strategist',
+  action: 'quality_assurance_check'
+}
+[2025-11-23T15:51:46.559Z] [ToolRegistry] Running quality assurance checks
+[2025-11-23T15:51:46.561Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'validate-quality'
+}
+[2025-11-23T15:51:46.561Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'validate-quality',
+  durationMs: 0,
+  resultKeys: [ 'quality_passed', 'quality_score', 'issues_found' ]
+}
+[2025-11-23T15:51:46.561Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'prepare-campaigns',
+  agent: 'outreach-orchestrator',
+  action: 'setup_lemlist_campaign'
+}
+[2025-11-23T15:51:46.561Z] [ToolRegistry] Setting up Lemlist campaign { prospect_count: 0 }
+[2025-11-23T15:51:46.561Z] [ToolRegistry] Using mock data for campaign setup (Lemlist not configured)
+[2025-11-23T15:51:46.564Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'prepare-campaigns'
+}
+[2025-11-23T15:51:46.564Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'prepare-campaigns',
+  durationMs: 0,
+  resultKeys: [
+    'campaign_id',
+    'prospects_enrolled',
+    'campaign_start_date',
+    'estimated_completion_date'
+  ]
+}
+[2025-11-23T15:51:46.564Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'sync-to-hubspot',
+  agent: 'outreach-orchestrator',
+  action: 'sync_contacts_to_crm'
+}
+[2025-11-23T15:51:46.564Z] [ToolRegistry] Syncing contacts to HubSpot CRM { auto_approve: 0, review_queue: 0, total: 0 }
+[2025-11-23T15:51:46.564Z] [ToolRegistry] Using mock data for CRM sync (HubSpot not configured)
+[2025-11-23T15:51:46.565Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'sync-to-hubspot'
+}
+[2025-11-23T15:51:46.566Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'sync-to-hubspot',
+  durationMs: 0,
+  resultKeys: [
+    'contacts_synced',
+    'companies_created',
+    'tasks_created',
+    'sync_errors'
+  ]
+}
+[2025-11-23T15:51:46.566Z] [WorkflowEngine] Executing step {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'generate-report',
+  agent: 'sales-strategist',
+  action: 'create_discovery_summary'
+}
+[2025-11-23T15:51:46.566Z] [ToolRegistry] Generating discovery summary report
+[2025-11-23T15:51:46.567Z] [WorkflowStateManager] [DEBUG] Workflow step updated {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'generate-report'
+}
+[2025-11-23T15:51:46.567Z] [WorkflowEngine] Step completed {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  stepId: 'generate-report',
+  durationMs: 0,
+  resultKeys: [ 'report_url', 'report_pdf', 'summary_email' ]
+}
+[2025-11-23T15:51:46.569Z] [WorkflowStateManager] Workflow completed { workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae' }
+[2025-11-23T15:51:46.569Z] [WorkflowEngine] Workflow completed successfully {
+  workflowId: '37e51d[REDACTED]bc7-8a29-e399d[REDACTED]dae',
+  workflowName: 'prospect-discovery',
+  stepsCompleted: 10
+}
+
+═══════════════════════════════════════════════════════
+  WORKFLOW EXECUTION COMPLETE
+═══════════════════════════════════════════════════════
+
+Final Context: {
+  "market_segment": {
+    "industry": "SaaS",
+    "company_size": "50-200",
+    "location": "North America"
+  },
+  "define-icp": {
+    "icp_profile": {
+      "firmographic_criteria": [
+        {
+          "industry": "array"
+        },
+        {
+          "geography": "array"
+        },
+        {
+          "company_size": "range"
+        },
+        {
+          "revenue_range": "range"
+        }
+      ],
+      "technographic_criteria": [],
+      "behavioral_criteria": [
+        {
+          "tech_stack": "array"
+        },
+        {
+          "recent_funding": "boolean"
+        },
+        {
+          "growth_indicators": "array"
+        }
+      ],
+      "scoring_weights": {
+        "firmographic": 40,
+        "technographic": 30,
+        "behavioral": 20,
+        "intent": 10
+      }
+    },
+    "quality_thresholds": {
+      "auto_approve": 85,
+      "review_queue": 70,
+      "disqualify": 70
+    }
+  },
+  "search-companies": [
+    {
+      "name": "TechCorp Inc",
+      "domain": "techcorp.com",
+      "industry": "SaaS",
+      "employee_count": 150
+    },
+    {
+      "name": "DataFlow Systems",
+      "domain": "dataflow.io",
+      "industry": "SaaS",
+      "employee_count": 200
+    }
+  ],
+  "find-decision-makers": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "title": "CTO",
+      "email": "john.doe@techcorp.com",
+      "company": "TechCorp Inc"
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "title": "VP Engineering",
+      "email": "jane.smith@dataflow.io",
+      "company": "DataFlow Systems"
+    }
+  ],
+  "enrich-contacts": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "title": "CTO",
+      "email": "john.doe@techcorp.com",
+      "company": "TechCorp Inc",
+      "email_verified": true,
+      "linkedin_url": "https://linkedin.com/in/john-doe",
+      "phone": "+1-555-0100"
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "title": "VP Engineering",
+      "email": "jane.smith@dataflow.io",
+      "company": "DataFlow Systems",
+      "email_verified": true,
+      "linkedin_url": "https://linkedin.com/in/jane-smith",
+      "phone": "+1-555-0100"
+    }
+  ],
+  "score-icp-fit": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "title": "CTO",
+      "email": "john.doe@techcorp.com",
+      "company": "TechCorp Inc",
+      "email_verified": true,
+      "linkedin_url": "https://linkedin.com/in/john-doe",
+      "phone": "+1-555-0100",
+      "icp_score": 80
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "title": "VP Engineering",
+      "email": "jane.smith@dataflow.io",
+      "company": "DataFlow Systems",
+      "email_verified": true,
+      "linkedin_url": "https://linkedin.com/in/jane-smith",
+      "phone": "+1-555-0100",
+      "icp_score": 85
+    }
+  ],
+  "segment-by-score": {
+    "auto_approve_list": [
+      {
+        "first_name": "Jane",
+        "last_name": "Smith",
+        "title": "VP Engineering",
+        "email": "jane.smith@dataflow.io",
+        "company": "DataFlow Systems",
+        "email_verified": true,
+        "linkedin_url": "https://linkedin.com/in/jane-smith",
+        "phone": "+1-555-0100",
+        "icp_score": 85
+      }
+    ],
+    "review_queue": [
+      {
+        "first_name": "John",
+        "last_name": "Doe",
+        "title": "CTO",
+        "email": "john.doe@techcorp.com",
+        "company": "TechCorp Inc",
+        "email_verified": true,
+        "linkedin_url": "https://linkedin.com/in/john-doe",
+        "phone": "+1-555-0100",
+        "icp_score": 80
+      }
+    ],
+    "disqualified": [],
+    "segment_stats": {
+      "total_prospects": 2,
+      "auto_approved": 1,
+      "needs_review": 1,
+      "disqualified": 0
+    }
+  },
+  "validate-quality": {
+    "quality_passed": true,
+    "quality_score": 95,
+    "issues_found": []
+  },
+  "prepare-campaigns": {
+    "campaign_id": "camp_1763913106561",
+    "prospects_enrolled": 0,
+    "campaign_start_date": "2025-11-23T15:51:46.561Z",
+    "estimated_completion_date": "2025-12-07T15:51:46.561Z"
+  },
+  "sync-to-hubspot": {
+    "contacts_synced": 0,
+    "companies_created": 2,
+    "tasks_created": 0,
+    "sync_errors": []
+  },
+  "generate-report": {
+    "report_url": "https://reports.example.com/discovery-1763913106566",
+    "report_pdf": "discovery_report.pdf",
+    "summary_email": "Discovery complete! Check the report for details."
+  }
+}
+
+✅ Test completed successfully!

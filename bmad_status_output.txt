@@ -1,0 +1,16 @@
+=== BMAD AGENT STATUS ===
+
+--- Workflow Statistics (Last 7 Days) ---
+[2025-11-23T16:02:44.684Z] [WorkflowStateManager] Failed to get workflow stats {
+  workflowName: 'prospect-discovery',
+  error: 'bind message supplies 2 parameters, but prepared statement "" requires 1'
+}
+
+Workflow: prospect-discovery
+  No execution data.
+
+--- Recent Failures (Last 5) ---
+No recent failures recorded.
+
+--- Recent Executions (Last 5) ---
+[Sun Nov 23 2025 15:51:46 GMT+0000 (Greenwich Mean Time)] prospect-discovery - COMPLETED (Step: generate-report)

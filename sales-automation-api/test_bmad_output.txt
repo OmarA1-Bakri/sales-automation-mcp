@@ -1,0 +1,15 @@
+
+> sales-automation-api@1.0.0 test:bmad
+> tsx test-bmad.ts
+
+/home/omar/claude - sales_auto_skill/sales-automation-api/src/bmad/validation-schemas.ts:5
+  NonNegativeIntegerSchema,
+  ^
+
+SyntaxError: The requested module '../validators/complete-schemas.js' does not provide an export named 'NonNegativeIntegerSchema'
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:228:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:337:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.20.0

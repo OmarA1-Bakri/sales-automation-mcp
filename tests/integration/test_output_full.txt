@@ -1,0 +1,222 @@
+[dotenv@17.2.3] injecting env (43) from ../../.env -- tip: ⚙️  suppress all logs with { quiet: true }
+[2025-11-23T08:51:59.945Z] [CircuitBreaker] Creating circuit breaker for HubSpot API { timeout: 10000, errorThreshold: 50, resetTimeout: 30000 }
+[2025-11-23T08:51:59.946Z] [CircuitBreaker] Creating circuit breaker for Explorium API { timeout: 30000, errorThreshold: 40, resetTimeout: 60000 }
+[2025-11-23T08:51:59.947Z] [CircuitBreaker] Creating circuit breaker for Lemlist API { timeout: 15000, errorThreshold: 60, resetTimeout: 45000 }
+(node:93815) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/omar/claude%20-%20sales_auto_skill/tests/integration/test-full-pipeline.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/omar/claude - sales_auto_skill/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+======================================================================
+FULL PIPELINE INTEGRATION TEST
+======================================================================
+
+1. Creating test CSV file...
+   ✅ Created: /home/omar/claude - sales_auto_skill/tests/integration/test-contacts.csv
+
+2. Importing CSV...
+[Import] Reading CSV file: /home/omar/claude - sales_auto_skill/tests/integration/test-contacts.csv
+[Import] Found 3 records in CSV
+[Import] 3 valid contacts after validation
+[Import] 3 unique contacts after deduplication
+[Import] Stored 3 contacts in database
+[Import] Emitting contacts-imported event for 3 contacts
+
+✅ IMPORT COMPLETE: 3 contacts imported
+
+3. Enriching contacts...
+   Enriching: Patrick Collison (patrick+1763887919950@stripe.com)
+[2025-11-23T08:51:59.955Z] [EnrichmentWorker] Enriching contact { email: '[REDACTED]' }
+   Imported: 3 contacts
+   Skipped: 0 contacts
+
+   Waiting for pipeline to complete...
+[2025-11-23T08:51:59.955Z] [EnrichmentWorker] Using cached company data { companyKey: 'stripe.com' }
+[2025-11-23T08:52:02.306Z] [CircuitBreaker] [DEBUG] Circuit success for Explorium API { latency: 2350 }
+[2025-11-23T08:52:03.472Z] [CircuitBreaker] [DEBUG] Circuit success for Explorium API { latency: 1757.5 }
+[2025-11-23T08:52:04.049Z] [CircuitBreaker] [DEBUG] Circuit success for Explorium API { latency: 1752.3333333333333 }
+     ✅ Enriched with confidence: N/A
+   Enriching: John Collison (john+1763887919950@stripe.com)
+[2025-11-23T08:52:04.050Z] [EnrichmentWorker] Enriching contact { email: '[REDACTED]' }
+[2025-11-23T08:52:04.050Z] [EnrichmentWorker] Using cached company data { companyKey: 'stripe.com' }
+[2025-11-23T08:52:06.821Z] [CircuitBreaker] [DEBUG] Circuit success for Explorium API { latency: 2006.75 }
+[2025-11-23T08:52:08.118Z] [CircuitBreaker] [DEBUG] Circuit success for Explorium API { latency: 1864.6 }
+[2025-11-23T08:52:08.191Z] [CircuitBreaker] [DEBUG] Circuit success for Explorium API { latency: 1781.8333333333333 }
+     ✅ Enriched with confidence: N/A
+   Enriching: Tobi Lütke (tobi+1763887919950@shopify.com)
+[2025-11-23T08:52:08.192Z] [EnrichmentWorker] Enriching contact { email: '[REDACTED]' }
+[2025-11-23T08:52:08.192Z] [EnrichmentWorker] Using cached company data { companyKey: 'shopify.com' }
+[2025-11-23T08:52:11.468Z] [CircuitBreaker] [DEBUG] Circuit success for Explorium API { latency: 1995.142857142857 }
+[2025-11-23T08:52:11.468Z] [ExploriumClient] No prospect_id returned { email: '[REDACTED]' }
+     ✅ Enriched with confidence: N/A
+
+   Sample Enriched Contact:
+     Name: undefined undefined
+     Title: N/A
+     Company: N/A
+     LinkedIn: N/A
+     Email Verified: N/A
+     Confidence: N/A
+
+4. Syncing to HubSpot...
+   Syncing: undefined
+[CRM Sync] Processing contact: undefined
+[2025-11-23T08:52:12.307Z] [HubSpotClient] searchContacts failed {
+  success: false,
+  error: 'Invalid input JSON on line 1, column 69: operator EQ requires a value',
+  method: 'searchContacts',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 400,
+  hubspotError: {
+    status: 'error',
+    message: 'Invalid input JSON on line 1, column 69: operator EQ requires a value',
+    correlationId: '0d0d[REDACTED]e0e-4b5c-[REDACTED]fa16c95ce',
+    category: 'VALIDATION_ERROR'
+  }
+}
+[CRM Sync] Updating existing contact: undefined
+[2025-11-23T08:52:12.906Z] [HubSpotClient] updateContact failed {
+  success: false,
+  error: 'Object not found.  objectId are usually numeric.',
+  method: 'updateContact',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 404,
+  hubspotError: {
+    status: 'error',
+    message: 'Object not found.  objectId are usually numeric.',
+    correlationId: '0d6fdb86-df6a-464f-882e-822e42b[REDACTED]',
+    context: { id: [Array] },
+    category: 'OBJECT_NOT_FOUND'
+  }
+}
+[2025-11-23T08:52:13.486Z] [HubSpotClient] createNote failed {
+  success: false,
+  error: 'Error creating NOTE.  Some required properties were not set.',
+  method: 'createNote',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 400,
+  hubspotError: {
+    status: 'error',
+    message: 'Error creating NOTE.  Some required properties were not set.',
+    correlationId: 'ec8b0651-e[REDACTED]-a82f-bd39efca679a',
+    context: { properties: [Array] },
+    category: 'VALIDATION_ERROR'
+  }
+}
+[CRM Sync] Logged enrichment activity for contact undefined
+[CRM Sync] Failed to record sync: this.database.prepare is not a function
+     ✅ updated: Contact ID N/A
+   Syncing: undefined
+[CRM Sync] Processing contact: undefined
+[2025-11-23T08:52:14.284Z] [HubSpotClient] searchContacts failed {
+  success: false,
+  error: 'Invalid input JSON on line 1, column 69: operator EQ requires a value',
+  method: 'searchContacts',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 400,
+  hubspotError: {
+    status: 'error',
+    message: 'Invalid input JSON on line 1, column 69: operator EQ requires a value',
+    correlationId: '971e19c3-a[REDACTED]c4f-83e9-08d[REDACTED]a[REDACTED]',
+    category: 'VALIDATION_ERROR'
+  }
+}
+[CRM Sync] Updating existing contact: undefined
+[2025-11-23T08:52:14.778Z] [HubSpotClient] updateContact failed {
+  success: false,
+  error: 'Object not found.  objectId are usually numeric.',
+  method: 'updateContact',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 404,
+  hubspotError: {
+    status: 'error',
+    message: 'Object not found.  objectId are usually numeric.',
+    correlationId: 'a[REDACTED]c-20e[REDACTED]-b8e6-c50ee99a2a71',
+    context: { id: [Array] },
+    category: 'OBJECT_NOT_FOUND'
+  }
+}
+[2025-11-23T08:52:15.329Z] [HubSpotClient] createNote failed {
+  success: false,
+  error: 'Error creating NOTE.  Some required properties were not set.',
+  method: 'createNote',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 400,
+  hubspotError: {
+    status: 'error',
+    message: 'Error creating NOTE.  Some required properties were not set.',
+    correlationId: '[REDACTED]dc[REDACTED]c-[REDACTED]-bf1b-305fce8e[REDACTED]',
+    context: { properties: [Array] },
+    category: 'VALIDATION_ERROR'
+  }
+}
+[CRM Sync] Logged enrichment activity for contact undefined
+[CRM Sync] Failed to record sync: this.database.prepare is not a function
+     ✅ updated: Contact ID N/A
+   Syncing: undefined
+[CRM Sync] Processing contact: undefined
+[2025-11-23T08:52:15.895Z] [HubSpotClient] searchContacts failed {
+  success: false,
+  error: 'Invalid input JSON on line 1, column 69: operator EQ requires a value',
+  method: 'searchContacts',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 400,
+  hubspotError: {
+    status: 'error',
+    message: 'Invalid input JSON on line 1, column 69: operator EQ requires a value',
+    correlationId: '46bdeca0-e5b9-48f1-b83d-a9a[REDACTED]afacc',
+    category: 'VALIDATION_ERROR'
+  }
+}
+[CRM Sync] Updating existing contact: undefined
+[2025-11-23T08:52:16.447Z] [HubSpotClient] updateContact failed {
+  success: false,
+  error: 'Object not found.  objectId are usually numeric.',
+  method: 'updateContact',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 404,
+  hubspotError: {
+    status: 'error',
+    message: 'Object not found.  objectId are usually numeric.',
+    correlationId: '05e40e3c-c043-4f[REDACTED]c-2d389f[REDACTED]',
+    context: { id: [Array] },
+    category: 'OBJECT_NOT_FOUND'
+  }
+}
+[2025-11-23T08:52:17.001Z] [HubSpotClient] createNote failed {
+  success: false,
+  error: 'Error creating NOTE.  Some required properties were not set.',
+  method: 'createNote',
+  timestamp: '[REDACTED]T08:52:[REDACTED]Z',
+  statusCode: 400,
+  hubspotError: {
+    status: 'error',
+    message: 'Error creating NOTE.  Some required properties were not set.',
+    correlationId: '55e[REDACTED]f[REDACTED]c[REDACTED]a-956a0bc[REDACTED]',
+    context: { properties: [Array] },
+    category: 'VALIDATION_ERROR'
+  }
+}
+[CRM Sync] Logged enrichment activity for contact undefined
+[CRM Sync] Failed to record sync: this.database.prepare is not a function
+     ✅ updated: Contact ID N/A
+
+   Sample Sync Result:
+     Contact ID: N/A
+     Company ID: N/A
+     Action: updated
+
+======================================================================
+TEST SUMMARY
+======================================================================
+Contacts Imported: 3
+Contacts Enriched: 3
+Contacts Synced: 3
+Errors: 0
+Total Time: 17.05s
+
+5. Cleaning up...
+   ✅ Deleted: /home/omar/claude - sales_auto_skill/tests/integration/test-contacts.csv
+
+======================================================================
+✅ FULL PIPELINE TEST PASSED
+======================================================================

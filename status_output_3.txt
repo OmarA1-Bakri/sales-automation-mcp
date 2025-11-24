@@ -1,0 +1,23 @@
+Connecting to database at /home/omar/claude - sales_auto_skill/.sales-automation/sales-automation.db...
+
+=== JOB STATISTICS ===
+┌────────────┬────────┐
+│ (index)    │ Values │
+├────────────┼────────┤
+│ total      │ 0      │
+│ pending    │ null   │
+│ processing │ null   │
+│ completed  │ null   │
+│ failed     │ null   │
+└────────────┴────────┘
+
+=== IMPORTED CONTACTS ===
+Total imported contacts: 15
+- tobi+1763894942188@shopify.com (Tobi Lütke)
+- john+1763894942188@stripe.com (John Collison)
+- patrick+1763894942188@stripe.com (Patrick Collison)
+- tobi+1763894275903@shopify.com (Tobi Lütke)
+- john+1763894275903@stripe.com (John Collison)
+
+=== RECENT CRM SYNCS ===
+No recent syncs found (Syncs may have failed before recording).
