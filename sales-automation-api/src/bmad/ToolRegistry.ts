@@ -21,8 +21,17 @@ import {
 
 type ToolFunction = (inputs: any) => Promise<any>;
 
+interface ToolMetadata {
+  name: string;
+  type: 'read_only' | 'destructive';
+  batchLimit?: number;
+  requiresApproval: boolean;
+}
+
 export class ToolRegistry {
   private tools: Map<string, ToolFunction> = new Map();
+  private toolMetadata: Map<string, ToolMetadata> = new Map();
+  private pendingApprovals: Map<string, any> = new Map();
   private explorium: any;
   private lemlist: any;
   private hubspot: any;
@@ -375,6 +384,10 @@ export class ToolRegistry {
         this.logger.error('Campaign setup error', { error: (error as Error).message });
         throw error;
       }
+    }, {
+      type: 'destructive',
+      batchLimit: 100,
+      requiresApproval: true
     });
 
     this.register('sync_contacts_to_crm', async (inputs) => {
@@ -466,6 +479,10 @@ export class ToolRegistry {
         this.logger.error('CRM sync error', { error: (error as Error).message });
         throw error;
       }
+    }, {
+      type: 'destructive',
+      batchLimit: 100,
+      requiresApproval: true
     });
 
     this.register('create_discovery_summary', async (inputs) => {
@@ -624,12 +641,128 @@ Generate a subject line and email body.`;
     });
   }
 
-  register(name: string, fn: ToolFunction) {
+  register(name: string, fn: ToolFunction, metadata?: Partial<ToolMetadata>) {
     this.tools.set(name, fn);
+
+    // Set default metadata if not provided
+    const fullMetadata: ToolMetadata = {
+      name,
+      type: metadata?.type || 'read_only',
+      batchLimit: metadata?.batchLimit,
+      requiresApproval: metadata?.requiresApproval ?? (metadata?.type === 'destructive')
+    };
+
+    this.toolMetadata.set(name, fullMetadata);
   }
 
   getTool(name: string) {
     return this.tools.get(name);
+  }
+
+  /**
+   * Execute a tool with approval checks for destructive operations
+   */
+  async executeTool(name: string, inputs: any): Promise<any> {
+    const tool = this.tools.get(name);
+    if (!tool) {
+      throw new Error(`Tool not found: ${name}`);
+    }
+
+    const metadata = this.toolMetadata.get(name);
+    if (!metadata) {
+      throw new Error(`Tool metadata not found: ${name}`);
+    }
+
+    // SAFETY CHECK: Enforce batch limits
+    if (metadata.batchLimit) {
+      const batchSize = this._getBatchSize(inputs);
+      if (batchSize > metadata.batchLimit) {
+        throw new Error(
+          `Batch size ${batchSize} exceeds limit of ${metadata.batchLimit} for tool "${name}"`
+        );
+      }
+    }
+
+    // SAFETY CHECK: Require approval for destructive operations
+    if (metadata.requiresApproval) {
+      const batchSize = this._getBatchSize(inputs);
+      const approval = await this._requestToolApproval(name, metadata, inputs, batchSize);
+
+      if (!approval.approved) {
+        throw new Error(`Tool execution cancelled: approval ${approval.status}`);
+      }
+    }
+
+    // Execute the tool
+    return await tool(inputs);
+  }
+
+  /**
+   * Calculate batch size from tool inputs
+   */
+  private _getBatchSize(inputs: any): number {
+    // Check common batch fields
+    if (Array.isArray(inputs.auto_approve_list)) {
+      return inputs.auto_approve_list.length + (inputs.review_queue?.length || 0);
+    }
+    if (Array.isArray(inputs.contacts)) {
+      return inputs.contacts.length;
+    }
+    if (Array.isArray(inputs.leads)) {
+      return inputs.leads.length;
+    }
+    return 1; // Single operation
+  }
+
+  /**
+   * Request approval for destructive tool operation
+   */
+  private async _requestToolApproval(
+    toolName: string,
+    metadata: ToolMetadata,
+    inputs: any,
+    batchSize: number
+  ): Promise<{ approved: boolean; status: string; approvalId?: string }> {
+    this.logger.warn(`[Tool Approval] Destructive operation detected:`, {
+      tool: toolName,
+      type: metadata.type,
+      batchSize,
+      batchLimit: metadata.batchLimit
+    });
+
+    // Auto-approve small batches (under 10 items)
+    if (batchSize <= 10) {
+      this.logger.info(`[Tool Approval] AUTO-APPROVED (batch size ${batchSize} <= 10)`);
+      return { approved: true, status: 'auto_approved' };
+    }
+
+    // For larger batches, require manual approval
+    // In production, this would integrate with approval UI/notification system
+    const approvalId = `tool_${toolName}_${Date.now()}`;
+    const approval = {
+      id: approvalId,
+      toolName,
+      batchSize,
+      inputs,
+      requestedAt: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    this.pendingApprovals.set(approvalId, approval);
+
+    this.logger.warn(`[Tool Approval] Manual approval required. Approval ID: ${approvalId}`);
+    this.logger.warn(`[Tool Approval] Approve via: POST /api/admin/tools/approve/${approvalId}`);
+
+    // For MVP: auto-approve batches under 50 (safety limit)
+    // Remove this once approval UI is built
+    if (batchSize <= 50) {
+      this.logger.warn(`[Tool Approval] AUTO-APPROVED (under safety limit of 50)`);
+      approval.status = 'approved';
+      return { approved: true, status: 'auto_approved', approvalId };
+    }
+
+    // Operations over 50 require manual approval
+    return { approved: false, status: 'pending', approvalId };
   }
 
   listTools(): string[] {

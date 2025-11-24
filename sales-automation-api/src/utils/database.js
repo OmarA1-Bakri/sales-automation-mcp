@@ -165,27 +165,22 @@ export class Database {
     const lookbackDays = parseInt(lookbackDaysRaw, 10);
 
     // Validate: must be a positive integer between 1 and 365
+    let validatedDays = 30;
     if (isNaN(lookbackDays) || lookbackDays < 1 || lookbackDays > 365) {
       console.warn(`[Database] Invalid HUBSPOT_SYNC_LOOKBACK_DAYS: "${lookbackDaysRaw}". Using default: 30`);
-      const validatedDays = 30;
-      this.db.exec(`
-        INSERT OR IGNORE INTO hubspot_sync_state (id, last_sync_timestamp, updated_at)
-        VALUES (
-          1,
-          datetime('now', '-${validatedDays} days'),
-          datetime('now')
-        )
-      `);
     } else {
-      this.db.exec(`
-        INSERT OR IGNORE INTO hubspot_sync_state (id, last_sync_timestamp, updated_at)
-        VALUES (
-          1,
-          datetime('now', '-${lookbackDays} days'),
-          datetime('now')
-        )
-      `);
+      validatedDays = lookbackDays;
     }
+
+    // Calculate timestamp in JavaScript and use parameterized query
+    const lookbackTimestamp = new Date(Date.now() - validatedDays * 24 * 60 * 60 * 1000).toISOString();
+    const currentTimestamp = new Date().toISOString();
+
+    const stmt = this.db.prepare(`
+      INSERT OR IGNORE INTO hubspot_sync_state (id, last_sync_timestamp, updated_at)
+      VALUES (?, ?, ?)
+    `);
+    stmt.run(1, lookbackTimestamp, currentTimestamp);
 
     // HubSpot sync log table
     this.db.exec(`
@@ -318,16 +313,23 @@ export class Database {
     }
 
     // SECURITY FIX: Whitelist allowed field names to prevent SQL injection
+    // Field names are validated against both a whitelist AND a regex pattern
+    // This dual-layer approach ensures no SQL injection even if whitelist is misconfigured
     const ALLOWED_FIELDS = ['status', 'updated_at', 'started_at', 'completed_at', 'result', 'error', 'progress'];
+    const FIELD_NAME_PATTERN = /^[a-z_][a-z0-9_]*$/i; // Only alphanumeric + underscore
     const fieldNames = Object.keys(updates);
 
-    // Validate all field names against whitelist
+    // Validate all field names against whitelist AND regex pattern
     for (const field of fieldNames) {
       if (!ALLOWED_FIELDS.includes(field)) {
         throw new Error(`[Database Security] Attempt to update disallowed field: ${field}`);
       }
+      if (!FIELD_NAME_PATTERN.test(field)) {
+        throw new Error(`[Database Security] Invalid field name format: ${field}`);
+      }
     }
 
+    // Safe to interpolate field names after validation - values still use parameterized queries
     const fields = fieldNames.map(k => `${k} = ?`).join(', ');
     const values = Object.values(updates);
 

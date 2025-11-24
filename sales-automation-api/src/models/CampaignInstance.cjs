@@ -163,11 +163,11 @@ module.exports = (sequelize) => {
       opened,
       clicked,
       replied,
-      delivery_rate: sent > 0 ? (delivered / sent * 100).toFixed(2) : 0,
-      open_rate: delivered > 0 ? (opened / delivered * 100).toFixed(2) : 0,
-      click_rate: delivered > 0 ? (clicked / delivered * 100).toFixed(2) : 0,
-      reply_rate: delivered > 0 ? (replied / delivered * 100).toFixed(2) : 0,
-      click_through_rate: opened > 0 ? (clicked / opened * 100).toFixed(2) : 0
+      delivery_rate: sent > 0 ? parseFloat((delivered / sent * 100).toFixed(2)) : 0,
+      open_rate: delivered > 0 ? parseFloat((opened / delivered * 100).toFixed(2)) : 0,
+      click_rate: delivered > 0 ? parseFloat((clicked / delivered * 100).toFixed(2)) : 0,
+      reply_rate: delivered > 0 ? parseFloat((replied / delivered * 100).toFixed(2)) : 0,
+      click_through_rate: opened > 0 ? parseFloat((clicked / opened * 100).toFixed(2)) : 0
     };
   };
 

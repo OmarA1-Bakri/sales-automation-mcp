@@ -633,7 +633,7 @@ export class EnrichmentWorker extends EventEmitter {
    */
   async getStats() {
     try {
-      const stats = this.database
+      const stats = this.database.db
         .prepare(
           `
         SELECT

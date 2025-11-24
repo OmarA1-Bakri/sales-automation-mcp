@@ -528,6 +528,26 @@ export class YoloManager {
     };
 
     try {
+      // SAFETY CHECK: Calculate expected volume and cost
+      const expectedLeads = this._calculateExpectedLeads(yolo, skipSteps);
+      const estimatedCost = this._estimateAICost(expectedLeads);
+
+      // Require approval for high-volume operations (>10 leads)
+      if (expectedLeads > 10) {
+        const approval = await this._requestApproval({
+          operation: 'YOLO Cycle',
+          expectedLeads,
+          estimatedCost,
+          steps: this._getActiveSteps(skipSteps),
+        });
+
+        if (!approval.approved) {
+          console.log('[YOLO] Cycle cancelled: approval denied');
+          result.errors.push('User denied approval for high-volume operation');
+          return result;
+        }
+      }
+
       // Step 1: Discovery
       if (!skipSteps.includes('discovery')) {
         console.log('[YOLO] Step 1: Discovery...');
@@ -582,6 +602,86 @@ export class YoloManager {
       this.stats.errors++;
       throw error;
     }
+  }
+
+  /**
+   * Calculate expected number of leads for this cycle
+   */
+  _calculateExpectedLeads(yolo, skipSteps) {
+    let expectedLeads = 0;
+
+    if (!skipSteps.includes('discovery')) {
+      // Each ICP profile will discover N leads
+      const icpCount = yolo.discovery?.icp_profiles?.length || 0;
+      const leadsPerDay = yolo.discovery?.leads_per_day || 0;
+      expectedLeads += icpCount * leadsPerDay;
+    }
+
+    return expectedLeads;
+  }
+
+  /**
+   * Estimate AI cost for processing N leads
+   * Cost estimates (approximate):
+   * - Discovery: $0.01 per lead (Haiku)
+   * - Enrichment: $0.02 per lead (Haiku)
+   * - Personalization: $0.05 per lead (Sonnet)
+   */
+  _estimateAICost(leadCount) {
+    const costPerLead = 0.08; // Total AI cost per lead across all steps
+    return (leadCount * costPerLead).toFixed(2);
+  }
+
+  /**
+   * Get list of active steps (not in skipSteps)
+   */
+  _getActiveSteps(skipSteps) {
+    const allSteps = ['discovery', 'enrichment', 'sync', 'outreach'];
+    return allSteps.filter(step => !skipSteps.includes(step));
+  }
+
+  /**
+   * Request user approval for high-volume operation
+   * In production, this would integrate with a notification/approval system
+   */
+  async _requestApproval(details) {
+    console.warn('[YOLO] HIGH-VOLUME OPERATION DETECTED:');
+    console.warn(`  Operation: ${details.operation}`);
+    console.warn(`  Expected Leads: ${details.expectedLeads}`);
+    console.warn(`  Estimated Cost: $${details.estimatedCost}`);
+    console.warn(`  Active Steps: ${details.steps.join(', ')}`);
+
+    // In a real implementation, this would:
+    // 1. Send notification to user (email, Slack, dashboard alert)
+    // 2. Store pending approval in database
+    // 3. Wait for user response via API endpoint
+    // 4. Return approval status
+
+    // For now, we'll create a pending approval that must be manually approved
+    // via the API: POST /api/admin/yolo/approve/:approvalId
+
+    const approvalId = `yolo_${Date.now()}`;
+    this.pendingApprovals = this.pendingApprovals || {};
+    this.pendingApprovals[approvalId] = {
+      id: approvalId,
+      details,
+      requestedAt: new Date().toISOString(),
+      status: 'pending',
+    };
+
+    console.warn(`[YOLO] Approval required. Approval ID: ${approvalId}`);
+    console.warn('[YOLO] Approve via: POST /api/admin/yolo/approve/:approvalId');
+
+    // For MVP: auto-approve operations under 100 leads (safety limit)
+    // Remove this in production once approval UI is built
+    if (details.expectedLeads <= 100) {
+      console.warn('[YOLO] AUTO-APPROVED (under safety limit)');
+      this.pendingApprovals[approvalId].status = 'approved';
+      return { approved: true, approvalId };
+    }
+
+    // Operations over 100 leads require manual approval
+    return { approved: false, approvalId };
   }
 
   async _monitorReplies() {

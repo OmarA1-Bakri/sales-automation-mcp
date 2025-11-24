@@ -492,7 +492,7 @@ export class CRMSyncWorker {
    */
   async _recordSync(type, identifier, hubspotId, metadata) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         INSERT OR REPLACE INTO crm_sync_log (type, identifier, hubspot_id, metadata, synced_at)
         VALUES (?, ?, ?, ?, datetime('now'))
       `);
@@ -508,7 +508,7 @@ export class CRMSyncWorker {
    */
   async wasRecentlySynced(type, identifier, withinHours = 24) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         SELECT synced_at
         FROM crm_sync_log
         WHERE type = ? AND identifier = ?
@@ -602,7 +602,7 @@ export class CRMSyncWorker {
    */
   async getRecentSyncs(limit = 100) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         SELECT *
         FROM crm_sync_log
         ORDER BY synced_at DESC

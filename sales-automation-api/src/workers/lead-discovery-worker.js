@@ -639,7 +639,7 @@ export class LeadDiscoveryWorker {
 
   async _storeDiscoveredCompanies(companies) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         INSERT OR REPLACE INTO discovered_companies
         (domain, name, icp_score, intent_score, data, discovered_at)
         VALUES (?, ?, ?, ?, ?, datetime('now'))
@@ -661,7 +661,7 @@ export class LeadDiscoveryWorker {
 
   async _storeDiscoveredContacts(contacts) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         INSERT OR REPLACE INTO discovered_contacts
         (email, first_name, last_name, company_domain, contact_score, data, discovered_at)
         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))

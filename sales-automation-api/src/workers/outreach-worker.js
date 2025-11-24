@@ -309,8 +309,8 @@ export class OutreachWorker {
     // Pain points
     if (intelligence.painHypotheses && intelligence.painHypotheses.length > 0) {
       const topPain = intelligence.painHypotheses[0];
-      variables.pain_point = topPain.pain;
-      variables.pain_reasoning = topPain.reasoning;
+      variables.pain_point = topPain?.pain || 'improving sales efficiency';
+      variables.pain_reasoning = topPain?.reasoning || 'based on industry analysis';
     }
 
     // Personalization hooks
@@ -319,8 +319,8 @@ export class OutreachWorker {
       intelligence.personalizationHooks.length > 0
     ) {
       const topHook = intelligence.personalizationHooks[0];
-      variables.personalization_hook = topHook.hook;
-      variables.hook_usage = topHook.usage;
+      variables.personalization_hook = topHook?.hook || 'your recent growth';
+      variables.hook_usage = topHook?.usage || 'opening context';
     }
 
     // Why now trigger
@@ -336,7 +336,8 @@ export class OutreachWorker {
       variables.company_funding = lead.company.fundingStage;
 
       if (lead.company.signals && lead.company.signals.length > 0) {
-        variables.recent_signal = lead.company.signals[0];
+        const signal = lead.company.signals[0];
+        variables.recent_signal = signal?.description || signal?.name || 'your company\'s momentum';
       }
     }
 
@@ -600,7 +601,7 @@ export class OutreachWorker {
 
   async _storeCampaign(campaign) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         INSERT OR REPLACE INTO campaigns (id, name, status, settings, created_at)
         VALUES (?, ?, ?, ?, datetime('now'))
       `);
@@ -618,7 +619,7 @@ export class OutreachWorker {
 
   async _recordEnrollment(campaignId, email, leadId) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         INSERT INTO enrollments (campaign_id, email, lead_id, enrolled_at)
         VALUES (?, ?, ?, datetime('now'))
       `);
@@ -631,7 +632,7 @@ export class OutreachWorker {
 
   async _recordUnsubscribe(email) {
     try {
-      const stmt = this.database.prepare(`
+      const stmt = this.database.db.prepare(`
         INSERT INTO unsubscribes (email, unsubscribed_at)
         VALUES (?, datetime('now'))
       `);
