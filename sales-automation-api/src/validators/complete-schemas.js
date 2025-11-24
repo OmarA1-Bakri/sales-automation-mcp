@@ -75,6 +75,11 @@ export const URLSchema = z
   .url('Invalid URL format')
   .max(2048, 'URL too long');
 
+export const NonNegativeIntegerSchema = z
+  .number()
+  .int('Must be an integer')
+  .min(0, 'Must be non-negative');
+
 /**
  * Sanitization helper function
  */
@@ -144,8 +149,8 @@ function hasDangerousKeys(obj, depth = 0) {
   // This catches both { __proto__: ... } and { ["__proto__"]: ... }
   const jsonStr = JSON.stringify(obj);
   if (jsonStr.includes('"__proto__"') ||
-      jsonStr.includes('"constructor"') ||
-      jsonStr.includes('"prototype"')) {
+    jsonStr.includes('"constructor"') ||
+    jsonStr.includes('"prototype"')) {
     return true;
   }
 
@@ -1161,6 +1166,7 @@ export default {
   DomainSchema,
   UUIDSchema,
   URLSchema,
+  NonNegativeIntegerSchema,
   SafeJSONBSchema,
 
   // API Key Management
