@@ -2,7 +2,13 @@
  * Quick test script for Explorium API integration
  */
 
-import { ExploriumClient } from './mcp-server/src/clients/explorium-client.js';
+import { ExploriumClient } from '../../sales-automation-api/src/clients/explorium-client.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 async function testExploriumAPI() {
   console.log('='.repeat(60));

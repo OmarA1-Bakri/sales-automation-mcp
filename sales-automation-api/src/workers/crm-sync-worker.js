@@ -56,7 +56,14 @@ export class CRMSyncWorker {
       // Step 1: Check for existing contact (deduplication)
       let existingContact = null;
       if (deduplicate) {
-        existingContact = await this.hubspot.findContactByEmail(email);
+        const searchResult = await this.hubspot.findContactByEmail(email);
+        if (searchResult.success && searchResult.found) {
+          existingContact = searchResult.contact;
+        } else if (!searchResult.success) {
+          console.warn(`[CRM Sync] Failed to search for contact ${email}: ${searchResult.error}`);
+          // Continue as if new, or throw? Better to throw to avoid duplicates if API is down
+          throw new Error(`Failed to search for contact: ${searchResult.error}`);
+        }
       }
 
       // Step 2: Prepare HubSpot properties
@@ -69,7 +76,10 @@ export class CRMSyncWorker {
           console.log(
             `[CRM Sync] Updating existing contact: ${existingContact.id}`
           );
-          await this.hubspot.updateContact(existingContact.id, properties);
+          const updateResult = await this.hubspot.updateContact(existingContact.id, properties);
+          if (!updateResult.success) {
+            throw new Error(`Failed to update contact: ${updateResult.error}`);
+          }
           contactId = existingContact.id;
           this.stats.contactsUpdated++;
         } else {
@@ -80,8 +90,11 @@ export class CRMSyncWorker {
         // New contact
         if (createIfNew) {
           console.log(`[CRM Sync] Creating new contact: ${email}`);
-          const newContact = await this.hubspot.createContact(properties);
-          contactId = newContact.id;
+          const createResult = await this.hubspot.createContact(properties);
+          if (!createResult.success) {
+            throw new Error(`Failed to create contact: ${createResult.error}`);
+          }
+          contactId = createResult.contactId;
           this.stats.contactsCreated++;
         } else {
           console.log(`[CRM Sync] Skipping new contact (createIfNew=false)`);
@@ -101,11 +114,15 @@ export class CRMSyncWorker {
         });
 
         if (companyId) {
-          await this.hubspot.associateContactToCompany(contactId, companyId);
-          this.stats.associationsCreated++;
-          console.log(
-            `[CRM Sync] Associated contact ${contactId} with company ${companyId}`
-          );
+          const assocResult = await this.hubspot.associateContactToCompany(contactId, companyId);
+          if (assocResult.success) {
+            this.stats.associationsCreated++;
+            console.log(
+              `[CRM Sync] Associated contact ${contactId} with company ${companyId}`
+            );
+          } else {
+            console.warn(`[CRM Sync] Failed to associate contact ${contactId} with company ${companyId}: ${assocResult.error}`);
+          }
         }
       }
 
@@ -224,7 +241,14 @@ export class CRMSyncWorker {
       // Step 1: Check for existing company
       let existingCompany = null;
       if (deduplicate && domain) {
-        existingCompany = await this.hubspot.findCompanyByDomain(domain);
+        const searchResult = await this.hubspot.findCompanyByDomain(domain);
+        if (searchResult.success && searchResult.found) {
+          existingCompany = searchResult.company;
+        } else if (!searchResult.success) {
+          console.warn(`[CRM Sync] Failed to search for company ${domain}: ${searchResult.error}`);
+          // Throw to avoid duplicates
+          throw new Error(`Failed to search for company: ${searchResult.error}`);
+        }
       }
 
       // Step 2: Prepare properties
@@ -236,7 +260,10 @@ export class CRMSyncWorker {
           console.log(
             `[CRM Sync] Updating existing company: ${existingCompany.id}`
           );
-          await this.hubspot.updateCompany(existingCompany.id, properties);
+          const updateResult = await this.hubspot.updateCompany(existingCompany.id, properties);
+          if (!updateResult.success) {
+            throw new Error(`Failed to update company: ${updateResult.error}`);
+          }
           companyId = existingCompany.id;
           this.stats.companiesUpdated++;
         } else {
@@ -245,8 +272,11 @@ export class CRMSyncWorker {
       } else {
         if (createIfNew) {
           console.log(`[CRM Sync] Creating new company: ${domain || name}`);
-          const newCompany = await this.hubspot.createCompany(properties);
-          companyId = newCompany.id;
+          const createResult = await this.hubspot.createCompany(properties);
+          if (!createResult.success) {
+            throw new Error(`Failed to create company: ${createResult.error}`);
+          }
+          companyId = createResult.companyId;
           this.stats.companiesCreated++;
         } else {
           return null;

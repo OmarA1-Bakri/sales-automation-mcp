@@ -40,6 +40,15 @@ export class Database {
     this.createTables();
   }
 
+  /**
+   * Prepare a SQL statement
+   * @param {string} sql - SQL query
+   * @returns {Statement} Prepared statement
+   */
+  prepare(sql) {
+    return this.db.prepare(sql);
+  }
+
   createTables() {
     // Jobs table
     this.db.exec(`
@@ -198,6 +207,22 @@ export class Database {
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_hubspot_sync_status ON hubspot_sync_log(status);
       CREATE INDEX IF NOT EXISTS idx_hubspot_sync_date ON hubspot_sync_log(sync_started_at);
+    `);
+
+    // CRM sync log table (individual record syncs)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS crm_sync_log (
+        type TEXT NOT NULL,
+        identifier TEXT NOT NULL,
+        hubspot_id TEXT,
+        metadata TEXT,
+        synced_at TEXT NOT NULL
+      )
+    `);
+
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_crm_sync_log_identifier ON crm_sync_log(type, identifier);
+      CREATE INDEX IF NOT EXISTS idx_crm_sync_log_date ON crm_sync_log(synced_at);
     `);
 
     // Add hubspot_last_modified column to imported_contacts if not exists

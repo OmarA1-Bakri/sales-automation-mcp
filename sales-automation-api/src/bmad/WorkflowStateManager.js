@@ -200,7 +200,7 @@ export class WorkflowStateManager {
           AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) as avg_duration_seconds
         FROM workflow_states
         WHERE workflow_name = $1
-          AND started_at > NOW() - INTERVAL '$2 days'
+          AND started_at > NOW() - ($2 * INTERVAL '1 day')
         GROUP BY status
       `, {
         bind: [workflowName, days]
