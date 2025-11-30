@@ -30,7 +30,7 @@ class APIService {
     try {
       // Use Electron IPC if available
       if (this.isElectron()) {
-        const response = await window.electron.mcpCall(endpoint, method, data);
+        const response = await window.electron.mcpCall(endpoint, method, data, this.apiKey);
         if (!response.success) {
           throw new Error(response.error?.message || response.error || 'API call failed');
         }
@@ -363,17 +363,6 @@ class APIService {
   }
 
   // ==========================================================================
-  // CHAT with AI
-  // ==========================================================================
-
-  async sendChatMessage(message, context = {}) {
-    return this.call('/api/chat', 'POST', {
-      message,
-      context,
-    });
-  }
-
-  // ==========================================================================
   // SETTINGS & SYSTEM
   // ==========================================================================
 
@@ -391,6 +380,27 @@ class APIService {
 
   async getCampaignsDirect() {
     return this.call('/api/campaigns', 'GET');
+  }
+
+  /**
+   * Update campaign instance status (pause/resume/complete)
+   * @param {string} campaignId - Campaign instance ID
+   * @param {string} status - New status ('active', 'paused', 'completed')
+   * @returns {Promise<Object>} Updated campaign
+   */
+  async updateCampaignStatus(campaignId, status) {
+    return this.call(`/api/campaigns/instances/${campaignId}`, 'PATCH', { status });
+  }
+
+  /**
+   * Update ICP profile
+   * NOTE: Backend endpoint not yet implemented - will return error
+   * @param {string} profileId - ICP profile ID
+   * @param {Object} updates - Fields to update
+   * @returns {Promise<Object>} Updated profile
+   */
+  async updateICPProfile(profileId, updates) {
+    return this.call(`/api/icp/${profileId}`, 'PATCH', updates);
   }
 
   async getJobsDirect() {
@@ -441,6 +451,81 @@ class APIService {
    */
   async getChatSuggestions() {
     return this.call('/api/chat/suggestions', 'GET');
+  }
+
+  // ==========================================================================
+  // WORKFLOWS (B-MAD Integration)
+  // ==========================================================================
+
+  /**
+   * Get available workflow definitions
+   * @param {Object} options - Options
+   * @param {boolean} options.includeMetadata - Include YAML metadata
+   * @returns {Promise<Object>} List of workflow definitions
+   */
+  async getWorkflowDefinitions(options = {}) {
+    const params = options.includeMetadata ? '?includeMetadata=true' : '';
+    return this.call(`/api/workflows/definitions${params}`, 'GET');
+  }
+
+  /**
+   * Execute a workflow
+   * @param {Object} params - Execution parameters
+   * @param {string} params.workflowName - Name of workflow to execute
+   * @param {Object} params.inputs - Initial inputs for the workflow
+   * @param {boolean} params.sync - Execute synchronously (default: false)
+   * @param {string} params.priority - Execution priority (low/normal/high/critical)
+   * @param {number} params.timeout - Timeout for sync execution (ms)
+   * @returns {Promise<Object>} Execution result or job info
+   */
+  async executeWorkflow({ workflowName, inputs = {}, sync = false, priority = 'normal', timeout = 60000 }) {
+    return this.call('/api/workflows/execute', 'POST', {
+      workflowName,
+      inputs,
+      sync,
+      priority,
+      timeout
+    });
+  }
+
+  /**
+   * Get workflow execution status
+   * @param {string} jobId - Workflow job ID
+   * @returns {Promise<Object>} Workflow status
+   */
+  async getWorkflowStatus(jobId) {
+    return this.call(`/api/workflows/${jobId}`, 'GET');
+  }
+
+  /**
+   * List workflow executions
+   * @param {Object} filters - Filter options
+   * @param {string} filters.status - Filter by status
+   * @param {string} filters.workflowName - Filter by workflow type
+   * @param {number} filters.limit - Max results
+   * @param {number} filters.offset - Results offset
+   * @returns {Promise<Object>} List of workflow executions
+   */
+  async listWorkflows(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.workflowName) params.append('workflowName', filters.workflowName);
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+
+    const query = params.toString();
+    const endpoint = query ? `/api/workflows?${query}` : '/api/workflows';
+    return this.call(endpoint, 'GET');
+  }
+
+  /**
+   * Cancel a pending workflow
+   * @param {string} jobId - Workflow job ID
+   * @param {string} reason - Cancellation reason
+   * @returns {Promise<Object>} Cancellation result
+   */
+  async cancelWorkflow(jobId, reason = 'User requested cancellation') {
+    return this.call(`/api/workflows/${jobId}`, 'DELETE', { reason });
   }
 }
 

@@ -130,9 +130,12 @@ function validateScope(keyScopes, method, path) {
   const requiredScope = `${action}:${resource}`;
 
   // Check if key has required scope or wildcard scope
-  return keyScopes.includes(requiredScope) || 
-         keyScopes.includes(`${action}:*`) || 
-         keyScopes.includes('*');
+  // Also support simple scope names (read, write, admin) as wildcards for backward compatibility
+  return keyScopes.includes(requiredScope) ||
+         keyScopes.includes(`${action}:*`) ||
+         keyScopes.includes('*') ||
+         keyScopes.includes(action) ||  // Simple 'read' or 'write' acts as wildcard
+         keyScopes.includes('admin');   // 'admin' scope grants all access
 }
 
 /**

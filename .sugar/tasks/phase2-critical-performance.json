@@ -1,0 +1,177 @@
+{
+  "phase": "2-critical-performance",
+  "phase_name": "Critical Performance Fixes",
+  "blocking": false,
+  "depends_on": ["1-security-blockers"],
+  "estimated_hours": 14,
+  "parallel_tracks": 5,
+  "tasks": [
+    {
+      "id": "PERF-001",
+      "title": "Fix N+1 query pattern in DLQ event processing with eager loading",
+      "type": "refactor",
+      "priority": 4,
+      "status": "pending",
+      "context": "DeadLetterEvent.findAll() loads 1000 events but triggers separate queries for each related CampaignEnrollment and CampaignInstance. Results in 1000+ database hits per request.",
+      "business_context": "Admin DLQ page takes 2-5 seconds to load, making incident response slow during outages.",
+      "technical_requirements": [
+        "Add Sequelize .include() for eager loading associations",
+        "Include CampaignEnrollment and CampaignInstance in single query",
+        "Update stats queries to use aggregate functions",
+        "Benchmark before/after response times"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/server.js (L700-839)"
+      ],
+      "agent_assignments": {
+        "performance_oracle": "Implement eager loading optimization"
+      },
+      "success_criteria": [
+        "DLQ endpoint completes in <500ms",
+        "Single database query for events + relations",
+        "Database query count reduced by 99%"
+      ],
+      "estimated_hours": 3
+    },
+    {
+      "id": "PERF-002",
+      "title": "Fix O(n²) contact filtering algorithm using Set data structure",
+      "type": "refactor",
+      "priority": 4,
+      "status": "pending",
+      "context": "ContactsPage.jsx uses Array.filter() with Array.includes() to find selected contacts. includes() is O(n), called n times = O(n²). UI freezes with 1000+ contacts.",
+      "business_context": "Users cannot efficiently bulk-enrich large contact lists, reducing platform value.",
+      "technical_requirements": [
+        "Replace Array with Set for selectedContacts",
+        "Change .includes() to .has() for O(1) lookup",
+        "Apply same pattern to similar filters in codebase",
+        "Test with 5000+ contacts"
+      ],
+      "files_affected": [
+        "desktop-app/src/pages/ContactsPage.jsx (L80, L108)"
+      ],
+      "agent_assignments": {
+        "performance_oracle": "Implement Set-based optimization"
+      },
+      "success_criteria": [
+        "Filtering 5000 contacts completes in <100ms",
+        "No UI freeze during bulk selection",
+        "Algorithm complexity reduced to O(n)"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "id": "PERF-003",
+      "title": "Replace synchronous file operations with async fs.promises",
+      "type": "refactor",
+      "priority": 4,
+      "status": "pending",
+      "context": "CSV import endpoint uses fs.writeFileSync, fs.unlinkSync, fs.existsSync, fs.mkdirSync. These block the entire event loop for 100-500ms during large imports.",
+      "business_context": "All users experience latency/timeouts when any user imports CSV data.",
+      "technical_requirements": [
+        "Replace fs.writeFileSync with fs.promises.writeFile",
+        "Replace fs.unlinkSync with fs.promises.unlink",
+        "Replace fs.existsSync/mkdirSync with async equivalents",
+        "Add proper error handling for async operations"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/server.js (L1268-1291)"
+      ],
+      "agent_assignments": {
+        "performance_oracle": "Convert sync to async file I/O"
+      },
+      "success_criteria": [
+        "No fs.*Sync calls in hot paths",
+        "CSV import doesn't block other requests",
+        "Event loop latency <10ms during imports"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "PERF-004",
+      "title": "Apply safe JSON.parse wrapper for prototype pollution protection",
+      "type": "bug_fix",
+      "priority": 4,
+      "status": "pending",
+      "context": "Multiple files use JSON.parse() directly on user-controlled data without prototype pollution protection, despite having prototype-protection.js utility available.",
+      "business_context": "Prototype pollution can lead to remote code execution or denial of service.",
+      "technical_requirements": [
+        "Import safe JSON.parse from src/utils/prototype-protection.js",
+        "Replace direct JSON.parse calls in identified files",
+        "Add tests for prototype pollution attempts"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/bmad/WorkflowStateManager.js (L150)",
+        "sales-automation-api/src/workers/enrichment-worker.js (L591)",
+        "sales-automation-api/src/workers/import-worker.js (L650)",
+        "sales-automation-api/src/utils/yolo-manager.js (L385, L725)"
+      ],
+      "agent_assignments": {
+        "security_sentinel": "Implement prototype pollution protection"
+      },
+      "success_criteria": [
+        "All JSON.parse calls use safe wrapper",
+        "__proto__ and constructor.prototype inputs rejected",
+        "Security test suite passes"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "PERF-005",
+      "title": "Fix fire-and-forget async operations with proper error handling",
+      "type": "bug_fix",
+      "priority": 4,
+      "status": "pending",
+      "context": "processJobAsync() and other async functions are called without await or .catch(). Promise rejections go unhandled, potentially crashing Node.js in newer versions.",
+      "business_context": "Unhandled rejections cause silent job failures and potential process crashes.",
+      "technical_requirements": [
+        "Add .catch() handlers to all fire-and-forget calls",
+        "Or convert to await with try-catch",
+        "Add global unhandledRejection handler as safety net",
+        "Log all caught rejections with context"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/server.js (L1840)",
+        "sales-automation-api/src/server.js (L1643-1733)",
+        "sales-automation-api/src/server.js (L2278-2370)"
+      ],
+      "agent_assignments": {
+        "pattern_recognition_specialist": "Find all fire-and-forget patterns",
+        "backend_developer": "Add proper error handling"
+      },
+      "success_criteria": [
+        "No unhandled promise rejections in logs",
+        "All async calls have error handling",
+        "Global rejection handler catches escapes"
+      ],
+      "estimated_hours": 3
+    },
+    {
+      "id": "PERF-006",
+      "title": "Fix correlated subquery in chat conversation listing",
+      "type": "refactor",
+      "priority": 4,
+      "status": "pending",
+      "context": "listConversations() uses correlated subquery for first_message that runs per row. For 100 conversations, this executes 100 additional queries - O(n²) behavior.",
+      "business_context": "Chat history loading slows down as conversation count grows.",
+      "technical_requirements": [
+        "Replace correlated subquery with JOIN or window function",
+        "Use ROW_NUMBER() OVER (PARTITION BY conversation_id)",
+        "Or use lateral join pattern",
+        "Add index on (conversation_id, created_at)"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/utils/database.js (L615-621)"
+      ],
+      "agent_assignments": {
+        "data_integrity_guardian": "Optimize SQL query"
+      },
+      "success_criteria": [
+        "Single query fetches conversations with first message",
+        "Response time <200ms for 100 conversations",
+        "Query plan shows no nested loops"
+      ],
+      "estimated_hours": 3
+    }
+  ]
+}

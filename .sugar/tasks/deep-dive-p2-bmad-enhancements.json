@@ -1,0 +1,151 @@
+{
+  "id": "deep-dive-p2-bmad-enhancements",
+  "title": "P2: BMAD Workflow System Enhancements",
+  "type": "feature",
+  "priority": 6,
+  "status": "pending",
+  "created_at": "2025-11-27T00:00:00Z",
+  "estimated_effort_hours": 80,
+  "source": "Deep Dive Analysis - November 2025",
+
+  "context": "BMAD workflow system has strong design but lacks validation, testing, and runtime management capabilities. Agent creation requires manual YAML editing with no UI support.",
+
+  "business_context": "Workflow errors only surface at runtime causing production issues. Users cannot create custom agents without developer support. No workflow execution testing framework.",
+
+  "current_state": {
+    "workflows": 3,
+    "agents": 4,
+    "yaml_validation": "none",
+    "agent_testing": "none",
+    "hot_reload": false,
+    "creation_ui": false
+  },
+
+  "phases": [
+    {
+      "id": "BMAD-001",
+      "title": "YAML Schema Validation",
+      "description": "Add JSON Schema validation for workflow and agent YAML files",
+      "deliverables": [
+        "workflow.schema.json - JSON Schema for workflow YAML",
+        "agent.schema.json - JSON Schema for agent YAML",
+        "CLI validation command: npm run validate:bmad",
+        "Pre-commit hook for YAML validation",
+        "VSCode extension config for YAML schema"
+      ],
+      "estimated_hours": 16,
+      "priority": 1
+    },
+    {
+      "id": "BMAD-002",
+      "title": "Agent Registry Service",
+      "description": "Runtime registry for agent discovery and management",
+      "features": [
+        "Load all agents on startup",
+        "Expose agent capabilities via API",
+        "Validate agent references in workflows",
+        "Support dynamic agent loading"
+      ],
+      "file": "sales-automation-api/src/services/AgentRegistryService.js",
+      "estimated_hours": 12,
+      "priority": 2
+    },
+    {
+      "id": "BMAD-003",
+      "title": "Workflow Execution Testing Framework",
+      "description": "Test workflows without external API calls",
+      "features": [
+        "Mock agent responses",
+        "Step-by-step execution",
+        "State snapshots at each step",
+        "Assertion helpers for workflow outcomes"
+      ],
+      "estimated_hours": 20,
+      "priority": 3
+    },
+    {
+      "id": "BMAD-004",
+      "title": "Agent Template Library",
+      "description": "Pre-built templates for common agent patterns",
+      "templates": [
+        "analysis-agent-template.yaml - Data analysis and scoring",
+        "strategy-agent-template.yaml - Planning and decisions",
+        "execution-agent-template.yaml - Action execution",
+        "integration-agent-template.yaml - External system coordination",
+        "communication-agent-template.yaml - Message crafting"
+      ],
+      "estimated_hours": 12,
+      "priority": 4
+    },
+    {
+      "id": "BMAD-005",
+      "title": "Agent Hot Reload",
+      "description": "Reload agent definitions without server restart",
+      "features": [
+        "File watcher for agent YAML changes",
+        "Validate before reload",
+        "Emit events on agent updates",
+        "Development mode only (security)"
+      ],
+      "estimated_hours": 8,
+      "priority": 5
+    },
+    {
+      "id": "BMAD-006",
+      "title": "Additional Critical Agents",
+      "description": "Implement remaining high-priority missing agents",
+      "agents": [
+        {
+          "name": "timing-optimizer",
+          "role": "ML-based send time optimization",
+          "priority": "P1"
+        },
+        {
+          "name": "pipeline-analyst",
+          "role": "Cross-workflow analytics and forecasting",
+          "priority": "P1"
+        }
+      ],
+      "estimated_hours": 16,
+      "priority": 6
+    }
+  ],
+
+  "technical_requirements": [
+    "JSON Schema draft-07 for YAML validation",
+    "ajv library for runtime validation",
+    "chokidar for file watching",
+    "Agent capabilities exposed via REST API",
+    "Backward compatible with existing workflows"
+  ],
+
+  "files_to_create": [
+    "sales-automation-api/bmad-library/schemas/workflow.schema.json",
+    "sales-automation-api/bmad-library/schemas/agent.schema.json",
+    "sales-automation-api/src/services/AgentRegistryService.js",
+    "sales-automation-api/src/services/WorkflowTestRunner.js",
+    "sales-automation-api/bmad-library/templates/*.yaml",
+    "sales-automation-api/bmad-library/modules/sales/agents/timing-optimizer.agent.yaml",
+    "sales-automation-api/bmad-library/modules/sales/agents/pipeline-analyst.agent.yaml"
+  ],
+
+  "agent_assignments": {
+    "schema_design": "compounding-engineering:architecture-strategist",
+    "implementation": "sugar:task-planner",
+    "testing": "sugar:quality-guardian"
+  },
+
+  "success_criteria": [
+    "All existing YAML files pass schema validation",
+    "Agent registry API returns all 6+ agents",
+    "Workflow tests can run without external APIs",
+    "5 agent templates available",
+    "Hot reload works in development mode",
+    "Agent coverage increased to 50%"
+  ],
+
+  "dependencies": [
+    "Security fixes complete",
+    "Backend refactoring ideally complete (not blocking)"
+  ]
+}

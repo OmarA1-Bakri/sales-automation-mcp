@@ -39,7 +39,7 @@ trap cleanup SIGINT SIGTERM
 
 # Start API Server
 echo "Starting API Server..."
-cd sales-automation-api
+cd ../sales-automation-api
 npm start > ../logs/sales-automation-api.log 2>&1 &
 API_SERVER_PID=$!
 cd ..

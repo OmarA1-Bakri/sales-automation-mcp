@@ -1,0 +1,215 @@
+# Provider Health Alerting Rules
+# Phase 6: 3rd Party Provider Integration
+
+groups:
+  - name: provider_health
+    interval: 30s
+    rules:
+      # ============================================================================
+      # PROVIDER DOWN/DEGRADED ALERTS
+      # ============================================================================
+
+      - alert: ProviderDown
+        expr: provider_health_status == -1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Provider {{ $labels.provider }} is DOWN"
+          description: "The {{ $labels.provider }} provider has been down for more than 2 minutes. This will block all {{ $labels.provider }} operations."
+          runbook_url: "https://docs.rtgs.io/runbooks/provider-down"
+
+      - alert: ProviderDegraded
+        expr: provider_health_status == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Provider {{ $labels.provider }} is degraded"
+          description: "The {{ $labels.provider }} provider has been in degraded state for 5 minutes. Operations may be slower or partially failing."
+          runbook_url: "https://docs.rtgs.io/runbooks/provider-degraded"
+
+      # ============================================================================
+      # API ERROR RATE ALERTS
+      # ============================================================================
+
+      - alert: ProviderHighErrorRate
+        expr: |
+          (
+            sum(rate(provider_api_calls_total{status="error"}[5m])) by (provider)
+            /
+            sum(rate(provider_api_calls_total[5m])) by (provider)
+          ) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate for {{ $labels.provider }}"
+          description: "{{ $labels.provider }} API error rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+          runbook_url: "https://docs.rtgs.io/runbooks/provider-error-rate"
+
+      - alert: ProviderCriticalErrorRate
+        expr: |
+          (
+            sum(rate(provider_api_calls_total{status="error"}[5m])) by (provider)
+            /
+            sum(rate(provider_api_calls_total[5m])) by (provider)
+          ) > 0.5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical error rate for {{ $labels.provider }}"
+          description: "{{ $labels.provider }} API error rate is {{ $value | humanizePercentage }} - more than half of requests are failing!"
+          runbook_url: "https://docs.rtgs.io/runbooks/provider-error-rate"
+
+      # ============================================================================
+      # LATENCY ALERTS
+      # ============================================================================
+
+      - alert: ProviderHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(provider_api_latency_ms_bucket[5m])) by (provider, le)) > 5000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency for {{ $labels.provider }}"
+          description: "{{ $labels.provider }} p95 latency is {{ $value | humanizeDuration }} (threshold: 5s)"
+          runbook_url: "https://docs.rtgs.io/runbooks/provider-latency"
+
+      # ============================================================================
+      # LINKEDIN RATE LIMIT ALERTS (PhantomBuster)
+      # ============================================================================
+
+      - alert: LinkedInRateLimitWarning
+        expr: provider_rate_limit_usage{provider="linkedin"} > 0.8
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LinkedIn {{ $labels.action_type }} rate limit at {{ $value | humanizePercentage }}"
+          description: "LinkedIn {{ $labels.action_type }} usage is approaching the daily limit. Consider slowing down automation."
+          runbook_url: "https://docs.rtgs.io/runbooks/linkedin-rate-limit"
+
+      - alert: LinkedInRateLimitCritical
+        expr: provider_rate_limit_usage{provider="linkedin"} > 0.95
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LinkedIn {{ $labels.action_type }} rate limit CRITICAL"
+          description: "LinkedIn {{ $labels.action_type }} is at {{ $value | humanizePercentage }} of daily limit. STOP automation immediately to avoid account suspension!"
+          runbook_url: "https://docs.rtgs.io/runbooks/linkedin-rate-limit"
+
+      - alert: LinkedInRateLimitHit
+        expr: increase(provider_rate_limit_hits_total{provider="linkedin"}[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "LinkedIn rate limit hit for {{ $labels.action_type }}"
+          description: "A LinkedIn {{ $labels.action_type }} action was blocked due to rate limiting."
+          runbook_url: "https://docs.rtgs.io/runbooks/linkedin-rate-limit"
+
+      # ============================================================================
+      # EMAIL ALERTS (Postmark)
+      # ============================================================================
+
+      - alert: EmailHighBounceRate
+        expr: email_bounce_rate > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Email bounce rate is {{ $value | humanizePercentage }}"
+          description: "Email bounce rate exceeds 5%. Review email list hygiene and sender reputation."
+          runbook_url: "https://docs.rtgs.io/runbooks/email-bounce-rate"
+
+      - alert: EmailCriticalBounceRate
+        expr: email_bounce_rate > 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL: Email bounce rate is {{ $value | humanizePercentage }}"
+          description: "Email bounce rate exceeds 10%! This may trigger Postmark account suspension. Pause email campaigns immediately."
+          runbook_url: "https://docs.rtgs.io/runbooks/email-bounce-rate"
+
+      - alert: PostmarkWebhookRejections
+        expr: increase(provider_webhooks_total{provider="postmark", status="rejected"}[5m]) > 5
+        labels:
+          severity: warning
+        annotations:
+          summary: "Postmark webhook rejections detected"
+          description: "{{ $value }} Postmark webhooks were rejected in the last 5 minutes. Check webhook secret configuration."
+          runbook_url: "https://docs.rtgs.io/runbooks/webhook-rejections"
+
+      # ============================================================================
+      # VIDEO GENERATION ALERTS (HeyGen)
+      # ============================================================================
+
+      - alert: HeyGenHighFailureRate
+        expr: |
+          (
+            sum(rate(video_generations_total{status="failed"}[1h]))
+            /
+            sum(rate(video_generations_total[1h]))
+          ) > 0.2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HeyGen video generation failure rate is {{ $value | humanizePercentage }}"
+          description: "More than 20% of HeyGen video generations are failing. Check API key and quota."
+          runbook_url: "https://docs.rtgs.io/runbooks/heygen-failures"
+
+      - alert: HeyGenSlowGeneration
+        expr: |
+          histogram_quantile(0.95, sum(rate(video_generation_duration_ms_bucket[1h])) by (le)) > 600000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HeyGen video generation is slow"
+          description: "Video generation p95 latency is {{ $value | humanizeDuration }}. HeyGen may be experiencing high load."
+          runbook_url: "https://docs.rtgs.io/runbooks/heygen-latency"
+
+      - alert: HeyGenWebhookMissing
+        expr: |
+          increase(video_generations_total{status="completed"}[1h]) > 0
+          and
+          increase(provider_webhooks_total{provider="heygen", event_type="video.completed"}[1h]) == 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HeyGen webhooks may not be configured"
+          description: "Videos are completing but no webhooks are being received. Check callback_url configuration."
+          runbook_url: "https://docs.rtgs.io/runbooks/heygen-webhooks"
+
+      # ============================================================================
+      # WEBHOOK PROCESSING ALERTS
+      # ============================================================================
+
+      - alert: WebhookProcessingBacklog
+        expr: |
+          sum(rate(provider_webhooks_total{status="processed"}[5m])) <
+          sum(rate(provider_webhooks_total[5m])) * 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Webhook processing falling behind"
+          description: "Less than 90% of webhooks are being successfully processed. Check application logs."
+          runbook_url: "https://docs.rtgs.io/runbooks/webhook-processing"
+
+      - alert: WebhookHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(provider_webhook_latency_ms_bucket[5m])) by (le)) > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Webhook processing latency is high"
+          description: "Webhook p95 processing latency is {{ $value }}ms (threshold: 500ms)"
+          runbook_url: "https://docs.rtgs.io/runbooks/webhook-processing"

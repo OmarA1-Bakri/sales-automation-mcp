@@ -1,0 +1,137 @@
+{
+  "phase": "1-security-blockers",
+  "phase_name": "Security Blockers",
+  "blocking": true,
+  "estimated_hours": 8,
+  "tasks": [
+    {
+      "id": "SEC-001",
+      "title": "Rotate all exposed API keys and revoke compromised credentials",
+      "type": "bug_fix",
+      "priority": 5,
+      "status": "pending",
+      "context": "Production API keys have been exposed in version control. Files affected: desktop-app/.env, desktop-app/.env.local, sales-automation-api/.env. Keys include VITE_API_KEY (sk_live_v2_*), API_KEYS (sk_live_*), and various provider tokens. NOTE: The root .env file must NOT be modified.",
+      "business_context": "CRITICAL: Exposed credentials can lead to unauthorized access, data breaches, billing fraud, and complete account takeover. Deployment is BLOCKED until resolved.",
+      "technical_requirements": [
+        "Identify all exposed API keys in subdirectory .env files ONLY",
+        "DO NOT modify the root .env file",
+        "Rotate keys with each provider (Anthropic, HubSpot, Lemlist, Explorium)",
+        "Update production environment with new keys",
+        "Verify old keys are revoked and non-functional"
+      ],
+      "files_affected": [
+        "desktop-app/.env",
+        "desktop-app/.env.local",
+        "sales-automation-api/.env"
+      ],
+      "files_excluded": [
+        ".env (root)"
+      ],
+      "agent_assignments": {
+        "security_sentinel": "Execute credential rotation and verify revocation"
+      },
+      "success_criteria": [
+        "All old API keys return 401/403 when tested",
+        "New keys are functional in all environments",
+        "No hardcoded keys remain in codebase"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "SEC-002",
+      "title": "Remove .env files from git history using git filter-repo",
+      "type": "bug_fix",
+      "priority": 5,
+      "status": "pending",
+      "context": "Even after removing .env files from current commit, they remain in git history and can be recovered. Must purge all historical occurrences from subdirectories only. IMPORTANT: The root .env file must NOT be touched.",
+      "business_context": "Attackers can access old commits to find exposed credentials. Complete history cleanup is required for security compliance.",
+      "technical_requirements": [
+        "Install git-filter-repo if not available",
+        "Create backup of repository",
+        "Run git filter-repo to remove desktop-app/.env* and sales-automation-api/.env* from history",
+        "DO NOT remove root .env file from history",
+        "Force push cleaned history to all remotes",
+        "Notify all contributors to re-clone"
+      ],
+      "files_affected": [
+        "desktop-app/.env*",
+        "sales-automation-api/.env*",
+        ".git/objects"
+      ],
+      "files_excluded": [
+        ".env (root)"
+      ],
+      "agent_assignments": {
+        "git_history_analyzer": "Analyze and clean git history"
+      },
+      "success_criteria": [
+        "git log -p -- 'desktop-app/.env*' 'sales-automation-api/.env*' returns no results",
+        "Root .env file remains intact in history",
+        "Repository size reduced (no subdirectory .env blobs)",
+        "All team members have fresh clones"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "id": "SEC-003",
+      "title": "Replace database credential fallbacks with explicit errors",
+      "type": "bug_fix",
+      "priority": 5,
+      "status": "pending",
+      "context": "Database connection files use fallback values for credentials when environment variables are missing. This means code deployed without proper env vars will use hardcoded dev passwords.",
+      "business_context": "If production deployment misses environment variable setup, it would connect using exposed dev credentials, potentially compromising data.",
+      "technical_requirements": [
+        "Modify src/db/connection.js lines 15-19",
+        "Modify src/db/config.cjs lines 6, 15",
+        "Replace || 'password' patterns with || throw new Error()",
+        "Add startup validation to ensure all DB vars present",
+        "Update error messages to be helpful for debugging"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/db/connection.js",
+        "sales-automation-api/src/db/config.cjs"
+      ],
+      "agent_assignments": {
+        "security_sentinel": "Implement secure credential handling"
+      },
+      "success_criteria": [
+        "Server fails to start if DB credentials missing",
+        "Error messages clearly indicate which env var is missing",
+        "No fallback passwords exist in source code"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "id": "SEC-004",
+      "title": "Fix silent failures in worker database operations",
+      "type": "bug_fix",
+      "priority": 5,
+      "status": "pending",
+      "context": "Multiple worker methods catch database errors, log them, but return default values (undefined, false, empty array) instead of propagating errors. This causes data to be silently lost.",
+      "business_context": "Silent failures mean campaigns don't get stored, contacts don't sync, and analytics are incomplete - all without any alerts or awareness.",
+      "technical_requirements": [
+        "Audit all catch blocks in workers for silent failures",
+        "Add 'throw error' after logging in critical operations",
+        "Add metrics counters for error tracking",
+        "Ensure callers handle the propagated errors"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/workers/outreach-worker.js (L615-643)",
+        "sales-automation-api/src/workers/crm-sync-worker.js (L146-530)",
+        "sales-automation-api/src/workers/lead-discovery-worker.js (L657-682)",
+        "sales-automation-api/src/workers/import-worker.js (L578-655)",
+        "sales-automation-api/src/utils/yolo-manager.js (L706-746)"
+      ],
+      "agent_assignments": {
+        "pattern_recognition_specialist": "Find all silent failure patterns",
+        "backend_developer": "Implement error propagation"
+      },
+      "success_criteria": [
+        "All critical catch blocks re-throw errors",
+        "Metrics track error rates per operation",
+        "No 'return undefined/false' after error log"
+      ],
+      "estimated_hours": 4
+    }
+  ]
+}

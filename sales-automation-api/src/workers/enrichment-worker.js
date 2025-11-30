@@ -15,6 +15,7 @@
 
 import { EventEmitter } from 'events';
 import { createLogger } from '../utils/logger.js';
+import { safeJsonParse } from '../utils/prototype-protection.js';
 
 export class EnrichmentWorker extends EventEmitter {
   constructor(clients, database) {
@@ -24,9 +25,14 @@ export class EnrichmentWorker extends EventEmitter {
     this.hubspot = clients.hubspot;
     this.database = database;
 
-    // Enrichment cache (30-day TTL)
+    // Enrichment cache with type-specific TTLs
     this.cacheEnabled = true;
-    this.cacheTTL = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
+    // ARCH-007 FIX: Separate TTLs for contacts vs companies
+    // Company data changes more frequently (funding, headcount, signals)
+    this.cacheTTL = {
+      contact: 30 * 24 * 60 * 60 * 1000, // 30 days for contacts
+      company: 7 * 24 * 60 * 60 * 1000,  // 7 days for companies (more volatile)
+    };
 
     // SECURITY FIX: Phase 2, T2.4 - Use secure logger with PII redaction
     this.logger = createLogger('EnrichmentWorker');
@@ -579,8 +585,9 @@ export class EnrichmentWorker extends EventEmitter {
       const cachedAt = new Date(row.cached_at).getTime();
       const age = Date.now() - cachedAt;
 
-      // Check if cache is still valid
-      if (age > this.cacheTTL) {
+      // Check if cache is still valid (ARCH-007 FIX: use type-specific TTL)
+      const ttl = this.cacheTTL[type] || this.cacheTTL.contact;
+      if (age > ttl) {
         // Cache expired, delete it
         this.database.db
           .prepare('DELETE FROM enrichment_cache WHERE type = ? AND key = ?')
@@ -588,7 +595,8 @@ export class EnrichmentWorker extends EventEmitter {
         return null;
       }
 
-      return JSON.parse(row.data);
+      // PERF-004 FIX: Use safeJsonParse to prevent prototype pollution
+      return safeJsonParse(row.data);
     } catch (error) {
       this.logger.error('Cache read error', { error: error.message });
       return null;
@@ -649,7 +657,10 @@ export class EnrichmentWorker extends EventEmitter {
         ...stats,
         rateLimiter: this.rateLimiter.getStatus(),
         cacheEnabled: this.cacheEnabled,
-        cacheTTL: this.cacheTTL / (24 * 60 * 60 * 1000) + ' days',
+        cacheTTL: {
+          contact: this.cacheTTL.contact / (24 * 60 * 60 * 1000) + ' days',
+          company: this.cacheTTL.company / (24 * 60 * 60 * 1000) + ' days',
+        },
       };
     } catch (error) {
       return {

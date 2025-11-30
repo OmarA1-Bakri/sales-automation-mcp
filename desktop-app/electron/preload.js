@@ -15,8 +15,8 @@ contextBridge.exposeInMainWorld('electron', {
   closeWindow: () => ipcRenderer.send('window-close'),
 
   // MCP Server communication
-  mcpCall: (endpoint, method, data) =>
-    ipcRenderer.invoke('mcp-call', { endpoint, method, data }),
+  mcpCall: (endpoint, method, data, apiKey) =>
+    ipcRenderer.invoke('mcp-call', { endpoint, method, data, apiKey }),
 
   // Config management
   readConfig: () => ipcRenderer.invoke('read-config'),

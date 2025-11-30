@@ -1,0 +1,133 @@
+{
+  "phase": "4-code-quality",
+  "phase_name": "Code Quality Improvements",
+  "blocking": false,
+  "depends_on": ["3-high-priority-architecture"],
+  "estimated_hours": 8,
+  "parallel_tracks": 3,
+  "tasks": [
+    {
+      "id": "QUAL-001",
+      "title": "Extract lazy-load model pattern to reusable utility",
+      "type": "refactor",
+      "priority": 2,
+      "status": "pending",
+      "context": "Multiple services implement identical lazy-load pattern for Sequelize models to avoid circular dependencies. This boilerplate is repeated 10+ times.",
+      "business_context": "Repetitive code increases maintenance burden and bug surface area.",
+      "technical_requirements": [
+        "Create src/utils/lazy-model-loader.js utility",
+        "Implement generic getModel(modelName) function",
+        "Handle caching and initialization",
+        "Replace all inline lazy-load patterns",
+        "Add JSDoc documentation"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/services/TemplateRanker.js",
+        "sales-automation-api/src/services/OutreachOptimizer.js",
+        "sales-automation-api/src/services/AnalyticsCacheService.js",
+        "sales-automation-api/src/utils/lazy-model-loader.js (new)"
+      ],
+      "agent_assignments": {
+        "code_simplicity_reviewer": "Design utility interface"
+      },
+      "success_criteria": [
+        "Single lazy-load utility function",
+        "All services use shared utility",
+        "No duplicate lazy-load implementations"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "QUAL-002",
+      "title": "Split validation schemas into domain-specific files",
+      "type": "refactor",
+      "priority": 2,
+      "status": "pending",
+      "context": "Validation schemas are in large monolithic files. Finding and updating schemas is difficult, and unrelated validations are coupled together.",
+      "business_context": "Slow schema updates delay feature delivery.",
+      "technical_requirements": [
+        "Create src/validators/contact-schemas.js",
+        "Create src/validators/campaign-schemas.js",
+        "Create src/validators/workflow-schemas.js",
+        "Create src/validators/enrichment-schemas.js",
+        "Create src/validators/index.js to re-export all",
+        "Update imports in controllers"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/validators/"
+      ],
+      "agent_assignments": {
+        "architecture_strategist": "Design schema organization"
+      },
+      "success_criteria": [
+        "Schemas organized by domain",
+        "Each file under 200 lines",
+        "All validators accessible via index"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "QUAL-003",
+      "title": "Standardize error handling patterns across controllers",
+      "type": "refactor",
+      "priority": 2,
+      "status": "pending",
+      "context": "Controllers have inconsistent error handling: some use try-catch with custom responses, others rely on global handler, some swallow errors. This makes debugging difficult.",
+      "business_context": "Inconsistent errors confuse frontend developers and make production debugging harder.",
+      "technical_requirements": [
+        "Create src/middleware/error-handler.js if not exists",
+        "Define standard error response format",
+        "Create custom error classes (ValidationError, NotFoundError, etc.)",
+        "Update controllers to throw typed errors",
+        "Ensure all errors flow through global handler"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/middleware/error-handler.js",
+        "sales-automation-api/src/utils/errors.js (new)",
+        "sales-automation-api/src/controllers/*.js"
+      ],
+      "agent_assignments": {
+        "pattern_recognition_specialist": "Audit existing error patterns",
+        "architecture_strategist": "Design error hierarchy"
+      },
+      "success_criteria": [
+        "All errors use typed error classes",
+        "Consistent error response format",
+        "No swallowed errors in controllers"
+      ],
+      "estimated_hours": 3
+    },
+    {
+      "id": "QUAL-004",
+      "title": "Add comprehensive JSDoc comments to public service methods",
+      "type": "documentation",
+      "priority": 2,
+      "status": "pending",
+      "context": "Many service methods lack documentation. Developers waste time reading implementation to understand interfaces.",
+      "business_context": "Poor documentation slows onboarding and increases bugs from misuse.",
+      "technical_requirements": [
+        "Add JSDoc to all public methods in services/",
+        "Document parameters with @param",
+        "Document return values with @returns",
+        "Document thrown errors with @throws",
+        "Add usage examples for complex methods"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/services/KnowledgeService.js",
+        "sales-automation-api/src/services/DataQualityService.js",
+        "sales-automation-api/src/services/TemplateRanker.js",
+        "sales-automation-api/src/services/OutreachOptimizer.js",
+        "sales-automation-api/src/services/HubSpotService.js"
+      ],
+      "agent_assignments": {
+        "best_practices_researcher": "JSDoc conventions"
+      },
+      "success_criteria": [
+        "All public methods documented",
+        "IDE shows helpful tooltips",
+        "No @param without description"
+      ],
+      "estimated_hours": 1
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { sequelize } from '../db/connection.js';
 import { createLogger } from '../utils/logger.js';
+import { safeJsonParse } from '../utils/prototype-protection.js';
 
 const logger = createLogger('WorkflowStateManager');
 
@@ -147,7 +148,8 @@ export class WorkflowStateManager {
         id: state.id,
         workflowName: state.workflow_name,
         status: state.status,
-        context: typeof state.context === 'string' ? JSON.parse(state.context) : state.context,
+        // PERF-004 FIX: Use safeJsonParse to prevent prototype pollution
+        context: typeof state.context === 'string' ? safeJsonParse(state.context) : state.context,
         currentStep: state.current_step,
         error: state.error,
         startedAt: state.started_at,
@@ -220,18 +222,23 @@ export class WorkflowStateManager {
    * Clean up old completed workflows (retention policy)
    */
   async cleanupOldWorkflows(retentionDays = 30) {
+    // Validate and sanitize retentionDays to prevent SQL injection
+    const safeDays = Math.max(1, Math.min(365, parseInt(retentionDays, 10) || 30));
+
     try {
       const result = await sequelize.query(`
         DELETE FROM workflow_states
         WHERE status = 'completed'
-          AND completed_at < NOW() - INTERVAL '${retentionDays} days'
-      `);
+          AND completed_at < NOW() - ($1 * INTERVAL '1 day')
+      `, {
+        bind: [safeDays]
+      });
 
       const deletedCount = result[1] || 0;
 
       logger.info('Cleaned up old workflows', {
         deletedCount,
-        retentionDays
+        retentionDays: safeDays
       });
 
       return deletedCount;

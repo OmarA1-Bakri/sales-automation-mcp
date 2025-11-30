@@ -467,9 +467,12 @@ workflow:
       - personalization_score: "> 0.6"
 
     escalation_rules:
-      - urgency_score: "> 85" → notify_sales_immediately
-      - negative_sentiment: "→ pause_and_review"
-      - spam_complaint: "→ emergency_stop"
+      - condition: "urgency_score > 85"
+        action: "notify_sales_immediately"
+      - condition: "negative_sentiment"
+        action: "pause_and_review"
+      - condition: "spam_complaint"
+        action: "emergency_stop"
 
     auto_stop_conditions:
       - prospect_replied: true

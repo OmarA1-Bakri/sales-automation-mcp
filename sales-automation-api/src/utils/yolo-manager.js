@@ -13,6 +13,7 @@ import path from 'path';
 import yaml from 'yaml';
 import cron from 'node-cron';
 import { createLogger } from './logger.js';
+import { safeJsonParse } from './prototype-protection.js';
 
 export class YoloManager {
   constructor(workers, database) {
@@ -380,9 +381,10 @@ export class YoloManager {
 
       return {
         success: true,
+        // PERF-004 FIX: Use safeJsonParse to prevent prototype pollution
         activities: activities.map((a) => ({
           ...a,
-          data: JSON.parse(a.data),
+          data: safeJsonParse(a.data),
         })),
         total: activities.length,
       };
@@ -549,9 +551,9 @@ export class YoloManager {
       }
 
       // Step 1: Discovery
+      let discoveries = [];
       if (!skipSteps.includes('discovery')) {
-        console.log('[YOLO] Step 1: Discovery...');
-        const discoveries = [];
+        this.logger.info('[YOLO] Step 1: Discovery...');
 
         for (const icpProfile of yolo.discovery.icp_profiles) {
           const discovery = await this.workers.leadDiscovery.discoverByICP({
@@ -566,26 +568,74 @@ export class YoloManager {
         }
 
         result.discovered = discoveries.length;
-        console.log(`[YOLO] Discovered ${result.discovered} companies`);
+        this.logger.info(`[YOLO] Discovered ${result.discovered} companies`);
       }
 
       // Step 2: Enrichment
-      if (!skipSteps.includes('enrichment') && yolo.enrichment?.auto_enrich) {
-        console.log('[YOLO] Step 2: Enrichment...');
-        // TODO: Enrich discovered contacts
+      if (!skipSteps.includes('enrichment') && yolo.enrichment?.auto_enrich && result.discovered > 0) {
+        this.logger.info('[YOLO] Step 2: Enrichment...');
+        
+        // Get contacts from discovered companies
+        const contactsToEnrich = [];
+        for (const company of discoveries || []) {
+          if (company.contacts && company.contacts.length > 0) {
+            contactsToEnrich.push(...company.contacts.map(c => ({
+              ...c,
+              companyDomain: company.domain,
+              companyName: company.name,
+            })));
+          }
+        }
+
+        if (contactsToEnrich.length > 0) {
+          const enrichResult = await this.workers.enrichment.enrichContacts(contactsToEnrich, {
+            minQuality: yolo.enrichment.min_quality_score || 0.7,
+            batchSize: yolo.enrichment.batch_size || 50,
+          });
+
+          result.enriched = enrichResult.enriched?.length || 0;
+          this.logger.info(`[YOLO] Enriched ${result.enriched} contacts`);
+          
+          // Store enriched contacts for next steps
+          result._enrichedContacts = enrichResult.enriched || [];
+        }
       }
 
       // Step 3: CRM Sync
-      if (!skipSteps.includes('sync') && yolo.crm_sync?.auto_create_contacts) {
-        console.log('[YOLO] Step 3: CRM Sync...');
-        // TODO: Sync enriched contacts to HubSpot
+      if (!skipSteps.includes('sync') && yolo.crm_sync?.auto_create_contacts && result.enriched > 0) {
+        this.logger.info('[YOLO] Step 3: CRM Sync...');
+        
+        const contactsToSync = result._enrichedContacts || [];
+        if (contactsToSync.length > 0) {
+          const syncResult = await this.workers.crmSync.batchSyncContacts(contactsToSync);
+          result.synced = syncResult.synced || syncResult.created || 0;
+          this.logger.info(`[YOLO] Synced ${result.synced} contacts to CRM`);
+          
+          // Store synced contacts for outreach
+          result._syncedContacts = contactsToSync;
+        }
       }
 
       // Step 4: Outreach
-      if (!skipSteps.includes('outreach') && yolo.outreach?.auto_enroll) {
-        console.log('[YOLO] Step 4: Outreach...');
-        // TODO: Enroll contacts in campaigns
+      if (!skipSteps.includes('outreach') && yolo.outreach?.auto_enroll && result.synced > 0) {
+        this.logger.info('[YOLO] Step 4: Outreach...');
+        
+        const contactsForOutreach = result._syncedContacts || [];
+        if (contactsForOutreach.length > 0 && yolo.outreach.campaign_id) {
+          const enrollResult = await this.workers.outreach.batchEnrollLeads(
+            contactsForOutreach,
+            yolo.outreach.campaign_id,
+            { skipDuplicates: true }
+          );
+
+          result.enrolled = enrollResult.enrolled?.length || enrollResult.total || 0;
+          this.logger.info(`[YOLO] Enrolled ${result.enrolled} contacts in campaign`);
+        }
       }
+      
+      // Clean up internal tracking properties
+      delete result._enrichedContacts;
+      delete result._syncedContacts;
 
       // Update stats
       this.stats.cyclesRun++;
@@ -705,6 +755,8 @@ export class YoloManager {
       });
     } catch (error) {
       console.error('[YOLO] Reply monitoring error:', error.message);
+      // SEC-004 FIX: Re-throw to surface errors to caller
+      throw new Error(`Reply monitoring failed: ${error.message}`);
     }
   }
 
@@ -720,14 +772,16 @@ export class YoloManager {
 
       const activities = stmt.all(today);
 
+      // PERF-004 FIX: Use safeJsonParse to prevent prototype pollution
       return activities.map((a) => ({
         type: a.activity_type,
-        data: JSON.parse(a.data),
+        data: safeJsonParse(a.data),
         timestamp: a.created_at,
       }));
     } catch (error) {
       console.error('[YOLO] Failed to get today activity:', error.message);
-      return [];
+      // SEC-004 FIX: Re-throw - returning [] hides database errors
+      throw new Error(`Failed to get today activity: ${error.message}`);
     }
   }
 
@@ -743,6 +797,8 @@ export class YoloManager {
       stmt.run(activityType, today, JSON.stringify(data));
     } catch (error) {
       console.error('[YOLO] Failed to log activity:', error.message);
+      // SEC-004 FIX: Re-throw - activity logging failures should be visible
+      throw new Error(`Failed to log activity ${activityType}: ${error.message}`);
     }
   }
 

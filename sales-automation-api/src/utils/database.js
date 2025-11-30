@@ -73,6 +73,11 @@ export class Database {
       CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, priority, created_at)
     `);
 
+    // ARCH-005 FIX: Add index for type-based job queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs(type, status);
+    `);
+
     // Enrichment cache table (simple key-value cache)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS enrichment_cache (
@@ -82,6 +87,11 @@ export class Database {
         cached_at TEXT NOT NULL,
         PRIMARY KEY (type, key)
       )
+    `);
+
+    // ARCH-005 FIX: Add index for cache expiry queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_enrichment_cache_expiry ON enrichment_cache(type, cached_at);
     `);
 
     // API rate limit tracking
@@ -132,6 +142,12 @@ export class Database {
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_imported_source ON imported_contacts(source);
       CREATE INDEX IF NOT EXISTS idx_imported_date ON imported_contacts(imported_at);
+    `);
+
+    // ARCH-005 FIX: Add indexes for common query patterns
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_imported_company_domain ON imported_contacts(company_domain);
+      CREATE INDEX IF NOT EXISTS idx_imported_company ON imported_contacts(company);
     `);
 
     // YOLO activity log table
@@ -261,6 +277,65 @@ export class Database {
 
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id, created_at);
+    `);
+
+    // Lead conversation tables (for ConversationalResponder - dynamic AI replies)
+    // Designed for future Neo4j migration: tables map to graph nodes/edges
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS lead_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_email TEXT NOT NULL,
+        lead_name TEXT,
+        company_name TEXT,
+        campaign_id TEXT,
+        enrollment_id TEXT,
+        channel TEXT DEFAULT 'email',
+        thread_id TEXT,
+        status TEXT DEFAULT 'active',
+        ai_responses_count INTEGER DEFAULT 0,
+        last_message_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(lead_email, campaign_id)
+      )
+    `);
+
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS lead_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL,
+        direction TEXT NOT NULL,
+        content TEXT NOT NULL,
+        subject TEXT,
+        message_type TEXT,
+        sentiment TEXT,
+        detected_intent TEXT,
+        ai_generated INTEGER DEFAULT 0,
+        knowledge_used TEXT,
+        lemlist_activity_id TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (conversation_id) REFERENCES lead_conversations(id)
+      )
+    `);
+
+    // Junction table for knowledge usage tracking (maps to USED_KNOWLEDGE edge in future graph)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS message_knowledge_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER NOT NULL,
+        knowledge_type TEXT NOT NULL,
+        knowledge_key TEXT NOT NULL,
+        relevance_score REAL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (message_id) REFERENCES lead_messages(id)
+      )
+    `);
+
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_lead_conversations_email ON lead_conversations(lead_email);
+      CREATE INDEX IF NOT EXISTS idx_lead_conversations_campaign ON lead_conversations(campaign_id);
+      CREATE INDEX IF NOT EXISTS idx_lead_messages_conv ON lead_messages(conversation_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_message_knowledge ON message_knowledge_usage(message_id);
     `);
   }
 
@@ -606,27 +681,294 @@ export class Database {
   }
 
   listConversations(limit = 50) {
+    // PERF-006 FIX: Replaced correlated subquery with JOIN to derived table
+    // Original query ran subquery per row (O(n) extra queries)
+    // New query gets all first messages in single scan, then joins (O(1) queries)
     const stmt = this.db.prepare(`
       SELECT
         c.conversation_id,
         c.created_at,
         c.updated_at,
         COUNT(m.id) as message_count,
-        (
-          SELECT content
-          FROM chat_messages
-          WHERE conversation_id = c.conversation_id
-          AND role = 'user'
-          ORDER BY created_at ASC
-          LIMIT 1
-        ) as first_message
+        fm.content as first_message
       FROM chat_conversations c
       LEFT JOIN chat_messages m ON c.conversation_id = m.conversation_id
+      LEFT JOIN (
+        SELECT cm.conversation_id, cm.content
+        FROM chat_messages cm
+        INNER JOIN (
+          SELECT conversation_id, MIN(created_at) as min_created
+          FROM chat_messages
+          WHERE role = 'user'
+          GROUP BY conversation_id
+        ) first ON cm.conversation_id = first.conversation_id
+               AND cm.created_at = first.min_created
+               AND cm.role = 'user'
+      ) fm ON c.conversation_id = fm.conversation_id
       GROUP BY c.conversation_id
       ORDER BY c.updated_at DESC
       LIMIT ?
     `);
     return stmt.all(limit);
+  }
+
+  // Lead Conversation operations (for ConversationalResponder)
+  
+  /**
+   * Get or create a lead conversation thread
+   * @param {string} leadEmail - Lead's email address
+   * @param {string} campaignId - Campaign ID
+   * @param {object} options - Additional options (channel, leadName, companyName, enrollmentId)
+   * @returns {object} Conversation record
+   */
+  getOrCreateLeadConversation(leadEmail, campaignId, options = {}) {
+    const { channel = 'email', leadName = null, companyName = null, enrollmentId = null, threadId = null } = options;
+
+    // Use INSERT OR IGNORE to handle race conditions atomically
+    // The UNIQUE(lead_email, campaign_id) constraint ensures no duplicates
+    this.db.prepare(`
+      INSERT OR IGNORE INTO lead_conversations
+      (lead_email, lead_name, company_name, campaign_id, enrollment_id, channel, thread_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(leadEmail, leadName, companyName, campaignId, enrollmentId, channel, threadId);
+
+    // Always update timestamp and return the conversation (whether new or existing)
+    this.db.prepare(`
+      UPDATE lead_conversations
+      SET updated_at = datetime('now')
+      WHERE lead_email = ? AND campaign_id = ?
+    `).run(leadEmail, campaignId);
+
+    return this.db.prepare(`
+      SELECT * FROM lead_conversations
+      WHERE lead_email = ? AND campaign_id = ?
+    `).get(leadEmail, campaignId);
+  }
+
+  /**
+   * Add a message to a lead conversation
+   * @param {number} conversationId - Conversation ID
+   * @param {string} direction - 'inbound' or 'outbound'
+   * @param {string} content - Message content
+   * @param {object} options - Additional metadata
+   * @returns {object} Message record
+   */
+  addLeadMessage(conversationId, direction, content, options = {}) {
+    const { 
+      subject = null, 
+      messageType = null, 
+      sentiment = null, 
+      detectedIntent = null,
+      aiGenerated = false, 
+      knowledgeUsed = null,
+      lemlistActivityId = null 
+    } = options;
+    
+    const result = this.db.prepare(`
+      INSERT INTO lead_messages (
+        conversation_id, direction, content, subject, message_type, 
+        sentiment, detected_intent, ai_generated, knowledge_used, lemlist_activity_id
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      conversationId, direction, content, subject, messageType,
+      sentiment, detectedIntent, aiGenerated ? 1 : 0, 
+      knowledgeUsed ? JSON.stringify(knowledgeUsed) : null, 
+      lemlistActivityId
+    );
+    
+    // Update conversation timestamp and AI response count if applicable
+    if (aiGenerated && direction === 'outbound') {
+      this.db.prepare(`
+        UPDATE lead_conversations 
+        SET updated_at = datetime('now'), 
+            last_message_at = datetime('now'),
+            ai_responses_count = ai_responses_count + 1
+        WHERE id = ?
+      `).run(conversationId);
+    } else {
+      this.db.prepare(`
+        UPDATE lead_conversations 
+        SET updated_at = datetime('now'), last_message_at = datetime('now')
+        WHERE id = ?
+      `).run(conversationId);
+    }
+    
+    return this.db.prepare('SELECT * FROM lead_messages WHERE id = ?').get(result.lastInsertRowid);
+  }
+
+  /**
+   * Get conversation history for a lead
+   * @param {string} leadEmail - Lead's email
+   * @param {string} campaignId - Optional campaign ID filter
+   * @returns {array} Messages ordered by time
+   */
+  getLeadConversationHistory(leadEmail, campaignId = null) {
+    let query = `
+      SELECT 
+        lc.id as conversation_id,
+        lc.lead_email,
+        lc.lead_name,
+        lc.company_name,
+        lc.channel,
+        lc.ai_responses_count,
+        lm.id as message_id,
+        lm.direction,
+        lm.content,
+        lm.subject,
+        lm.message_type,
+        lm.sentiment,
+        lm.detected_intent,
+        lm.ai_generated,
+        lm.knowledge_used,
+        lm.created_at
+      FROM lead_conversations lc
+      JOIN lead_messages lm ON lc.id = lm.conversation_id
+      WHERE lc.lead_email = ?
+    `;
+    const params = [leadEmail];
+    
+    if (campaignId) {
+      query += ' AND lc.campaign_id = ?';
+      params.push(campaignId);
+    }
+    
+    query += ' ORDER BY lm.created_at ASC';
+    
+    return this.db.prepare(query).all(...params);
+  }
+
+  /**
+   * Get conversation by ID with all messages
+   * @param {number} conversationId - Conversation ID
+   * @returns {object} Conversation with messages
+   */
+  getLeadConversation(conversationId) {
+    const conversation = this.db.prepare(`
+      SELECT * FROM lead_conversations WHERE id = ?
+    `).get(conversationId);
+    
+    if (!conversation) return null;
+    
+    const messages = this.db.prepare(`
+      SELECT * FROM lead_messages 
+      WHERE conversation_id = ? 
+      ORDER BY created_at ASC
+    `).all(conversationId);
+    
+    return { ...conversation, messages };
+  }
+
+  /**
+   * Check if we should respond (respects max AI responses limit)
+   * @param {number} conversationId - Conversation ID
+   * @param {number} maxResponses - Maximum AI responses allowed
+   * @returns {boolean} Whether AI can respond
+   */
+  canAIRespond(conversationId, maxResponses = 5) {
+    const conversation = this.db.prepare(`
+      SELECT ai_responses_count, status FROM lead_conversations WHERE id = ?
+    `).get(conversationId);
+    
+    if (!conversation) return false;
+    if (conversation.status !== 'active') return false;
+    if (conversation.ai_responses_count >= maxResponses) return false;
+    
+    return true;
+  }
+
+  /**
+   * Track knowledge usage for a message (for learning/future graph)
+   * @param {number} messageId - Message ID
+   * @param {string} knowledgeType - Type (case_study, value_prop, objection_handler, etc.)
+   * @param {string} knowledgeKey - Identifier for the knowledge item
+   * @param {number} relevanceScore - How relevant (0-1)
+   */
+  trackKnowledgeUsage(messageId, knowledgeType, knowledgeKey, relevanceScore = 1.0) {
+    this.db.prepare(`
+      INSERT INTO message_knowledge_usage (message_id, knowledge_type, knowledge_key, relevance_score)
+      VALUES (?, ?, ?, ?)
+    `).run(messageId, knowledgeType, knowledgeKey, relevanceScore);
+  }
+
+  /**
+   * Get knowledge usage stats (what knowledge items lead to positive outcomes)
+   * @returns {array} Knowledge usage with outcome correlation
+   */
+  getKnowledgeEffectiveness() {
+    return this.db.prepare(`
+      SELECT 
+        mku.knowledge_type,
+        mku.knowledge_key,
+        COUNT(*) as times_used,
+        AVG(mku.relevance_score) as avg_relevance,
+        SUM(CASE WHEN lm.sentiment = 'positive' THEN 1 ELSE 0 END) as positive_outcomes,
+        SUM(CASE WHEN lm.sentiment = 'negative' THEN 1 ELSE 0 END) as negative_outcomes
+      FROM message_knowledge_usage mku
+      JOIN lead_messages lm ON mku.message_id = lm.id
+      GROUP BY mku.knowledge_type, mku.knowledge_key
+      ORDER BY positive_outcomes DESC
+    `).all();
+  }
+
+  // Contact operations
+  getContacts(filters = {}) {
+    let query = 'SELECT * FROM imported_contacts WHERE 1=1';
+    const params = [];
+
+    if (filters.status) {
+      // Status is stored in the data JSON, for now skip this filter
+      // Could be implemented by parsing JSON but would be slow
+    }
+
+    if (filters.source) {
+      query += ' AND source = ?';
+      params.push(filters.source);
+    }
+
+    query += ' ORDER BY imported_at DESC';
+
+    if (filters.limit) {
+      query += ' LIMIT ?';
+      params.push(parseInt(filters.limit));
+    }
+
+    if (filters.offset) {
+      query += ' OFFSET ?';
+      params.push(parseInt(filters.offset));
+    }
+
+    const stmt = this.db.prepare(query);
+    const rows = stmt.all(...params);
+
+    return rows.map(row => ({
+      email: row.email,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      title: row.title,
+      company: row.company,
+      companyDomain: row.company_domain,
+      phone: row.phone,
+      linkedinUrl: row.linkedin_url,
+      source: row.source,
+      importedAt: row.imported_at,
+      data: this.safeParse(row.data, {})
+    }));
+  }
+
+  getContactsCount(filters = {}) {
+    let query = 'SELECT COUNT(*) as count FROM imported_contacts WHERE 1=1';
+    const params = [];
+
+    if (filters.source) {
+      query += ' AND source = ?';
+      params.push(filters.source);
+    }
+
+    const stmt = this.db.prepare(query);
+    const row = stmt.get(...params);
+
+    return row ? row.count : 0;
   }
 
   close() {

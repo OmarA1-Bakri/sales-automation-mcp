@@ -87,7 +87,30 @@ function startMCPServer() {
 
 // Create system tray
 function createTray() {
-  tray = new Tray(path.join(__dirname, '../assets/icon.png'));
+  const { nativeImage } = require('electron');
+  const iconPath = path.join(__dirname, '../assets/icon.png');
+
+  let trayIcon;
+  try {
+    // Try to load custom icon
+    const fs = require('fs');
+    if (fs.existsSync(iconPath)) {
+      trayIcon = nativeImage.createFromPath(iconPath);
+    } else {
+      // Create a simple 16x16 placeholder icon
+      trayIcon = nativeImage.createEmpty();
+    }
+  } catch (err) {
+    console.log('[Tray] Using empty icon:', err.message);
+    trayIcon = nativeImage.createEmpty();
+  }
+
+  if (trayIcon.isEmpty()) {
+    console.log('[Tray] Skipping tray creation - no valid icon');
+    return; // Skip tray if no valid icon
+  }
+
+  tray = new Tray(trayIcon);
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -133,11 +156,8 @@ function setupSecureStorage() {
   const encryptionAvailable = safeStorage.isEncryptionAvailable();
 
   if (!encryptionAvailable) {
-    console.error('[Security] Encryption not available!');
-    dialog.showErrorBox(
-      'Security Warning',
-      'Secure credential storage is not available on this system.'
-    );
+    console.error('[Security] Encryption not available - using fallback storage');
+    // Don't show blocking dialog, just log warning
   }
 
   // Linux-specific security check
@@ -146,11 +166,8 @@ function setupSecureStorage() {
     console.log(`[Security] Linux storage backend: ${backend}`);
 
     if (backend === 'basic_text') {
-      console.warn('[Security] WARNING: No secure storage backend available on Linux');
-      dialog.showErrorBox(
-        'Security Warning',
-        'No secure credential storage available. Credentials will not be properly encrypted. Please install gnome-keyring or kwallet.'
-      );
+      console.warn('[Security] WARNING: No secure storage backend available on Linux - credentials stored in plain text');
+      // Don't show blocking dialog in development/WSL2 environment
     }
   }
 
@@ -162,7 +179,7 @@ app.whenReady().then(() => {
   setupSecureStorage();
   createWindow();
   createTray();
-  startMCPServer();
+  // startMCPServer(); // Using external API server on port 3000
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -357,14 +374,20 @@ ipcMain.handle('credentials:encryption-available', async (event) => {
 });
 
 // MCP Server API calls
-ipcMain.handle('mcp-call', async (event, { endpoint, method = 'POST', data }) => {
+ipcMain.handle('mcp-call', async (event, { endpoint, method = 'POST', data, apiKey }) => {
   const axios = require('axios');
 
   try {
+    const headers = {};
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
     const response = await axios({
       method,
-      url: `http://localhost:3456${endpoint}`,
+      url: `http://localhost:3000${endpoint}`,
       data,
+      headers,
     });
 
     return { success: true, data: response.data };

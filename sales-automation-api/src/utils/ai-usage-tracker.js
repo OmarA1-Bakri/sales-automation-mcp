@@ -7,6 +7,7 @@
 class AIUsageTracker {
   constructor(database) {
     this.db = database;
+    this._initialized = false;
     this._initializeTable();
   }
 
@@ -14,6 +15,12 @@ class AIUsageTracker {
    * Initialize AI usage tracking table
    */
   _initializeTable() {
+    // Gracefully handle missing database (e.g., during startup before db init)
+    if (!this.db || !this.db.db) {
+      console.warn('[AIUsageTracker] Database not available, deferring table initialization');
+      return;
+    }
+
     this.db.db.exec(`
       CREATE TABLE IF NOT EXISTS ai_usage (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +44,18 @@ class AIUsageTracker {
       CREATE INDEX IF NOT EXISTS idx_ai_usage_workflow ON ai_usage(workflow_type);
     `);
 
+    this._initialized = true;
     console.log('[AIUsageTracker] Initialized cost tracking table');
+  }
+
+  /**
+   * Check if tracker is ready to use
+   */
+  _ensureInitialized() {
+    if (!this._initialized && this.db && this.db.db) {
+      this._initializeTable();
+    }
+    return this._initialized;
   }
 
   /**
@@ -50,6 +68,11 @@ class AIUsageTracker {
    * @param {Object} usage.tokens - Token usage { input, output, total }
    */
   trackUsage(usage) {
+    if (!this._ensureInitialized()) {
+      console.warn('[AIUsageTracker] Cannot track usage - database not initialized');
+      return;
+    }
+
     const cost = this._calculateCost(usage.provider, usage.model, usage.tokens);
 
     const stmt = this.db.db.prepare(`
@@ -132,6 +155,10 @@ class AIUsageTracker {
    * @returns {Object} Usage summary
    */
   getUsageSummary(period = 'month') {
+    if (!this._ensureInitialized()) {
+      return { total_requests: 0, total_input_tokens: 0, total_output_tokens: 0, total_tokens: 0, total_cost_usd: 0, avg_cost_per_request: 0 };
+    }
+
     let dateFilter = '';
 
     switch (period) {
@@ -170,6 +197,10 @@ class AIUsageTracker {
    * @returns {Array} Provider breakdown
    */
   getProviderBreakdown(period = 'month') {
+    if (!this._ensureInitialized()) {
+      return [];
+    }
+
     let dateFilter = '';
 
     switch (period) {
@@ -208,6 +239,10 @@ class AIUsageTracker {
    * @returns {Array} Workflow breakdown
    */
   getWorkflowBreakdown(period = 'month') {
+    if (!this._ensureInitialized()) {
+      return [];
+    }
+
     let dateFilter = '';
 
     switch (period) {
@@ -245,6 +280,10 @@ class AIUsageTracker {
    * @returns {Array} Daily costs
    */
   getDailyCostTrend(days = 30) {
+    if (!this._ensureInitialized()) {
+      return [];
+    }
+
     const stmt = this.db.db.prepare(`
       SELECT
         DATE(timestamp) as date,
@@ -279,4 +318,4 @@ class AIUsageTracker {
   }
 }
 
-module.exports = AIUsageTracker;
+export default AIUsageTracker;

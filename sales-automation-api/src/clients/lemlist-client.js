@@ -437,6 +437,146 @@ export class LemlistClient {
   }
 
   // ============================================================================
+  // DYNAMIC RESPONSE (ConversationalResponder Integration)
+  // ============================================================================
+
+  /**
+   * Send a reply to an existing conversation thread
+   * Used by ConversationalResponder for dynamic AI responses
+   * 
+   * Note: Lemlist's API has limited direct reply support. This method attempts
+   * to use the best available approach:
+   * 1. Manual activity creation (email thread continuation)
+   * 2. LinkedIn message send (for LinkedIn campaigns)
+   * 3. Fallback notification for manual handling
+   * 
+   * @param {string} leadEmail - Lead's email address
+   * @param {string} campaignId - Campaign ID
+   * @param {string} messageContent - Reply message content
+   * @param {object} options - Additional options
+   * @returns {Promise<object>} Send result
+   */
+  async sendReply(leadEmail, campaignId, messageContent, options = {}) {
+    const { channel = 'email', threadId = null, subject = null } = options;
+    
+    try {
+      this.logger.info('Sending reply via Lemlist', { 
+        leadEmail, 
+        campaignId, 
+        channel,
+        contentLength: messageContent.length 
+      });
+
+      // Get lead info to find the lead ID
+      const leadsResult = await this.client.getLeads(campaignId);
+      const lead = leadsResult?.find?.(l => l.email === leadEmail);
+      
+      if (!lead) {
+        this.logger.warn('Lead not found in campaign, creating activity without lead link', { leadEmail, campaignId });
+      }
+
+      const leadId = lead?._id || lead?.id;
+
+      if (channel === 'linkedin') {
+        // For LinkedIn, we use Lemlist's LinkedIn integration
+        // This triggers the next LinkedIn step or sends a manual message
+        return await this._sendLinkedInReply(leadId, campaignId, messageContent);
+      } else {
+        // For email, create a manual activity/note and optionally trigger send
+        return await this._sendEmailReply(leadId, campaignId, leadEmail, messageContent, { subject, threadId });
+      }
+    } catch (error) {
+      this.logger.error('Failed to send reply', { error: error.message, leadEmail, campaignId });
+      return this._handleError('sendReply', error);
+    }
+  }
+
+  /**
+   * Send email reply (internal helper)
+   * @private
+   */
+  async _sendEmailReply(leadId, campaignId, leadEmail, content, options = {}) {
+    const { subject, threadId } = options;
+    
+    try {
+      // Lemlist approach: Update lead with a note and trigger activity
+      // The ideal is to use Lemlist's manual email feature if available
+      
+      // Option 1: Try to use Lemlist's hooks API for manual emails
+      // POST /api/hooks/{hookId} - if a webhook is configured for replies
+      
+      // Option 2: Create an activity record (logs the response)
+      // Note: This may not actually send the email depending on Lemlist setup
+      
+      // For now, we'll update the lead with the response content
+      // and return info for potential direct email fallback
+      
+      if (leadId) {
+        // Add response as a note/custom field for tracking
+        await this.client.updateLead({
+          campaignId,
+          leadId,
+          customFields: {
+            lastAIResponse: content.substring(0, 500),
+            lastAIResponseAt: new Date().toISOString()
+          }
+        });
+      }
+
+      // Return result with info needed for fallback direct send
+      return {
+        success: true,
+        sent: false, // Lemlist doesn't have direct reply API - needs fallback
+        method: 'lemlist_activity_logged',
+        message: 'Response logged to Lemlist. Direct email send may be needed.',
+        leadEmail,
+        content,
+        subject,
+        needsDirectSend: true // Signal to ConversationalResponder to use direct email
+      };
+    } catch (error) {
+      this.logger.error('Email reply failed', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Send LinkedIn reply (internal helper)
+   * @private
+   */
+  async _sendLinkedInReply(leadId, campaignId, content) {
+    try {
+      // Lemlist's LinkedIn integration allows sending messages through sequences
+      // For manual replies outside sequence, we may need to:
+      // 1. Use Lemlist's LinkedIn message step
+      // 2. Fall back to manual notification
+
+      if (leadId) {
+        // Update lead with response for tracking
+        await this.client.updateLead({
+          campaignId,
+          leadId,
+          customFields: {
+            lastLinkedInResponse: content.substring(0, 500),
+            lastLinkedInResponseAt: new Date().toISOString()
+          }
+        });
+      }
+
+      return {
+        success: true,
+        sent: false,
+        method: 'linkedin_activity_logged',
+        message: 'LinkedIn response logged. Manual send may be needed via Lemlist UI.',
+        needsManualAction: true
+      };
+    } catch (error) {
+      this.logger.error('LinkedIn reply failed', { error: error.message });
+      throw error;
+    }
+  }
+
+  // ============================================================================
   // UTILITY & HEALTH
   // ============================================================================
 

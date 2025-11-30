@@ -12,6 +12,11 @@
  * - Batch operations with error handling
  */
 
+// ARCH-004 FIX: Import structured logger instead of using console.*
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('CRMSyncWorker');
+
 export class CRMSyncWorker {
   constructor(hubspotClient, database) {
     this.hubspot = hubspotClient;
@@ -51,7 +56,7 @@ export class CRMSyncWorker {
       enrichedContact;
 
     try {
-      console.log(`[CRM Sync] Processing contact: ${email}`);
+      logger.info(`[CRM Sync] Processing contact: ${email}`);
 
       // Step 1: Check for existing contact (deduplication)
       let existingContact = null;
@@ -60,7 +65,7 @@ export class CRMSyncWorker {
         if (searchResult.success && searchResult.found) {
           existingContact = searchResult.contact;
         } else if (!searchResult.success) {
-          console.warn(`[CRM Sync] Failed to search for contact ${email}: ${searchResult.error}`);
+          logger.warn(`[CRM Sync] Failed to search for contact ${email}: ${searchResult.error}`);
           // Continue as if new, or throw? Better to throw to avoid duplicates if API is down
           throw new Error(`Failed to search for contact: ${searchResult.error}`);
         }
@@ -73,7 +78,7 @@ export class CRMSyncWorker {
       if (existingContact) {
         // Contact exists
         if (updateIfExists) {
-          console.log(
+          logger.info(
             `[CRM Sync] Updating existing contact: ${existingContact.id}`
           );
           const updateResult = await this.hubspot.updateContact(existingContact.id, properties);
@@ -83,13 +88,13 @@ export class CRMSyncWorker {
           contactId = existingContact.id;
           this.stats.contactsUpdated++;
         } else {
-          console.log(`[CRM Sync] Skipping existing contact: ${email}`);
+          logger.info(`[CRM Sync] Skipping existing contact: ${email}`);
           contactId = existingContact.id;
         }
       } else {
         // New contact
         if (createIfNew) {
-          console.log(`[CRM Sync] Creating new contact: ${email}`);
+          logger.info(`[CRM Sync] Creating new contact: ${email}`);
           const createResult = await this.hubspot.createContact(properties);
           if (!createResult.success) {
             throw new Error(`Failed to create contact: ${createResult.error}`);
@@ -97,7 +102,7 @@ export class CRMSyncWorker {
           contactId = createResult.contactId;
           this.stats.contactsCreated++;
         } else {
-          console.log(`[CRM Sync] Skipping new contact (createIfNew=false)`);
+          logger.info(`[CRM Sync] Skipping new contact (createIfNew=false)`);
           return {
             success: false,
             reason: 'Contact does not exist and createIfNew=false',
@@ -117,11 +122,11 @@ export class CRMSyncWorker {
           const assocResult = await this.hubspot.associateContactToCompany(contactId, companyId);
           if (assocResult.success) {
             this.stats.associationsCreated++;
-            console.log(
+            logger.info(
               `[CRM Sync] Associated contact ${contactId} with company ${companyId}`
             );
           } else {
-            console.warn(`[CRM Sync] Failed to associate contact ${contactId} with company ${companyId}: ${assocResult.error}`);
+            logger.warn(`[CRM Sync] Failed to associate contact ${contactId} with company ${companyId}: ${assocResult.error}`);
           }
         }
       }
@@ -144,7 +149,7 @@ export class CRMSyncWorker {
         action: existingContact ? 'updated' : 'created',
       };
     } catch (error) {
-      console.error(`[CRM Sync] Failed to sync contact ${email}:`, error.message);
+      logger.error(`[CRM Sync] Failed to sync contact ${email}:`, error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -163,7 +168,7 @@ export class CRMSyncWorker {
   async batchSyncContacts(enrichedContacts, options = {}) {
     const { batchSize = 100, continueOnError = true } = options;
 
-    console.log(
+    logger.info(
       `[CRM Sync] Starting batch sync of ${enrichedContacts.length} contacts`
     );
 
@@ -177,7 +182,7 @@ export class CRMSyncWorker {
     // Process in batches
     for (let i = 0; i < enrichedContacts.length; i += batchSize) {
       const batch = enrichedContacts.slice(i, i + batchSize);
-      console.log(
+      logger.info(
         `[CRM Sync] Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(enrichedContacts.length / batchSize)}`
       );
 
@@ -212,7 +217,7 @@ export class CRMSyncWorker {
       }
     }
 
-    console.log(
+    logger.info(
       `[CRM Sync] Batch sync complete: ${results.created.length} created, ${results.updated.length} updated, ${results.failed.length} failed`
     );
 
@@ -236,7 +241,7 @@ export class CRMSyncWorker {
     const { domain, name } = companyData;
 
     try {
-      console.log(`[CRM Sync] Processing company: ${domain || name}`);
+      logger.info(`[CRM Sync] Processing company: ${domain || name}`);
 
       // Step 1: Check for existing company
       let existingCompany = null;
@@ -245,7 +250,7 @@ export class CRMSyncWorker {
         if (searchResult.success && searchResult.found) {
           existingCompany = searchResult.company;
         } else if (!searchResult.success) {
-          console.warn(`[CRM Sync] Failed to search for company ${domain}: ${searchResult.error}`);
+          logger.warn(`[CRM Sync] Failed to search for company ${domain}: ${searchResult.error}`);
           // Throw to avoid duplicates
           throw new Error(`Failed to search for company: ${searchResult.error}`);
         }
@@ -257,7 +262,7 @@ export class CRMSyncWorker {
       let companyId;
       if (existingCompany) {
         if (updateIfExists) {
-          console.log(
+          logger.info(
             `[CRM Sync] Updating existing company: ${existingCompany.id}`
           );
           const updateResult = await this.hubspot.updateCompany(existingCompany.id, properties);
@@ -271,7 +276,7 @@ export class CRMSyncWorker {
         }
       } else {
         if (createIfNew) {
-          console.log(`[CRM Sync] Creating new company: ${domain || name}`);
+          logger.info(`[CRM Sync] Creating new company: ${domain || name}`);
           const createResult = await this.hubspot.createCompany(properties);
           if (!createResult.success) {
             throw new Error(`Failed to create company: ${createResult.error}`);
@@ -290,7 +295,7 @@ export class CRMSyncWorker {
 
       return companyId;
     } catch (error) {
-      console.error(
+      logger.error(
         `[CRM Sync] Failed to sync company ${domain || name}:`,
         error.message
       );
@@ -473,9 +478,9 @@ export class CRMSyncWorker {
         associatedObjectId: contactId,
       });
 
-      console.log(`[CRM Sync] Logged enrichment activity for contact ${contactId}`);
+      logger.info(`[CRM Sync] Logged enrichment activity for contact ${contactId}`);
     } catch (error) {
-      console.error(
+      logger.error(
         `[CRM Sync] Failed to log activity for contact ${contactId}:`,
         error.message
       );
@@ -499,7 +504,7 @@ export class CRMSyncWorker {
 
       stmt.run(type, identifier, hubspotId, JSON.stringify(metadata));
     } catch (error) {
-      console.error('[CRM Sync] Failed to record sync:', error.message);
+      logger.error('[CRM Sync] Failed to record sync:', error.message);
     }
   }
 
@@ -525,7 +530,7 @@ export class CRMSyncWorker {
 
       return age < maxAge;
     } catch (error) {
-      console.error('[CRM Sync] Failed to check sync status:', error.message);
+      logger.error('[CRM Sync] Failed to check sync status:', error.message);
       return false;
     }
   }
@@ -540,24 +545,41 @@ export class CRMSyncWorker {
    * @returns {Promise<Object>} Batch upsert result
    */
   async bulkUpsertContacts(contacts) {
-    console.log(`[CRM Sync] Bulk upserting ${contacts.length} contacts`);
+    logger.info(`[CRM Sync] Bulk upserting ${contacts.length} contacts`);
 
     try {
+      // ARCH-003 FIX: Deduplicate contacts by email before batch API call
+      // Keep the most recent contact data if duplicates exist
+      const contactsByEmail = new Map();
+      for (const contact of contacts) {
+        const email = (contact.email || contact.properties?.email || '').toLowerCase().trim();
+        if (email) {
+          // Later entries overwrite earlier ones (most recent wins)
+          contactsByEmail.set(email, contact);
+        }
+      }
+      const deduplicatedContacts = Array.from(contactsByEmail.values());
+      
+      const duplicatesRemoved = contacts.length - deduplicatedContacts.length;
+      if (duplicatesRemoved > 0) {
+        logger.info(`[CRM Sync] Deduplicated batch: removed ${duplicatesRemoved} duplicate contacts`);
+      }
+
       // Map to HubSpot format
-      const hubspotContacts = contacts.map((contact) => ({
+      const hubspotContacts = deduplicatedContacts.map((contact) => ({
         properties: this._mapContactProperties(contact),
       }));
 
       // Use HubSpot batch API
       const result = await this.hubspot.batchUpsertContacts(hubspotContacts);
 
-      console.log(
+      logger.info(
         `[CRM Sync] Bulk upsert complete: ${result.results?.length || 0} contacts processed`
       );
 
       return result;
     } catch (error) {
-      console.error('[CRM Sync] Bulk upsert failed:', error.message);
+      logger.error('[CRM Sync] Bulk upsert failed:', error.message);
       return {
         success: false,
         error: error.message,
@@ -611,7 +633,7 @@ export class CRMSyncWorker {
 
       return stmt.all(limit);
     } catch (error) {
-      console.error('[CRM Sync] Failed to get sync history:', error.message);
+      logger.error('[CRM Sync] Failed to get sync history:', error.message);
       return [];
     }
   }

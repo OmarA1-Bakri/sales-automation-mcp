@@ -1,0 +1,124 @@
+{
+  "plan_name": "Work-Critic Full Remediation Plan",
+  "plan_id": "WCR-FULL-2025-11-28",
+  "created_at": "2025-11-28T00:00:00Z",
+  "created_by": "work-critic-v2",
+  "overall_grade": "C+",
+  "deployment_status": "BLOCKED",
+  "total_tasks": 22,
+  "total_estimated_hours": 50,
+  "execution_strategy": "parallel_phases",
+  "phases": [
+    {
+      "phase_file": "phase1-security-blockers.json",
+      "phase_id": "1-security-blockers",
+      "phase_name": "Security Blockers",
+      "blocking": true,
+      "task_count": 4,
+      "estimated_hours": 8,
+      "priority": "CRITICAL",
+      "must_complete_before": ["2-critical-performance"],
+      "summary": "Rotate exposed credentials, purge git history, fix credential fallbacks, address silent failures"
+    },
+    {
+      "phase_file": "phase2-critical-performance.json",
+      "phase_id": "2-critical-performance",
+      "phase_name": "Critical Performance Fixes",
+      "blocking": false,
+      "task_count": 6,
+      "estimated_hours": 14,
+      "priority": "HIGH",
+      "depends_on": ["1-security-blockers"],
+      "must_complete_before": ["3-high-priority-architecture"],
+      "summary": "Fix N+1 queries, O(n2) algorithms, sync file I/O, prototype pollution, fire-and-forget async"
+    },
+    {
+      "phase_file": "phase3-high-priority-architecture.json",
+      "phase_id": "3-high-priority-architecture",
+      "phase_name": "High Priority Architecture",
+      "blocking": false,
+      "task_count": 8,
+      "estimated_hours": 20,
+      "priority": "MEDIUM-HIGH",
+      "depends_on": ["2-critical-performance"],
+      "must_complete_before": ["4-code-quality"],
+      "summary": "Split god objects, add HubSpot deduplication, replace console.log, add indexes, fix cache TTL"
+    },
+    {
+      "phase_file": "phase4-code-quality.json",
+      "phase_id": "4-code-quality",
+      "phase_name": "Code Quality Improvements",
+      "blocking": false,
+      "task_count": 4,
+      "estimated_hours": 8,
+      "priority": "MEDIUM",
+      "depends_on": ["3-high-priority-architecture"],
+      "summary": "Extract utilities, organize schemas, standardize errors, add documentation"
+    }
+  ],
+  "agent_utilization": {
+    "security_sentinel": ["SEC-001", "SEC-003", "PERF-004", "ARCH-006"],
+    "git_history_analyzer": ["SEC-002"],
+    "pattern_recognition_specialist": ["SEC-004", "PERF-005", "ARCH-004", "ARCH-008", "QUAL-003"],
+    "performance_oracle": ["PERF-001", "PERF-002", "PERF-003", "ARCH-007"],
+    "data_integrity_guardian": ["PERF-006", "ARCH-003", "ARCH-005"],
+    "architecture_strategist": ["ARCH-001", "ARCH-002", "QUAL-002", "QUAL-003"],
+    "code_simplicity_reviewer": ["ARCH-002", "ARCH-008", "QUAL-001"],
+    "best_practices_researcher": ["QUAL-004"]
+  },
+  "success_metrics": {
+    "security_score": {
+      "current": "F",
+      "target": "A",
+      "measurement": "No exposed credentials, no silent failures"
+    },
+    "performance_score": {
+      "current": "D",
+      "target": "B+",
+      "measurement": "No N+1 queries, no O(n2) algorithms, async I/O"
+    },
+    "architecture_score": {
+      "current": "D+",
+      "target": "B",
+      "measurement": "No file >500 lines, single responsibility"
+    },
+    "code_quality_score": {
+      "current": "C",
+      "target": "B+",
+      "measurement": "Consistent patterns, documented APIs"
+    }
+  },
+  "risk_assessment": {
+    "high_risk_tasks": [
+      {
+        "task_id": "SEC-002",
+        "risk": "Git history rewrite requires all team members to re-clone",
+        "mitigation": "Coordinate timing, backup repository first"
+      },
+      {
+        "task_id": "ARCH-001",
+        "risk": "Large refactor may introduce regressions",
+        "mitigation": "Comprehensive test coverage before and after"
+      },
+      {
+        "task_id": "ARCH-002",
+        "risk": "Route handler extraction may break middleware chains",
+        "mitigation": "Integration tests for all routes"
+      }
+    ]
+  },
+  "execution_notes": [
+    "Phase 1 MUST complete before any other work - deployment is blocked",
+    "Phases 2-4 can have internal parallelization (see parallel_tracks in each phase)",
+    "Each task should be committed separately with descriptive message",
+    "Run full test suite after each phase completion",
+    "Security tasks require credential rotation with external providers"
+  ],
+  "related_plans": [
+    {
+      "file": "work-critic-remediation.json",
+      "description": "Earlier frontend-focused remediation from UI/UX testing",
+      "status": "can_run_in_parallel"
+    }
+  ]
+}

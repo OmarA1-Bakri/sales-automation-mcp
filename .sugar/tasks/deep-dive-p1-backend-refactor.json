@@ -1,0 +1,143 @@
+{
+  "id": "deep-dive-p1-backend-refactor",
+  "title": "P1: Backend Monolith Decomposition",
+  "type": "refactoring",
+  "priority": 8,
+  "status": "pending",
+  "created_at": "2025-11-27T00:00:00Z",
+  "estimated_effort_hours": 120,
+  "source": "Deep Dive Analysis - November 2025",
+
+  "context": "server.js is a 2,556-line God Object containing all application logic. This creates maintenance nightmare, testing impossibility, and high bug risk. Campaign controller at 1,499 lines also needs decomposition.",
+
+  "business_context": "Current architecture makes feature development 3x slower than industry standard. Bug fixes have high regression risk. New developer onboarding takes 2+ weeks just to understand server.js.",
+
+  "current_state": {
+    "server_js_lines": 2556,
+    "campaign_controller_lines": 1499,
+    "test_coverage": "<10%",
+    "cyclomatic_complexity": ">20 in multiple functions"
+  },
+
+  "target_state": {
+    "max_file_lines": 300,
+    "max_function_lines": 50,
+    "target_test_coverage": "60%",
+    "max_cyclomatic_complexity": 10
+  },
+
+  "phases": [
+    {
+      "id": "REFACTOR-1",
+      "title": "Extract Route Handlers",
+      "description": "Move route definitions from server.js to dedicated route files",
+      "target_files": [
+        "sales-automation-api/src/routes/health.js",
+        "sales-automation-api/src/routes/workflows.js",
+        "sales-automation-api/src/routes/campaigns.js",
+        "sales-automation-api/src/routes/jobs.js",
+        "sales-automation-api/src/routes/chat.js",
+        "sales-automation-api/src/routes/admin.js"
+      ],
+      "estimated_hours": 24,
+      "lines_reduced": 988
+    },
+    {
+      "id": "REFACTOR-2",
+      "title": "Extract Middleware Configuration",
+      "description": "Create dedicated middleware configurator",
+      "target_files": [
+        "sales-automation-api/src/middleware/index.js",
+        "sales-automation-api/src/middleware/cors-config.js",
+        "sales-automation-api/src/middleware/security-headers.js"
+      ],
+      "estimated_hours": 16,
+      "lines_reduced": 305
+    },
+    {
+      "id": "REFACTOR-3",
+      "title": "Extract Service Layer",
+      "description": "Create dedicated services for business logic",
+      "target_files": [
+        "sales-automation-api/src/services/JobQueueService.js",
+        "sales-automation-api/src/services/WebSocketService.js",
+        "sales-automation-api/src/services/YoloModeService.js",
+        "sales-automation-api/src/services/ToolExecutorService.js"
+      ],
+      "estimated_hours": 24,
+      "lines_reduced": 400
+    },
+    {
+      "id": "REFACTOR-4",
+      "title": "Split Campaign Controller",
+      "description": "Decompose campaign controller by domain",
+      "target_files": [
+        "sales-automation-api/src/controllers/template-controller.js",
+        "sales-automation-api/src/controllers/instance-controller.js",
+        "sales-automation-api/src/controllers/sequence-controller.js",
+        "sales-automation-api/src/controllers/enrollment-controller.js",
+        "sales-automation-api/src/controllers/event-controller.js"
+      ],
+      "estimated_hours": 32,
+      "lines_reduced": 1200
+    },
+    {
+      "id": "REFACTOR-5",
+      "title": "Extract Analytics Service",
+      "description": "Centralize performance analytics queries",
+      "target_file": "sales-automation-api/src/services/PerformanceAnalyticsService.js",
+      "estimated_hours": 8,
+      "lines_reduced": 130
+    },
+    {
+      "id": "REFACTOR-6",
+      "title": "Create Query Builder Layer",
+      "description": "Abstract database queries for testability",
+      "target_files": [
+        "sales-automation-api/src/repositories/CampaignRepository.js",
+        "sales-automation-api/src/repositories/EnrollmentRepository.js",
+        "sales-automation-api/src/repositories/EventRepository.js"
+      ],
+      "estimated_hours": 16
+    }
+  ],
+
+  "technical_requirements": [
+    "Maintain 100% backward compatibility during refactor",
+    "Each phase must have tests before AND after",
+    "Use dependency injection for services",
+    "Follow Express best practices for route organization",
+    "Create index.js files for clean exports",
+    "No breaking changes to API contracts"
+  ],
+
+  "agent_assignments": {
+    "architect": "compounding-engineering:architecture-strategist",
+    "implementation": "sugar:task-planner",
+    "code_review": "compounding-engineering:code-simplicity-reviewer",
+    "testing": "sugar:quality-guardian"
+  },
+
+  "success_criteria": [
+    "server.js reduced to <500 lines (bootstrap only)",
+    "campaign-controller.js split into 5 files (<300 lines each)",
+    "All existing API endpoints function identically",
+    "Test coverage increased to 30% minimum",
+    "Cyclomatic complexity <10 for all functions"
+  ],
+
+  "risks": [
+    {
+      "risk": "Regression bugs during refactor",
+      "mitigation": "Comprehensive E2E test suite before starting"
+    },
+    {
+      "risk": "Circular dependencies",
+      "mitigation": "Careful dependency graph planning"
+    },
+    {
+      "risk": "Breaking API contracts",
+      "mitigation": "Contract tests for all endpoints"
+    }
+  ]
+}

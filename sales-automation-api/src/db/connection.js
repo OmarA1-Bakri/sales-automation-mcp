@@ -9,14 +9,41 @@ import Sequelize from 'sequelize';
 const { Pool } = pg;
 
 /**
+ * Validate required environment variables
+ * Throws clear error if any are missing - prevents accidental use of dev credentials in production
+ */
+function validateDatabaseEnv() {
+  const required = [
+    'POSTGRES_HOST',
+    'POSTGRES_DB',
+    'POSTGRES_USER',
+    'POSTGRES_PASSWORD'
+  ];
+
+  const missing = required.filter(key => !process.env[key]);
+
+  if (missing.length > 0) {
+    const errorMsg = `[Database] FATAL: Missing required environment variables: ${missing.join(', ')}. ` +
+      `Please set these in your .env file or environment. ` +
+      `Refusing to start with fallback credentials for security.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+}
+
+// Validate on module load - fail fast if credentials missing
+validateDatabaseEnv();
+
+/**
  * Database Configuration from Environment
+ * No fallbacks - all values must be explicitly set
  */
 const config = {
-  host: process.env.POSTGRES_HOST || 'localhost',
+  host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  database: process.env.POSTGRES_DB || 'rtgs_sales_automation',
-  user: process.env.POSTGRES_USER || 'rtgs_user',
-  password: process.env.POSTGRES_PASSWORD || 'rtgs_password_dev',
+  database: process.env.POSTGRES_DB,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
 
   // Connection pool settings
   max: 20,                    // Maximum number of clients in pool

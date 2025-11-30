@@ -9,6 +9,8 @@ import ContactsPage from './pages/ContactsPage';
 import ImportPage from './pages/ImportPage';
 import ICPPage from './pages/ICPPage';
 import SettingsPage from './pages/SettingsPage';
+import WorkflowsPage from './pages/WorkflowsPage';
+import PerformancePage from './pages/PerformancePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import useStore from './store/useStore';
 
@@ -135,6 +137,18 @@ function App() {
         return (
           <ErrorBoundary fallbackMessage="Settings page encountered an error. Please try again.">
             <SettingsPage />
+          </ErrorBoundary>
+        );
+      case 'workflows':
+        return (
+          <ErrorBoundary fallbackMessage="Workflows page encountered an error. Please try again.">
+            <WorkflowsPage />
+          </ErrorBoundary>
+        );
+      case 'performance':
+        return (
+          <ErrorBoundary fallbackMessage="Performance page encountered an error. Please try again.">
+            <PerformancePage />
           </ErrorBoundary>
         );
       default:

@@ -3,6 +3,13 @@
  *
  * Comprehensive Zod validation schemas for all API endpoints.
  * Implements RFC-compliant validation for emails, domains, and business logic.
+ *
+ * ARCH-008 NOTE: This file is maintained for backward compatibility.
+ * For new code, prefer importing from '../validators/complete-schemas.js' which
+ * includes XSS sanitization (DOMPurify) and prototype pollution protection.
+ *
+ * Base schemas (EmailSchema, DomainSchema, UUIDSchema, etc.) are duplicated
+ * in complete-schemas.js with enhanced security features.
  */
 
 import { z } from 'zod';

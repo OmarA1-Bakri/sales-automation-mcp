@@ -18,6 +18,11 @@ import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import { EventEmitter } from 'events';
+import { safeJsonParse } from '../utils/prototype-protection.js';
+// ARCH-004 FIX: Import structured logger
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('ImportWorker');
 
 export class ImportWorker extends EventEmitter {
   constructor(clients, database) {
@@ -49,7 +54,7 @@ export class ImportWorker extends EventEmitter {
     const { filePath, fieldMapping = null, skipHeader = true, deduplicate = true } = params;
 
     try {
-      console.log(`[Import] Reading CSV file: ${filePath}`);
+      logger.info(`[Import] Reading CSV file: ${filePath}`);
 
       // Read CSV file
       const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -59,7 +64,7 @@ export class ImportWorker extends EventEmitter {
         trim: true,
       });
 
-      console.log(`[Import] Found ${records.length} records in CSV`);
+      logger.info(`[Import] Found ${records.length} records in CSV`);
 
       // Apply field mapping if provided
       const mappedContacts = fieldMapping
@@ -69,13 +74,13 @@ export class ImportWorker extends EventEmitter {
       // Validate contacts
       const validContacts = this._validateContacts(mappedContacts);
 
-      console.log(`[Import] ${validContacts.length} valid contacts after validation`);
+      logger.info(`[Import] ${validContacts.length} valid contacts after validation`);
 
       // Deduplicate if enabled
       let finalContacts = validContacts;
       if (deduplicate) {
         finalContacts = await this._deduplicateContacts(validContacts);
-        console.log(`[Import] ${finalContacts.length} unique contacts after deduplication`);
+        logger.info(`[Import] ${finalContacts.length} unique contacts after deduplication`);
       }
 
       // Store imported contacts
@@ -93,7 +98,7 @@ export class ImportWorker extends EventEmitter {
 
       // Emit event for automatic enrichment
       if (finalContacts.length > 0) {
-        console.log(`[Import] Emitting contacts-imported event for ${finalContacts.length} contacts`);
+        logger.info(`[Import] Emitting contacts-imported event for ${finalContacts.length} contacts`);
         this.emit('contacts-imported', {
           source: 'csv',
           contacts: finalContacts,
@@ -103,7 +108,7 @@ export class ImportWorker extends EventEmitter {
 
       return result;
     } catch (error) {
-      console.error('[Import] CSV import failed:', error.message);
+      logger.error('[Import] CSV import failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -163,7 +168,7 @@ export class ImportWorker extends EventEmitter {
       }
     }
 
-    console.log('[Import] Auto-detected field mapping:', mapping);
+    logger.info('[Import] Auto-detected field mapping:', mapping);
 
     // Apply mapping
     for (const record of records) {
@@ -190,7 +195,7 @@ export class ImportWorker extends EventEmitter {
     const { campaignId = null, status = null, limit = 1000, deduplicate = true } = params;
 
     try {
-      console.log('[Import] Fetching leads from Lemlist...');
+      logger.info('[Import] Fetching leads from Lemlist...');
 
       // Get leads from Lemlist
       const lemlistLeads = await this.lemlist.getLeads({
@@ -199,7 +204,7 @@ export class ImportWorker extends EventEmitter {
         limit,
       });
 
-      console.log(`[Import] Found ${lemlistLeads.length} leads in Lemlist`);
+      logger.info(`[Import] Found ${lemlistLeads.length} leads in Lemlist`);
 
       // Map Lemlist format to our contact format
       const contacts = lemlistLeads.map((lead) => ({
@@ -241,7 +246,7 @@ export class ImportWorker extends EventEmitter {
 
       // Emit event for automatic enrichment
       if (finalContacts.length > 0) {
-        console.log(`[Import] Emitting contacts-imported event for ${finalContacts.length} contacts`);
+        logger.info(`[Import] Emitting contacts-imported event for ${finalContacts.length} contacts`);
         this.emit('contacts-imported', {
           source: 'lemlist',
           contacts: finalContacts,
@@ -252,7 +257,7 @@ export class ImportWorker extends EventEmitter {
 
       return result;
     } catch (error) {
-      console.error('[Import] Lemlist import failed:', error.message);
+      logger.error('[Import] Lemlist import failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -270,18 +275,18 @@ export class ImportWorker extends EventEmitter {
     const { deduplicate = true } = params;
 
     try {
-      console.log('[Import] Fetching all Lemlist campaigns...');
+      logger.info('[Import] Fetching all Lemlist campaigns...');
 
       // Get all campaigns
       const campaigns = await this.lemlist.getCampaigns();
 
-      console.log(`[Import] Found ${campaigns.length} Lemlist campaigns`);
+      logger.info(`[Import] Found ${campaigns.length} Lemlist campaigns`);
 
       const allContacts = [];
 
       // Import from each campaign
       for (const campaign of campaigns) {
-        console.log(`[Import] Processing campaign: ${campaign.name}`);
+        logger.info(`[Import] Processing campaign: ${campaign.name}`);
 
         const result = await this.importFromLemlist({
           campaignId: campaign.id,
@@ -293,13 +298,13 @@ export class ImportWorker extends EventEmitter {
         }
       }
 
-      console.log(`[Import] Total leads from all campaigns: ${allContacts.length}`);
+      logger.info(`[Import] Total leads from all campaigns: ${allContacts.length}`);
 
       // Deduplicate across all campaigns
       let finalContacts = allContacts;
       if (deduplicate) {
         finalContacts = await this._deduplicateContacts(allContacts);
-        console.log(`[Import] ${finalContacts.length} unique contacts after deduplication`);
+        logger.info(`[Import] ${finalContacts.length} unique contacts after deduplication`);
       }
 
       return {
@@ -310,7 +315,7 @@ export class ImportWorker extends EventEmitter {
         contacts: finalContacts,
       };
     } catch (error) {
-      console.error('[Import] Lemlist batch import failed:', error.message);
+      logger.error('[Import] Lemlist batch import failed:', error.message);
       return {
         success: false,
         error: error.message,
@@ -336,7 +341,7 @@ export class ImportWorker extends EventEmitter {
     } = params;
 
     try {
-      console.log('[Import] Fetching contacts from HubSpot...');
+      logger.info('[Import] Fetching contacts from HubSpot...');
 
       // Build search params
       const searchParams = {
@@ -348,7 +353,7 @@ export class ImportWorker extends EventEmitter {
       // Get contacts from HubSpot
       const hubspotContacts = await this.hubspot.searchContacts(searchParams);
 
-      console.log(`[Import] Found ${hubspotContacts.length} contacts in HubSpot`);
+      logger.info(`[Import] Found ${hubspotContacts.length} contacts in HubSpot`);
 
       // Map HubSpot format to our contact format
       const contacts = hubspotContacts.map((contact) => ({
@@ -389,7 +394,7 @@ export class ImportWorker extends EventEmitter {
 
       // Emit event for automatic enrichment
       if (finalContacts.length > 0) {
-        console.log(`[Import] Emitting contacts-imported event for ${finalContacts.length} contacts`);
+        logger.info(`[Import] Emitting contacts-imported event for ${finalContacts.length} contacts`);
         this.emit('contacts-imported', {
           source: 'hubspot',
           contacts: finalContacts,
@@ -399,7 +404,7 @@ export class ImportWorker extends EventEmitter {
 
       return result;
     } catch (error) {
-      console.error('[Import] HubSpot import failed:', error.message);
+      logger.error('[Import] HubSpot import failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -417,12 +422,12 @@ export class ImportWorker extends EventEmitter {
     const { listId, deduplicate = true } = params;
 
     try {
-      console.log(`[Import] Fetching contacts from HubSpot list: ${listId}`);
+      logger.info(`[Import] Fetching contacts from HubSpot list: ${listId}`);
 
       // Get list members
       const listMembers = await this.hubspot.getListMembers(listId);
 
-      console.log(`[Import] Found ${listMembers.length} contacts in list`);
+      logger.info(`[Import] Found ${listMembers.length} contacts in list`);
 
       // Fetch full contact details
       const contactIds = listMembers.map((member) => member.id);
@@ -463,7 +468,7 @@ export class ImportWorker extends EventEmitter {
         contacts: finalContacts,
       };
     } catch (error) {
-      console.error('[Import] HubSpot list import failed:', error.message);
+      logger.error('[Import] HubSpot list import failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -544,7 +549,7 @@ export class ImportWorker extends EventEmitter {
 
       // Step 1: Check if we've already seen this email in this batch
       if (seen.has(email)) {
-        console.log(`[Import] Skipping duplicate email in batch: ${email}`);
+        logger.info(`[Import] Skipping duplicate email in batch: ${email}`);
         continue;
       }
 
@@ -553,7 +558,7 @@ export class ImportWorker extends EventEmitter {
       // The INSERT OR REPLACE in _storeImportedContacts() provides the final atomic protection.
       const existing = await this._checkExistingContact(email);
       if (existing) {
-        console.log(`[Import] Skipping existing contact in database: ${email}`);
+        logger.info(`[Import] Skipping existing contact in database: ${email}`);
         continue;
       }
 
@@ -575,8 +580,10 @@ export class ImportWorker extends EventEmitter {
       );
       return stmt.get(email.toLowerCase()) !== undefined;
     } catch (error) {
-      console.error('[Import] Error checking existing contact:', error.message);
-      return false;
+      logger.error('[Import] Error checking existing contact:', error.message);
+      this.stats.errors = (this.stats.errors || 0) + 1;
+      // SEC-004 FIX: Re-throw - returning false could cause duplicate imports
+      throw new Error(`Failed to check existing contact ${email}: ${error.message}`);
     }
   }
 
@@ -617,9 +624,9 @@ export class ImportWorker extends EventEmitter {
 
     try {
       const storedCount = transaction(contacts);
-      console.log(`[Import] Stored ${storedCount} contacts in database`);
+      logger.info(`[Import] Stored ${storedCount} contacts in database`);
     } catch (error) {
-      console.error('[Import] Failed to store contacts:', error.message);
+      logger.error('[Import] Failed to store contacts:', error.message);
       // PHASE 3 FIX (P3.1): Transaction automatically rolled back on error
       throw error;
     }
@@ -646,13 +653,16 @@ export class ImportWorker extends EventEmitter {
       const stmt = this.database.db.prepare(query);
       const rows = stmt.all(...queryParams);
 
+      // PERF-004 FIX: Use safeJsonParse to prevent prototype pollution
       return rows.map((row) => ({
-        ...JSON.parse(row.data),
+        ...safeJsonParse(row.data),
         importedAt: row.imported_at,
       }));
     } catch (error) {
-      console.error('[Import] Failed to get imported contacts:', error.message);
-      return [];
+      logger.error('[Import] Failed to get imported contacts:', error.message);
+      this.stats.errors = (this.stats.errors || 0) + 1;
+      // SEC-004 FIX: Re-throw - returning [] hides database errors from callers
+      throw new Error(`Failed to get imported contacts: ${error.message}`);
     }
   }
 
@@ -702,7 +712,7 @@ export class ImportWorker extends EventEmitter {
 
       return summary;
     } catch (error) {
-      console.error('[Import] Failed to get summary:', error.message);
+      logger.error('[Import] Failed to get summary:', error.message);
       return [];
     }
   }

@@ -8,9 +8,10 @@
     "sales-automation-api": "./src/server.js"
   },
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "yolo": "node src/server.js --yolo",
+    "start": "node --import tsx src/server.js",
+    "start:no-tsx": "node src/server.js",
+    "dev": "node --import tsx --watch src/server.js",
+    "yolo": "node --import tsx src/server.js --yolo",
     "mcp": "node src/mcp-server.js",
     "mcp:dev": "node --watch src/mcp-server.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
@@ -55,7 +56,8 @@
     "sequelize": "^6.37.7",
     "ws": "^8.16.0",
     "yaml": "^2.3.4",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "tsx": "^4.20.6"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.1.0",
@@ -64,8 +66,7 @@
     "jest": "^30.2.0",
     "sequelize-cli": "^6.6.3",
     "sqlite3": "^5.1.7",
-    "supertest": "^7.1.4",
-    "tsx": "^4.20.6"
+    "supertest": "^7.1.4"
   },
   "keywords": [
     "mcp",

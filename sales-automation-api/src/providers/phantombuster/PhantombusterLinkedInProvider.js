@@ -13,6 +13,9 @@
 import { LinkedInProvider } from '../interfaces/LinkedInProvider.js';
 import { createLogger } from '../../utils/logger.js';
 import { providerConfig } from '../../config/provider-config.js';
+import { metrics } from '../../utils/metrics.js';
+import { replaceTemplateVariables } from '../utils/variable-replacer.js';
+import crypto from 'crypto';
 
 const logger = createLogger('PhantombusterLinkedInProvider');
 
@@ -25,10 +28,10 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
     this.webhookSecret = config?.webhookSecret;
     this.apiUrl = config?.apiUrl || 'https://api.phantombuster.com/api/v2';
 
-    // LinkedIn safety limits (2025 recommendations)
-    this.dailyConnectionLimit = 20; // Conservative limit
-    this.dailyMessageLimit = 50;
-    this.dailyProfileViewLimit = 500;
+    // LinkedIn safety limits (2025 recommendations) - configurable via env vars
+    this.dailyConnectionLimit = parseInt(process.env.LINKEDIN_DAILY_CONNECTION_LIMIT || '20', 10);
+    this.dailyMessageLimit = parseInt(process.env.LINKEDIN_DAILY_MESSAGE_LIMIT || '50', 10);
+    this.dailyProfileViewLimit = parseInt(process.env.LINKEDIN_DAILY_PROFILE_LIMIT || '500', 10);
 
     if (!this.apiKey) {
       logger.warn('PhantomBuster API key not configured');
@@ -44,6 +47,7 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
    */
   async _makeRequest(endpoint, method = 'GET', body = null) {
     const url = `${this.apiUrl}${endpoint}`;
+    const startTime = Date.now();
 
     const options = {
       method,
@@ -62,8 +66,26 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
     try {
       const response = await fetch(url, options);
       const data = await response.json();
+      const latency = Date.now() - startTime;
+
+      // Track API latency
+      metrics.histogram('provider.api_latency_ms', latency, {
+        provider: 'phantombuster',
+        endpoint: endpoint.split('/')[1] || endpoint
+      });
 
       if (!response.ok) {
+        // Track API error
+        metrics.counter('provider.api_calls', 1, {
+          provider: 'phantombuster',
+          endpoint: endpoint.split('/')[1] || endpoint,
+          status: 'error'
+        });
+        metrics.counter('provider.api_errors', 1, {
+          provider: 'phantombuster',
+          error_type: response.status === 429 ? 'rate_limit' : (response.status >= 500 ? 'server_error' : 'validation')
+        });
+
         logger.error('PhantomBuster API error', {
           status: response.status,
           endpoint,
@@ -76,8 +98,28 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
         );
       }
 
+      // Track successful API call
+      metrics.counter('provider.api_calls', 1, {
+        provider: 'phantombuster',
+        endpoint: endpoint.split('/')[1] || endpoint,
+        status: 'success'
+      });
+
       return data;
     } catch (error) {
+      // Track network/timeout errors
+      if (!error.message.includes('PhantomBuster API error')) {
+        metrics.counter('provider.api_calls', 1, {
+          provider: 'phantombuster',
+          endpoint: endpoint.split('/')[1] || endpoint,
+          status: 'error'
+        });
+        metrics.counter('provider.api_errors', 1, {
+          provider: 'phantombuster',
+          error_type: 'network'
+        });
+      }
+
       logger.error('PhantomBuster API request failed', {
         endpoint,
         error: error.message
@@ -226,12 +268,8 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
     // Validate connection request
     this.validateConnectionRequest({ message, profileUrl });
 
-    // Replace variables in message
-    let personalizedMessage = message;
-    Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      personalizedMessage = personalizedMessage.replace(regex, value || '');
-    });
+    // Replace variables in message using shared utility
+    const personalizedMessage = replaceTemplateVariables(message, variables);
 
     // Double-check character limit after personalization
     if (personalizedMessage.length > 300) {
@@ -394,23 +432,98 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
   }
 
   /**
-   * Verify webhook signature
-   * PhantomBuster doesn't provide signature verification
+   * Verify webhook signature using HMAC-SHA256
+   *
+   * SECURITY FIX: FAIL CLOSED - Reject ALL webhooks if secret not configured
+   *
+   * For PhantomBuster webhooks, we implement our own HMAC verification:
+   * 1. Set up a webhook URL with query param: ?token=YOUR_SECRET
+   * 2. Or use x-phantombuster-signature header with HMAC-SHA256 of body
    */
   verifyWebhookSignature(req, secret) {
-    // PhantomBuster webhooks don't include signatures
-    // Recommend using HTTPS + IP whitelisting
-    logger.debug('PhantomBuster webhook received (no signature verification available)');
-
-    // If you've configured a secret token, check it
-    const token = req.headers['x-phantombuster-token'] || req.query.token;
-
-    if (secret && token) {
-      return token === secret;
+    // P0 SECURITY: FAIL CLOSED - Never allow webhooks without secret configured
+    if (!secret) {
+      logger.error('PHANTOMBUSTER_WEBHOOK_SECRET not configured - REJECTING all webhooks for security');
+      return false;
     }
 
-    // Allow if no secret configured (not recommended for production)
-    return !secret || secret === '';
+    // Method 1: Check HMAC signature header (preferred)
+    const signature = req.headers['x-phantombuster-signature'];
+    if (signature) {
+      return this._verifyHMACSignature(req.body, signature, secret);
+    }
+
+    // Method 2: Check token in header or query param (fallback)
+    const token = req.headers['x-phantombuster-token'] || req.query.token;
+    if (token) {
+      return this._verifyToken(token, secret);
+    }
+
+    // No authentication provided - reject
+    logger.warn('PhantomBuster webhook missing authentication (signature or token)');
+    return false;
+  }
+
+  /**
+   * Verify HMAC-SHA256 signature
+   * @private
+   */
+  _verifyHMACSignature(body, signature, secret) {
+    try {
+      const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+
+      const expectedSig = crypto
+        .createHmac('sha256', secret)
+        .update(bodyString)
+        .digest('hex');
+
+      // Timing-safe comparison
+      const signatureBuffer = Buffer.from(signature);
+      const expectedBuffer = Buffer.from(expectedSig);
+
+      if (signatureBuffer.length !== expectedBuffer.length) {
+        logger.warn('PhantomBuster webhook HMAC signature length mismatch');
+        return false;
+      }
+
+      const isValid = crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
+
+      if (!isValid) {
+        logger.warn('PhantomBuster webhook HMAC signature mismatch');
+      }
+
+      return isValid;
+    } catch (error) {
+      logger.error('PhantomBuster HMAC verification error', { error: error.message });
+      return false;
+    }
+  }
+
+  /**
+   * Verify token using timing-safe comparison
+   * @private
+   */
+  _verifyToken(token, secret) {
+    try {
+      const tokenBuffer = Buffer.from(token);
+      const secretBuffer = Buffer.from(secret);
+
+      if (tokenBuffer.length !== secretBuffer.length) {
+        logger.warn('PhantomBuster webhook token length mismatch');
+        return false;
+      }
+
+      const isValid = crypto.timingSafeEqual(tokenBuffer, secretBuffer);
+
+      if (!isValid) {
+        logger.warn('PhantomBuster webhook token mismatch');
+      }
+
+      return isValid;
+    } catch (error) {
+      logger.error('PhantomBuster token verification error', { error: error.message });
+      return false;
+    }
   }
 
   /**
@@ -465,23 +578,223 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
   }
 
   /**
-   * Get current rate limit status
+   * Get current rate limit status from database
+   *
+   * P0 FIX: Now queries actual database instead of returning fake data
    */
   async getRateLimitStatus() {
-    // PhantomBuster doesn't track rate limits internally
-    // You would need to track this in your own database
+    try {
+      const accountId = this._getAccountIdentifier();
+      const today = this._getTodayInLinkedInTimezone();
 
-    logger.warn('Rate limit tracking not implemented - track in your database');
+      // Query database for today's counts
+      const { sequelize } = await import('../../models/index.js');
 
-    return {
-      connectionsToday: 0,
-      messagesToday: 0,
-      profileVisitsToday: 0,
-      connectionsRemaining: this.dailyConnectionLimit,
-      messagesRemaining: this.dailyMessageLimit,
-      profileVisitsRemaining: this.dailyProfileViewLimit,
-      resetsAt: this._getNextMidnight()
-    };
+      const [results] = await sequelize.query(`
+        SELECT connections_sent, messages_sent, profile_visits
+        FROM linkedin_rate_limits
+        WHERE account_identifier = :accountId AND date = :today
+      `, {
+        replacements: { accountId, today },
+        type: sequelize.QueryTypes.SELECT
+      });
+
+      const row = results || { connections_sent: 0, messages_sent: 0, profile_visits: 0 };
+
+      // Update rate limit usage gauges for Prometheus/Grafana
+      const connectionUsage = (row.connections_sent || 0) / this.dailyConnectionLimit;
+      const messageUsage = (row.messages_sent || 0) / this.dailyMessageLimit;
+      const profileVisitUsage = (row.profile_visits || 0) / this.dailyProfileViewLimit;
+
+      metrics.gauge('provider.rate_limit_usage', connectionUsage, {
+        provider: 'linkedin',
+        action_type: 'connection'
+      });
+      metrics.gauge('provider.rate_limit_usage', messageUsage, {
+        provider: 'linkedin',
+        action_type: 'message'
+      });
+      metrics.gauge('provider.rate_limit_usage', profileVisitUsage, {
+        provider: 'linkedin',
+        action_type: 'profile_visit'
+      });
+
+      // Update daily usage gauges
+      metrics.gauge('linkedin.daily_usage', row.connections_sent || 0, { action_type: 'connection' });
+      metrics.gauge('linkedin.daily_usage', row.messages_sent || 0, { action_type: 'message' });
+      metrics.gauge('linkedin.daily_usage', row.profile_visits || 0, { action_type: 'profile_visit' });
+
+      return {
+        connectionsToday: row.connections_sent || 0,
+        messagesToday: row.messages_sent || 0,
+        profileVisitsToday: row.profile_visits || 0,
+        connectionsRemaining: Math.max(0, this.dailyConnectionLimit - (row.connections_sent || 0)),
+        messagesRemaining: Math.max(0, this.dailyMessageLimit - (row.messages_sent || 0)),
+        profileVisitsRemaining: Math.max(0, this.dailyProfileViewLimit - (row.profile_visits || 0)),
+        resetsAt: this._getNextMidnight(),
+        accountIdentifier: accountId.substring(0, 8) + '...' // Show partial hash for debugging
+      };
+    } catch (error) {
+      logger.error('Failed to get rate limit status', { error: error.message });
+
+      // Return safe defaults on error (assume limits reached for safety)
+      return {
+        connectionsToday: this.dailyConnectionLimit,
+        messagesToday: this.dailyMessageLimit,
+        profileVisitsToday: this.dailyProfileViewLimit,
+        connectionsRemaining: 0,
+        messagesRemaining: 0,
+        profileVisitsRemaining: 0,
+        resetsAt: this._getNextMidnight(),
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Check if action is allowed under rate limits
+   * @private
+   */
+  async _checkRateLimit(actionType) {
+    try {
+      const accountId = this._getAccountIdentifier();
+      const today = this._getTodayInLinkedInTimezone();
+
+      const { sequelize } = await import('../../models/index.js');
+
+      // Get or create today's rate limit row with FOR UPDATE lock
+      const [results] = await sequelize.query(`
+        INSERT INTO linkedin_rate_limits (account_identifier, date, connections_sent, messages_sent, profile_visits)
+        VALUES (:accountId, :today, 0, 0, 0)
+        ON CONFLICT (account_identifier, date) DO UPDATE SET updated_at = NOW()
+        RETURNING *
+      `, {
+        replacements: { accountId, today },
+        type: sequelize.QueryTypes.SELECT
+      });
+
+      const row = results || { connections_sent: 0, messages_sent: 0, profile_visits: 0 };
+
+      // Get current count based on action type
+      let used, limit;
+      switch (actionType) {
+        case 'connection':
+          used = row.connections_sent || 0;
+          limit = this.dailyConnectionLimit;
+          break;
+        case 'message':
+          used = row.messages_sent || 0;
+          limit = this.dailyMessageLimit;
+          break;
+        case 'profile':
+          used = row.profile_visits || 0;
+          limit = this.dailyProfileViewLimit;
+          break;
+        default:
+          throw new Error(`Unknown action type: ${actionType}`);
+      }
+
+      const allowed = used < limit;
+
+      if (!allowed) {
+        // Track rate limit hit
+        metrics.counter('provider.rate_limit_hits', 1, {
+          provider: 'linkedin',
+          action_type: actionType
+        });
+
+        logger.warn(`Rate limit reached for ${actionType}`, {
+          accountId: accountId.substring(0, 8) + '...',
+          used,
+          limit,
+          resetsAt: this._getNextMidnight()
+        });
+      }
+
+      return {
+        allowed,
+        used,
+        limit,
+        remaining: Math.max(0, limit - used)
+      };
+    } catch (error) {
+      logger.error(`Rate limit check failed for ${actionType}`, { error: error.message });
+
+      // Fail SAFE - block action if we can't verify limits
+      return {
+        allowed: false,
+        used: 0,
+        limit: 0,
+        remaining: 0,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Increment rate limit counter after successful action
+   * @private
+   */
+  async _incrementRateLimit(actionType) {
+    try {
+      const accountId = this._getAccountIdentifier();
+      const today = this._getTodayInLinkedInTimezone();
+
+      const { sequelize } = await import('../../models/index.js');
+
+      // SECURITY: Whitelist of allowed columns to prevent SQL injection
+      const ALLOWED_COLUMNS = {
+        'connection': 'connections_sent',
+        'message': 'messages_sent',
+        'profile': 'profile_visits'
+      };
+
+      const column = ALLOWED_COLUMNS[actionType];
+      if (!column) {
+        throw new Error(`Unknown action type: ${actionType}`);
+      }
+
+      // Atomic increment with upsert
+      // Note: column is validated above from ALLOWED_COLUMNS whitelist
+      await sequelize.query(`
+        INSERT INTO linkedin_rate_limits (account_identifier, date, ${column})
+        VALUES (:accountId, :today, 1)
+        ON CONFLICT (account_identifier, date)
+        DO UPDATE SET ${column} = linkedin_rate_limits.${column} + 1, updated_at = NOW()
+      `, {
+        replacements: { accountId, today }
+      });
+
+      logger.debug(`Rate limit incremented for ${actionType}`, {
+        accountId: accountId.substring(0, 8) + '...',
+        column
+      });
+    } catch (error) {
+      logger.error(`Failed to increment rate limit for ${actionType}`, { error: error.message });
+      // Don't throw - action already succeeded, just log the error
+    }
+  }
+
+  /**
+   * Get account identifier (hash of session cookie)
+   * @private
+   */
+  _getAccountIdentifier() {
+    const sessionCookie = process.env.LINKEDIN_SESSION_COOKIE || 'default';
+    return crypto.createHash('sha256').update(sessionCookie).digest('hex');
+  }
+
+  /**
+   * Get today's date in LinkedIn HQ timezone (America/Los_Angeles)
+   * @private
+   */
+  _getTodayInLinkedInTimezone() {
+    // Use date-fns-tz or similar in production; this is a simple implementation
+    const now = new Date();
+    // LinkedIn HQ is in Pacific Time (PST/PDT)
+    const options = { timeZone: 'America/Los_Angeles' };
+    const laDate = new Date(now.toLocaleString('en-US', options));
+    return laDate.toISOString().split('T')[0]; // YYYY-MM-DD
   }
 
   /**

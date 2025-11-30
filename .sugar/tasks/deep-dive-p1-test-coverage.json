@@ -1,0 +1,190 @@
+{
+  "id": "deep-dive-p1-test-coverage",
+  "title": "P1: Test Coverage Improvement (10% -> 60%)",
+  "type": "testing",
+  "priority": 7,
+  "status": "pending",
+  "created_at": "2025-11-27T00:00:00Z",
+  "estimated_effort_hours": 200,
+  "source": "Deep Dive Analysis - November 2025",
+
+  "context": "Current test coverage estimated at <10% with only 3 test files for entire API. This makes refactoring dangerous, prevents CI/CD confidence, and increases production bug rate.",
+
+  "business_context": "Without proper test coverage, every code change risks regression. Current state blocks safe refactoring, slows feature development, and increases on-call burden.",
+
+  "current_state": {
+    "test_files": 3,
+    "estimated_coverage": "<10%",
+    "areas_untested": [
+      "AI agent execution",
+      "Workflow state management",
+      "Campaign lifecycle",
+      "Webhook processing",
+      "Authentication/authorization",
+      "External API integrations"
+    ]
+  },
+
+  "target_state": {
+    "coverage_percentage": 60,
+    "critical_paths_covered": 100,
+    "unit_tests": "All services and utilities",
+    "integration_tests": "All API endpoints",
+    "e2e_tests": "Critical user flows"
+  },
+
+  "phases": [
+    {
+      "id": "TEST-001",
+      "title": "Unit Tests - Utilities",
+      "description": "Test all utility functions",
+      "files": [
+        "src/utils/ai-usage-tracker.test.js",
+        "src/utils/metrics.test.js",
+        "src/utils/database.test.js",
+        "src/utils/logger.test.js"
+      ],
+      "estimated_hours": 16,
+      "coverage_added": 5
+    },
+    {
+      "id": "TEST-002",
+      "title": "Unit Tests - Services",
+      "description": "Test business logic services",
+      "files": [
+        "src/services/WorkflowExecutionService.test.js",
+        "src/bmad/WorkflowStateManager.test.js",
+        "src/services/OrphanedEventHandler.test.js"
+      ],
+      "estimated_hours": 32,
+      "coverage_added": 10
+    },
+    {
+      "id": "TEST-003",
+      "title": "Unit Tests - Controllers",
+      "description": "Test controller logic with mocked dependencies",
+      "files": [
+        "src/controllers/campaign-controller.test.js",
+        "src/controllers/workflow-controller.test.js"
+      ],
+      "estimated_hours": 24,
+      "coverage_added": 8
+    },
+    {
+      "id": "TEST-004",
+      "title": "Integration Tests - API Endpoints",
+      "description": "Test full request/response cycles",
+      "files": [
+        "tests/integration/campaigns.test.js",
+        "tests/integration/workflows.test.js",
+        "tests/integration/webhooks.test.js",
+        "tests/integration/chat.test.js"
+      ],
+      "estimated_hours": 40,
+      "coverage_added": 12
+    },
+    {
+      "id": "TEST-005",
+      "title": "Integration Tests - Authentication",
+      "description": "Test auth flows and authorization",
+      "files": [
+        "tests/integration/auth.test.js",
+        "tests/integration/api-keys.test.js",
+        "tests/integration/csrf.test.js"
+      ],
+      "estimated_hours": 24,
+      "coverage_added": 8
+    },
+    {
+      "id": "TEST-006",
+      "title": "Integration Tests - External APIs",
+      "description": "Test external service integrations with mocks",
+      "files": [
+        "tests/integration/hubspot.test.js",
+        "tests/integration/lemlist.test.js",
+        "tests/integration/explorium.test.js"
+      ],
+      "estimated_hours": 24,
+      "coverage_added": 7
+    },
+    {
+      "id": "TEST-007",
+      "title": "E2E Tests - Critical Flows",
+      "description": "End-to-end tests for user journeys",
+      "flows": [
+        "ICP profile creation -> prospect discovery",
+        "Campaign creation -> enrollment -> event processing",
+        "Workflow execution -> state persistence -> recovery"
+      ],
+      "estimated_hours": 32,
+      "coverage_added": 10
+    },
+    {
+      "id": "TEST-008",
+      "title": "Security Tests",
+      "description": "Specific tests for security controls",
+      "tests": [
+        "SQL injection prevention",
+        "XSS prevention",
+        "CSRF protection",
+        "Authorization bypass attempts",
+        "Rate limiting"
+      ],
+      "estimated_hours": 16,
+      "coverage_added": 5
+    }
+  ],
+
+  "test_infrastructure": [
+    {
+      "tool": "Jest",
+      "purpose": "Unit and integration testing",
+      "config_needed": "jest.config.js update for coverage thresholds"
+    },
+    {
+      "tool": "Supertest",
+      "purpose": "HTTP assertion library",
+      "config_needed": "Already installed"
+    },
+    {
+      "tool": "Mock Service Worker (MSW)",
+      "purpose": "API mocking for external services",
+      "config_needed": "Install and configure handlers"
+    },
+    {
+      "tool": "Test Database",
+      "purpose": "Isolated test database",
+      "config_needed": "Docker Compose for test PostgreSQL"
+    }
+  ],
+
+  "technical_requirements": [
+    "Jest coverage threshold set to 60%",
+    "CI fails on coverage decrease",
+    "All tests run in under 5 minutes",
+    "No test interdependencies",
+    "Use factories for test data",
+    "Mock external APIs consistently"
+  ],
+
+  "agent_assignments": {
+    "test_design": "sugar:quality-guardian",
+    "implementation": "sugar:task-planner",
+    "security_tests": "compounding-engineering:security-sentinel",
+    "review": "compounding-engineering:code-simplicity-reviewer"
+  },
+
+  "success_criteria": [
+    "Jest coverage report shows 60% overall",
+    "Critical paths at 100% coverage",
+    "All tests pass in CI",
+    "Test suite runs in <5 minutes",
+    "Zero flaky tests"
+  ],
+
+  "dependencies": [
+    "Backend refactoring complete (easier to test smaller modules)",
+    "MSW library installed",
+    "Test database Docker setup"
+  ]
+}

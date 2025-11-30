@@ -1,0 +1,515 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "3rd Party Provider Health Dashboard - Postmark, PhantomBuster, HeyGen",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "Provider Health Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "1": { "color": "green", "index": 0, "text": "Healthy" } }, "type": "value" },
+            { "options": { "0": { "color": "yellow", "index": 1, "text": "Degraded" } }, "type": "value" },
+            { "options": { "-1": { "color": "red", "index": 2, "text": "Down" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.5.0",
+      "targets": [
+        {
+          "expr": "provider_health_status{provider=\"postmark\"}",
+          "legendFormat": "Postmark"
+        }
+      ],
+      "title": "Postmark Status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "1": { "color": "green", "index": 0, "text": "Healthy" } }, "type": "value" },
+            { "options": { "0": { "color": "yellow", "index": 1, "text": "Degraded" } }, "type": "value" },
+            { "options": { "-1": { "color": "red", "index": 2, "text": "Down" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.5.0",
+      "targets": [
+        {
+          "expr": "provider_health_status{provider=\"phantombuster\"}",
+          "legendFormat": "PhantomBuster"
+        }
+      ],
+      "title": "PhantomBuster Status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "1": { "color": "green", "index": 0, "text": "Healthy" } }, "type": "value" },
+            { "options": { "0": { "color": "yellow", "index": 1, "text": "Degraded" } }, "type": "value" },
+            { "options": { "-1": { "color": "red", "index": 2, "text": "Down" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.5.0",
+      "targets": [
+        {
+          "expr": "provider_health_status{provider=\"heygen\"}",
+          "legendFormat": "HeyGen"
+        }
+      ],
+      "title": "HeyGen Status",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 5,
+      "panels": [],
+      "title": "API Performance",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 6,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(provider_api_latency_ms_bucket[5m])) by (provider, le))",
+          "legendFormat": "{{provider}} p95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(provider_api_latency_ms_bucket[5m])) by (provider, le))",
+          "legendFormat": "{{provider}} p50"
+        }
+      ],
+      "title": "API Latency by Provider (p50/p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "sum(rate(provider_api_calls_total{status=\"success\"}[5m])) by (provider)",
+          "legendFormat": "{{provider}} success"
+        },
+        {
+          "expr": "sum(rate(provider_api_calls_total{status=\"error\"}[5m])) by (provider)",
+          "legendFormat": "{{provider}} error"
+        }
+      ],
+      "title": "API Call Rate by Provider",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 8,
+      "panels": [],
+      "title": "LinkedIn Rate Limits (PhantomBuster)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 15 },
+      "id": 9,
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "pluginVersion": "9.5.0",
+      "targets": [
+        {
+          "expr": "provider_rate_limit_usage{provider=\"linkedin\", action_type=\"connection\"}",
+          "legendFormat": "Connections"
+        }
+      ],
+      "title": "Connection Requests (25/day limit)",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 15 },
+      "id": 10,
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "pluginVersion": "9.5.0",
+      "targets": [
+        {
+          "expr": "provider_rate_limit_usage{provider=\"linkedin\", action_type=\"message\"}",
+          "legendFormat": "Messages"
+        }
+      ],
+      "title": "Messages Sent (50/day limit)",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 15 },
+      "id": 11,
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "pluginVersion": "9.5.0",
+      "targets": [
+        {
+          "expr": "provider_rate_limit_usage{provider=\"linkedin\", action_type=\"profile_visit\"}",
+          "legendFormat": "Profile Visits"
+        }
+      ],
+      "title": "Profile Visits (100/day limit)",
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "id": 12,
+      "panels": [],
+      "title": "Email (Postmark)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "id": 13,
+      "targets": [
+        {
+          "expr": "sum(rate(emails_sent_total{status=\"sent\"}[5m])) * 60",
+          "legendFormat": "Sent"
+        },
+        {
+          "expr": "sum(rate(emails_sent_total{status=\"delivered\"}[5m])) * 60",
+          "legendFormat": "Delivered"
+        },
+        {
+          "expr": "sum(rate(emails_sent_total{status=\"bounced\"}[5m])) * 60",
+          "legendFormat": "Bounced"
+        }
+      ],
+      "title": "Email Volume (per minute)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 0.1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.02 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "id": 14,
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "pluginVersion": "9.5.0",
+      "targets": [
+        {
+          "expr": "email_bounce_rate",
+          "legendFormat": "Bounce Rate"
+        }
+      ],
+      "title": "Email Bounce Rate",
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "id": 15,
+      "panels": [],
+      "title": "Video Generation (HeyGen)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 16,
+      "targets": [
+        {
+          "expr": "sum(rate(video_generations_total{status=\"completed\"}[1h])) * 3600",
+          "legendFormat": "Completed"
+        },
+        {
+          "expr": "sum(rate(video_generations_total{status=\"failed\"}[1h])) * 3600",
+          "legendFormat": "Failed"
+        },
+        {
+          "expr": "sum(rate(video_generations_total{status=\"pending\"}[1h])) * 3600",
+          "legendFormat": "Pending"
+        }
+      ],
+      "title": "Video Generations (per hour)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "id": 17,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(video_generation_duration_ms_bucket[1h])) by (le)) / 1000",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(video_generation_duration_ms_bucket[1h])) by (le)) / 1000",
+          "legendFormat": "p95"
+        }
+      ],
+      "title": "Video Generation Duration",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
+      "id": 18,
+      "panels": [],
+      "title": "Webhooks",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 19,
+      "targets": [
+        {
+          "expr": "sum(rate(provider_webhooks_total{status=\"processed\"}[5m])) by (provider)",
+          "legendFormat": "{{provider}} processed"
+        },
+        {
+          "expr": "sum(rate(provider_webhooks_total{status=\"rejected\"}[5m])) by (provider)",
+          "legendFormat": "{{provider}} rejected"
+        }
+      ],
+      "title": "Webhook Processing Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 20,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(provider_webhook_latency_ms_bucket[5m])) by (provider, le))",
+          "legendFormat": "{{provider}} p95"
+        }
+      ],
+      "title": "Webhook Processing Latency (p95)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["provider-health", "postmark", "phantombuster", "heygen"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Provider Health Dashboard",
+  "uid": "provider-health-v1",
+  "version": 1
+}

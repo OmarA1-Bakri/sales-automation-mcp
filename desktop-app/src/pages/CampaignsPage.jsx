@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
-import { mockCampaigns } from '../mocks';
 import MultiChannelFlow from '../components/MultiChannelFlow';
 import CampaignEditor from '../components/CampaignEditor';
+import { normalizeCampaign, validateData, campaignSchema } from '../utils/normalizers';
 
 function CampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
@@ -22,12 +22,22 @@ function CampaignsPage() {
   const loadCampaigns = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with api.getCampaigns() when backend is implemented
-      // const result = await api.getCampaigns();
-      setCampaigns(mockCampaigns);
+      const result = await api.getCampaignsDirect();
+      if (result.success && result.campaigns) {
+        // Validate and normalize API response using shared utilities
+        result.campaigns.forEach((c, i) => validateData('CampaignsPage', c, i, campaignSchema));
+        const normalizedCampaigns = result.campaigns.map(normalizeCampaign);
+        setCampaigns(normalizedCampaigns);
+      } else {
+        // No campaigns found - start with empty state
+        setCampaigns([]);
+      }
     } catch (error) {
-      console.error('Failed to load campaigns:', error);
-      toast.error('Failed to load campaigns');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load campaigns:', error);
+      }
+      // Don't show error toast - just start with empty state
+      setCampaigns([]);
     } finally {
       setLoading(false);
     }
@@ -39,23 +49,36 @@ function CampaignsPage() {
   };
 
   const handleToggleStatus = async (campaignId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+
+    // Save original state for rollback
+    const originalCampaigns = [...campaigns];
+    const originalSelectedCampaign = selectedCampaign;
+
+    // Optimistic update
+    const updatedCampaigns = campaigns.map(c =>
+      c.id === campaignId ? { ...c, status: newStatus } : c
+    );
+    setCampaigns(updatedCampaigns);
+
+    if (selectedCampaign?.id === campaignId) {
+      setSelectedCampaign({ ...selectedCampaign, status: newStatus });
+    }
+
     try {
-      const newStatus = currentStatus === 'active' ? 'paused' : 'active';
-      const updatedCampaigns = campaigns.map(c =>
-        c.id === campaignId ? { ...c, status: newStatus } : c
-      );
-      setCampaigns(updatedCampaigns);
-
-      if (selectedCampaign?.id === campaignId) {
-        setSelectedCampaign({ ...selectedCampaign, status: newStatus });
-      }
-
+      // Call API to persist change
+      await api.updateCampaignStatus(campaignId, newStatus);
       toast.success(`Campaign ${newStatus === 'active' ? 'resumed' : 'paused'}`);
-
-      // TODO: Call API
-      // await api.updateCampaignStatus(campaignId, newStatus);
     } catch (error) {
-      toast.error('Failed to update campaign status');
+      // Rollback on failure
+      setCampaigns(originalCampaigns);
+      if (selectedCampaign?.id === campaignId) {
+        setSelectedCampaign(originalSelectedCampaign);
+      }
+      toast.error('Failed to update campaign status. Changes reverted.');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Campaign status update failed:', error);
+      }
     }
   };
 

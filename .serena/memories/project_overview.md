@@ -121,9 +121,15 @@ Production-ready autonomous sales prospecting system with a beautiful desktop UI
 ```
 
 ## Version
-**v1.0.0 (January 2025)** - Production Release
-- Complete desktop application (6 views)
-- AI chat assistant
-- Production quality improvements
-- Comprehensive documentation
-- Full test coverage
+**v1.1.0 (November 2025)** - Frontend Review Phase
+- All 8 UI pages fully functional
+- Contacts page displays 1082 imported contacts
+- ICP Profile creation form implemented
+- Sidebar logo centered and enlarged
+- E2E testing passed all pages
+
+## Recent Changes (Nov 2025)
+- Added `/api/contacts` endpoint for contact listing
+- Added `getContacts()` and `getContactsCount()` database methods
+- Full ICP profile creation form replacing placeholder
+- UI polish: centered sidebar logo

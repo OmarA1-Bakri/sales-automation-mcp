@@ -9,7 +9,7 @@ services:
     ports:
       - "3000:3000"  # Sales Automation API
       - "3456:3456"  # Alternate API port
-      - "5173:5173"  # Desktop App Dev Server
+      # Desktop app runs natively - port 5173 not needed in Docker
     environment:
       # ============================================================================
       # AI PROVIDERS
@@ -116,7 +116,11 @@ services:
       - /app/sales-automation-api/node_modules
       - /app/desktop-app/node_modules
 
-    command: /app/start.sh
+      # Exclude local .sales-automation database (use container's fresh database)
+      - /app/sales-automation-api/.sales-automation
+
+    # Only run the API server in Docker - Desktop app runs natively on host
+    command: sh -c "cd /app/sales-automation-api && npm start"
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]

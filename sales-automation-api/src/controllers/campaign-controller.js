@@ -35,6 +35,12 @@ import {
 // Import orphaned event queue for retry mechanism
 import OrphanedEventQueue from '../services/OrphanedEventQueue.js';
 
+// Import OutcomeTracker for learning from webhook events
+import OutcomeTracker from '../services/OutcomeTracker.js';
+
+// Import ConversationalResponder for dynamic AI responses
+import ConversationalResponder from '../services/ConversationalResponder.js';
+
 // ============================================================================
 // CUSTOM ERROR CLASSES
 // ============================================================================
@@ -1407,6 +1413,74 @@ async function createEvent(req, res) {
     res.status(201).json({
       success: true,
       data: event
+    });
+
+    // Fire-and-forget: Update OutcomeTracker for learning (don't block response)
+    // This enables automatic updates to what-works.md and what-doesnt-work.md
+    setImmediate(async () => {
+      try {
+        switch (eventData.event_type) {
+          case 'opened':
+            await OutcomeTracker.recordOpen(eventData.enrollment_id);
+            break;
+          case 'clicked':
+            await OutcomeTracker.recordClick(eventData.enrollment_id);
+            break;
+          case 'replied':
+            await OutcomeTracker.recordReply(eventData.enrollment_id, eventData.sentiment);
+            // Trigger learning update on replies
+            await OutcomeTracker.updateLearnings();
+            
+            // Trigger ConversationalResponder for dynamic AI replies (if configured)
+            const conversationalResponder = req.app?.locals?.conversationalResponder;
+            if (conversationalResponder) {
+              try {
+                // Get campaign to check if dynamic_ai is enabled
+                const campaign = await CampaignInstance.findByPk(eventData.campaign_id);
+                const template = campaign ? await CampaignTemplate.findByPk(campaign.template_id) : null;
+                
+                // Check if campaign uses dynamic_ai path type
+                const isDynamicAI = template?.path_type === 'dynamic_ai' || 
+                                   campaign?.settings?.dynamic_ai_enabled === true;
+                
+                if (isDynamicAI) {
+                  logger.info('Triggering ConversationalResponder for dynamic AI reply', {
+                    enrollmentId: eventData.enrollment_id,
+                    campaignId: eventData.campaign_id
+                  });
+                  
+                  // Get enrollment for lead details
+                  const replyEnrollment = await CampaignEnrollment.findByPk(eventData.enrollment_id);
+                  
+                  await conversationalResponder.handleIncomingReply({
+                    leadEmail: replyEnrollment?.lead_email || eventData.lead_email,
+                    leadName: replyEnrollment?.lead_data?.firstName || eventData.lead_name,
+                    companyName: replyEnrollment?.lead_data?.companyName || eventData.company_name,
+                    campaignId: eventData.campaign_id,
+                    enrollmentId: eventData.enrollment_id,
+                    messageContent: eventData.reply_content || eventData.message_content || '',
+                    subject: eventData.subject,
+                    channel: campaign?.type || 'email',
+                    threadId: eventData.thread_id
+                  });
+                }
+              } catch (responderError) {
+                logger.warn('ConversationalResponder failed (non-blocking)', { 
+                  error: responderError.message,
+                  enrollmentId: eventData.enrollment_id 
+                });
+              }
+            }
+            break;
+          case 'bounced':
+          case 'unsubscribed':
+            await OutcomeTracker.recordNegativeOutcome(eventData.enrollment_id, eventData.event_type);
+            break;
+        }
+        logger.debug('OutcomeTracker updated for event', { eventType: eventData.event_type });
+      } catch (trackingError) {
+        logger.warn('OutcomeTracker update failed (non-blocking)', { error: trackingError.message });
+      }
     });
 
   } catch (error) {

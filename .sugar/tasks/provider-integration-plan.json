@@ -1,0 +1,227 @@
+{
+  "phase": "provider-integration",
+  "phase_name": "3rd Party Provider Integration (Postmark, PhantomBuster, HeyGen)",
+  "blocking": true,
+  "estimated_hours": 39,
+  "source_plan": "/home/omar/.claude/plans/velvet-soaring-dewdrop.md",
+  "tasks": [
+    {
+      "id": "PROV-000",
+      "title": "Phase 0: Security Hardening - Webhook Fail-Closed",
+      "type": "bug_fix",
+      "priority": 5,
+      "status": "pending",
+      "context": "Fix critical security: webhooks default to ALLOW ALL when secrets missing. Must change to FAIL CLOSED. Add IP whitelisting for Postmark, HMAC validation for PhantomBuster.",
+      "business_context": "P0 CRITICAL: Attackers can inject fake webhook events. Blocks production deployment.",
+      "technical_requirements": [
+        "PostmarkEmailProvider.js: verifyWebhookSignature returns false if !secret",
+        "Create src/middleware/webhook-ip-whitelist.js with Postmark IPs",
+        "PhantombusterLinkedInProvider.js: Add HMAC-SHA256 validation",
+        "server.js: Add _validateProviderConfigs() startup check",
+        "Use crypto.timingSafeEqual for timing-safe comparisons"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/providers/postmark/PostmarkEmailProvider.js",
+        "sales-automation-api/src/providers/phantombuster/PhantombusterLinkedInProvider.js",
+        "sales-automation-api/src/server.js"
+      ],
+      "files_to_create": [
+        "sales-automation-api/src/middleware/webhook-ip-whitelist.js"
+      ],
+      "agent_assignments": {
+        "security_sentinel": "Audit security changes, verify fail-closed",
+        "backend_developer": "Implement IP whitelist and HMAC validation"
+      },
+      "success_criteria": [
+        "Server refuses to start without POSTMARK_WEBHOOK_SECRET",
+        "Non-Postmark IPs return 403",
+        "Invalid HMAC returns 401",
+        "All comparisons use timing-safe methods"
+      ],
+      "estimated_hours": 4
+    },
+    {
+      "id": "PROV-001",
+      "title": "Phase 1: Configuration & Activation",
+      "type": "feature",
+      "priority": 4,
+      "status": "pending",
+      "context": "Configure all provider credentials in .env and docker-compose.yml. Add startup validation. Document provider setup steps.",
+      "business_context": "Enable the three providers (Postmark, PhantomBuster, HeyGen) for production use.",
+      "technical_requirements": [
+        "Update .env with all provider credentials (REQUIRED fields)",
+        "Add API_SERVER_URL for HeyGen callbacks",
+        "Create docs/providers/SETUP_GUIDE.md"
+      ],
+      "files_affected": [
+        ".env",
+        "docker-compose.yml"
+      ],
+      "files_to_create": [
+        "docs/providers/SETUP_GUIDE.md"
+      ],
+      "agent_assignments": {
+        "backend_developer": "Configure environment variables"
+      },
+      "success_criteria": [
+        "All providers show 'ready' in health check",
+        "Startup fails if required secrets missing"
+      ],
+      "estimated_hours": 6
+    },
+    {
+      "id": "PROV-002",
+      "title": "Phase 2: PhantomBuster Rate Limiting",
+      "type": "feature",
+      "priority": 5,
+      "status": "pending",
+      "context": "Implement database-backed rate limiting for LinkedIn actions. Current getRateLimitStatus() returns fake data. Must track real counts with row-level locks.",
+      "business_context": "P0: LinkedIn account ban risk. Without proper rate limiting, accounts get suspended.",
+      "technical_requirements": [
+        "Create migration: linkedin_rate_limits table with account_identifier, timezone",
+        "Implement _checkRateLimit() with FOR UPDATE row locks",
+        "Implement _incrementRateLimit() with proper column updates",
+        "Add _getTodayInLinkedInTimezone() using America/Los_Angeles",
+        "Create rate-limit-reset-worker.js for daily cleanup"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/providers/phantombuster/PhantombusterLinkedInProvider.js"
+      ],
+      "files_to_create": [
+        "sales-automation-api/src/db/migrations/20251130000001-add-linkedin-rate-limits.cjs",
+        "sales-automation-api/src/workers/rate-limit-reset-worker.js"
+      ],
+      "agent_assignments": {
+        "backend_developer": "Implement rate limit tracking",
+        "data_integrity_guardian": "Review migration and transaction safety"
+      },
+      "success_criteria": [
+        "Rate limits stored in database (not in-memory)",
+        "Concurrent requests don't cause race conditions",
+        "Daily reset at midnight PT works correctly"
+      ],
+      "estimated_hours": 8
+    },
+    {
+      "id": "PROV-003",
+      "title": "Phase 3: Enhanced Webhook Handling",
+      "type": "feature",
+      "priority": 3,
+      "status": "pending",
+      "context": "Enhance unified webhook endpoint with provider query param, signature validation per provider, and better logging.",
+      "business_context": "Better debugging and provider identification for incoming webhooks.",
+      "technical_requirements": [
+        "Keep unified endpoint /api/campaigns/events/webhook",
+        "Add ?provider= query param support",
+        "Route to provider-specific signature validation",
+        "Add provider tag to all webhook logs"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/routes/campaigns.js"
+      ],
+      "agent_assignments": {
+        "backend_developer": "Implement webhook routing"
+      },
+      "success_criteria": [
+        "Provider identified via query param or body detection",
+        "Each provider's signature validated correctly",
+        "All webhook events logged with provider tag"
+      ],
+      "estimated_hours": 4
+    },
+    {
+      "id": "PROV-004",
+      "title": "Phase 4: HeyGen Video Completion Flow",
+      "type": "bug_fix",
+      "priority": 4,
+      "status": "pending",
+      "context": "Fix HeyGen webhook: currently only sets callback_id (metadata) but not callback_url. Add video tracking table, orphan cleanup worker, and delivery email template.",
+      "business_context": "P1: Video completion webhooks never arrive. Videos stuck in 'pending' forever.",
+      "technical_requirements": [
+        "HeyGenVideoProvider.js: Add callback_url to video generation request",
+        "Create migration: video_generations table with status, attempts, cost_credits",
+        "Create video-status-worker.js for orphan cleanup every 30 min",
+        "Create video delivery email template"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/providers/heygen/HeyGenVideoProvider.js"
+      ],
+      "files_to_create": [
+        "sales-automation-api/src/db/migrations/20251130000002-add-video-generations.cjs",
+        "sales-automation-api/src/workers/video-status-worker.js",
+        "sales-automation-api/src/templates/video-delivery.html"
+      ],
+      "agent_assignments": {
+        "backend_developer": "Implement video tracking and webhook fix",
+        "qa_test_engineer": "Test video completion flow end-to-end"
+      },
+      "success_criteria": [
+        "callback_url present in video generation request",
+        "Webhooks arrive and update video status",
+        "Orphan videos cleaned up after 30 min"
+      ],
+      "estimated_hours": 6
+    },
+    {
+      "id": "PROV-005",
+      "title": "Phase 5: Event Normalization & Deduplication",
+      "type": "feature",
+      "priority": 3,
+      "status": "pending",
+      "context": "Wire EventNormalizer into webhook flow. Add deduplication index on provider_event_id to prevent duplicate events.",
+      "business_context": "P1: Data inconsistency and duplicate events without normalization.",
+      "technical_requirements": [
+        "Create migration: UNIQUE INDEX on campaign_events(provider_event_id)",
+        "Wire EventNormalizer.normalize() into webhook handler",
+        "Add duplicate detection before insert",
+        "Trigger ConversationalResponder on reply events"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/routes/campaigns.js",
+        "sales-automation-api/src/providers/events/EventNormalizer.js"
+      ],
+      "files_to_create": [
+        "sales-automation-api/src/db/migrations/20251130000003-add-event-dedup-index.cjs"
+      ],
+      "agent_assignments": {
+        "backend_developer": "Wire EventNormalizer",
+        "pattern_recognition_specialist": "Verify normalization patterns"
+      },
+      "success_criteria": [
+        "Duplicate events ignored (return 'duplicate' status)",
+        "All events normalized before storage",
+        "Reply events trigger ConversationalResponder"
+      ],
+      "estimated_hours": 3
+    },
+    {
+      "id": "PROV-006",
+      "title": "Phase 6: Monitoring & Alerting",
+      "type": "feature",
+      "priority": 2,
+      "status": "pending",
+      "context": "Add Grafana metrics, alerting rules, and cost tracking for provider operations.",
+      "business_context": "Visibility into provider health, rate limit usage, and video costs.",
+      "technical_requirements": [
+        "Add metrics for webhook events per provider",
+        "Add metrics for rate limit usage per account",
+        "Add video generation queue depth metric",
+        "Create alerting rules for rate limit warnings",
+        "Add cost tracking for HeyGen video credits"
+      ],
+      "files_to_create": [
+        "sales-automation-api/src/utils/provider-metrics.js"
+      ],
+      "agent_assignments": {
+        "backend_developer": "Implement metrics collection",
+        "performance_oracle": "Review monitoring coverage"
+      },
+      "success_criteria": [
+        "Grafana dashboards show provider health",
+        "Alerts fire at 80% rate limit usage",
+        "Video costs tracked per campaign"
+      ],
+      "estimated_hours": 8
+    }
+  ]
+}

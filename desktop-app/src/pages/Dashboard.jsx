@@ -9,9 +9,13 @@ import {
   Pause,
   AlertTriangle,
   Activity,
+  Megaphone,
+  MessageSquare,
+  FileUp,
+  Target,
 } from 'lucide-react';
 import useStore from '../store/useStore';
-import { api } from '../services/api';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
 /**
@@ -37,11 +41,12 @@ function Dashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Load YOLO status, system stats, and recent jobs
-      const [yoloStatus, systemStats, jobsData] = await Promise.all([
+      // Load YOLO status, system stats, recent jobs, and performance metrics
+      const [yoloStatus, systemStats, jobsData, performanceData] = await Promise.all([
         api.getYOLOStatusDirect().catch(() => ({ success: false, enabled: false })),
         api.getStats().catch(() => null),
-        api.getJobsDirect().catch(() => ({ success: false, jobs: [] }))
+        api.getJobsDirect().catch(() => ({ success: false, jobs: [] })),
+        api.call('/api/performance/summary?days=30', 'GET').catch(() => ({ success: false, data: null }))
       ]);
 
       // Update YOLO mode state
@@ -53,21 +58,26 @@ function Dashboard() {
         });
       }
 
+      // Get performance metrics (replies, opens, clicks)
+      const perfMetrics = performanceData?.data?.metrics || {};
+      const positiveReplies = perfMetrics.positive_replies || perfMetrics.replies || 0;
+      const totalSent = perfMetrics.sent || 0;
+
       // Update stats from API or use defaults
       if (systemStats && systemStats.success) {
         setStats({
           totalContacts: systemStats.jobs?.completed || 0,
           activeCampaigns: systemStats.campaigns || 0,
-          emailsSent: systemStats.jobs?.total || 0,
-          positiveReplies: 0, // To be implemented
+          emailsSent: totalSent || systemStats.jobs?.total || 0,
+          positiveReplies: positiveReplies,
         });
       } else {
         // Defaults if API fails
         setStats({
           totalContacts: 0,
           activeCampaigns: 0,
-          emailsSent: 0,
-          positiveReplies: 0,
+          emailsSent: totalSent,
+          positiveReplies: positiveReplies,
         });
       }
 
@@ -117,12 +127,18 @@ function Dashboard() {
     <div className="h-full overflow-y-auto custom-scrollbar bg-slate-900 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Welcome to RTGS Sales Automation
+        <div className="flex flex-col items-center justify-center text-center mb-10 animate-fade-in">
+          <img
+            src="/ASIA_takeover.svg"
+            alt="RTGS Agentic"
+            className="h-[30rem] mb-8 transform transition-transform duration-500 hover:scale-105"
+          />
+
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+            Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-rtgs-blue to-cyan-400">RTGS Sales Automation</span>
           </h1>
-          <p className="text-slate-400">
-            Your intelligent sales automation platform - running 24/7 to find and engage prospects
+          <p className="text-slate-400 text-lg max-w-2xl leading-relaxed">
+            Your intelligent sales automation platform — running 24/7 to find, enrich, and engage prospects with autonomous precision.
           </p>
         </div>
 
@@ -340,12 +356,19 @@ function StatCard({ label, value, icon: Icon, color, trend }) {
     emerald: 'from-emerald-500/20 to-emerald-600/20 border-emerald-500/30',
   };
 
+  const iconColorClasses = {
+    blue: 'text-blue-400',
+    purple: 'text-purple-400',
+    green: 'text-green-400',
+    emerald: 'text-emerald-400',
+  };
+
   return (
-    <div className={`card bg-gradient-to-br ${colorClasses[color]}`}>
+    <div className={`card bg-gradient-to-br ${colorClasses[color]}`} role="figure" aria-label={`${label}: ${value}`}>
       <div className="flex items-center justify-between mb-4">
-        <Icon size={24} className={`text-${color}-400`} />
+        <Icon size={24} className={iconColorClasses[color]} aria-hidden="true" />
         {trend && (
-          <span className="text-sm text-green-400 font-medium">{trend}</span>
+          <span className="text-sm text-green-400 font-medium" aria-label={`Trend: ${trend}`}>{trend}</span>
         )}
       </div>
       <div className="stat-value">{value.toLocaleString()}</div>
@@ -403,8 +426,5 @@ function ActivityItem({ icon: Icon, title, time, color }) {
     </div>
   );
 }
-
-// Import missing icons
-import { Megaphone, MessageSquare, FileUp, Target } from 'lucide-react';
 
 export default Dashboard;

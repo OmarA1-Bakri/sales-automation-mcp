@@ -1,0 +1,164 @@
+{
+  "id": "deep-dive-p1-frontend-improvements",
+  "title": "P1: Frontend Architecture & TypeScript Migration",
+  "type": "refactoring",
+  "priority": 7,
+  "status": "pending",
+  "created_at": "2025-11-27T00:00:00Z",
+  "estimated_effort_hours": 240,
+  "source": "Deep Dive Analysis - November 2025",
+
+  "context": "Frontend code quality scored 5.5/10. 940-line ICPPage.jsx, no TypeScript, manual view switching instead of React Router, 45% WCAG compliance. Major blockers for maintainability and accessibility.",
+
+  "business_context": "Poor frontend architecture slows feature development by 40%. No type safety means runtime errors. WCAG non-compliance creates legal liability.",
+
+  "current_state": {
+    "typescript": false,
+    "routing": "manual useState switch",
+    "largest_component": "ICPPage.jsx (940 lines)",
+    "accessibility_score": "45-55%",
+    "prop_types_coverage": "5%"
+  },
+
+  "phases": [
+    {
+      "id": "FE-001",
+      "title": "React Router Implementation",
+      "description": "Replace manual view switching with proper routing",
+      "changes": [
+        "Install react-router-dom (already dependency)",
+        "Create routes/index.jsx with route definitions",
+        "Replace switch statement in App.jsx with Router",
+        "Update Sidebar navigation to use Link/NavLink",
+        "Add route-based code splitting with lazy()"
+      ],
+      "estimated_hours": 40,
+      "priority": 1
+    },
+    {
+      "id": "FE-002",
+      "title": "TypeScript Migration - Foundation",
+      "description": "Set up TypeScript and migrate core files",
+      "changes": [
+        "Add TypeScript configuration (tsconfig.json)",
+        "Install @types packages for dependencies",
+        "Migrate utility files to .ts",
+        "Create type definitions for API responses",
+        "Migrate useStore.js to useStore.ts"
+      ],
+      "estimated_hours": 24,
+      "priority": 2
+    },
+    {
+      "id": "FE-003",
+      "title": "TypeScript Migration - Components",
+      "description": "Convert all components to TypeScript",
+      "files": [
+        "src/components/Sidebar.jsx -> .tsx",
+        "src/components/TitleBar.jsx -> .tsx",
+        "src/components/ErrorBoundary.jsx -> .tsx"
+      ],
+      "estimated_hours": 40,
+      "priority": 3
+    },
+    {
+      "id": "FE-004",
+      "title": "TypeScript Migration - Pages",
+      "description": "Convert page components with proper typing",
+      "files": [
+        "Dashboard.jsx -> .tsx (359 lines)",
+        "ChatPage.jsx -> .tsx (428 lines)",
+        "ContactsPage.jsx -> .tsx (385 lines)",
+        "SettingsPage.jsx -> .tsx (600 lines)",
+        "CampaignsPage.jsx -> .tsx (673 lines)",
+        "ICPPage.jsx -> .tsx (940 lines)",
+        "WorkflowsPage.jsx -> .tsx (608 lines)"
+      ],
+      "estimated_hours": 56,
+      "priority": 4
+    },
+    {
+      "id": "FE-005",
+      "title": "Component Decomposition - ICPPage",
+      "description": "Break down 940-line ICPPage into manageable components",
+      "target_components": [
+        "ICPProfileList.tsx (list display)",
+        "ICPProfileEditor.tsx (form editing)",
+        "FirmographicsEditor.tsx (firmographic config)",
+        "TitleEditor.tsx (title management)",
+        "ScoringEditor.tsx (scoring config)",
+        "useICPProfiles.ts (custom hook)"
+      ],
+      "estimated_hours": 24,
+      "priority": 5
+    },
+    {
+      "id": "FE-006",
+      "title": "Component Decomposition - CampaignsPage",
+      "description": "Split dual-mode campaigns page",
+      "target_components": [
+        "CampaignList.tsx",
+        "CampaignDetail.tsx",
+        "CampaignPerformance.tsx",
+        "CampaignChat.tsx",
+        "useCampaigns.ts"
+      ],
+      "estimated_hours": 20,
+      "priority": 6
+    },
+    {
+      "id": "FE-007",
+      "title": "Accessibility Improvements",
+      "description": "Achieve WCAG 2.1 AA compliance",
+      "changes": [
+        "Add semantic HTML elements",
+        "Implement proper ARIA labels",
+        "Fix keyboard navigation",
+        "Add screen reader support",
+        "Fix color contrast issues"
+      ],
+      "estimated_hours": 36,
+      "priority": 7
+    }
+  ],
+
+  "technical_requirements": [
+    "TypeScript strict mode enabled",
+    "No 'any' types without explicit justification",
+    "All API responses typed with interfaces",
+    "Component props typed with explicit interfaces",
+    "Maximum 200 lines per component",
+    "WCAG 2.1 AA compliance"
+  ],
+
+  "files_to_create": [
+    "desktop-app/tsconfig.json",
+    "desktop-app/src/types/api.ts",
+    "desktop-app/src/types/models.ts",
+    "desktop-app/src/routes/index.tsx",
+    "desktop-app/src/components/icp/*",
+    "desktop-app/src/components/campaigns/*"
+  ],
+
+  "agent_assignments": {
+    "architect": "compounding-engineering:architecture-strategist",
+    "typescript_review": "compounding-engineering:kieran-typescript-reviewer",
+    "accessibility": "accessibility-test-scanner:a11y-scan",
+    "quality": "sugar:quality-guardian"
+  },
+
+  "success_criteria": [
+    "100% TypeScript coverage (no .jsx files)",
+    "No component exceeds 200 lines",
+    "React Router handles all navigation",
+    "WCAG 2.1 AA compliance score >85%",
+    "Zero TypeScript 'any' without justification",
+    "All props have explicit interfaces"
+  ],
+
+  "dependencies": [
+    "Backend API stable (refactor complete)",
+    "E2E tests pass before starting migration",
+    "Design system documentation"
+  ]
+}

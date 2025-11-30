@@ -32,7 +32,7 @@ function ContactsPage() {
         params.source = filterSource;
       }
 
-      const result = await api.getImportedContacts(params);
+      const result = await api.getContacts(params);
 
       if (result && result.contacts) {
         setContacts(result.contacts);
@@ -76,8 +76,8 @@ function ContactsPage() {
 
     setEnriching(true);
     try {
-      const selectedEmails = Array.from(selectedContacts);
-      const contactsToEnrich = contacts.filter(c => selectedEmails.includes(c.email));
+      // PERF-002 FIX: Use Set.has() directly for O(1) lookup instead of Array.includes() O(n)
+      const contactsToEnrich = contacts.filter(c => selectedContacts.has(c.email));
 
       toast.loading(`Enriching ${contactsToEnrich.length} contacts...`, { id: 'enrich' });
 
@@ -104,8 +104,8 @@ function ContactsPage() {
 
     setSyncing(true);
     try {
-      const selectedEmails = Array.from(selectedContacts);
-      const contactsToSync = contacts.filter(c => selectedEmails.includes(c.email));
+      // PERF-002 FIX: Use Set.has() directly for O(1) lookup instead of Array.includes() O(n)
+      const contactsToSync = contacts.filter(c => selectedContacts.has(c.email));
 
       toast.loading(`Syncing ${contactsToSync.length} contacts to HubSpot...`, { id: 'sync' });
 

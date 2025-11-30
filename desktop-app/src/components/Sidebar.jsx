@@ -10,6 +10,8 @@ import {
   Settings,
   Zap,
   ChevronLeft,
+  GitBranch,
+  BarChart2,
 } from 'lucide-react';
 import useStore from '../store/useStore';
 
@@ -58,6 +60,19 @@ function Sidebar() {
       icon: Target,
       description: 'Ideal customer profiles',
     },
+    {
+      id: 'workflows',
+      label: 'Workflows',
+      icon: GitBranch,
+      description: 'B-MAD automation workflows',
+      badge: 'NEW',
+    },
+    {
+      id: 'performance',
+      label: 'Performance',
+      icon: BarChart2,
+      description: 'AI & outreach metrics',
+    },
   ];
 
   const bottomNavItems = [
@@ -78,13 +93,21 @@ function Sidebar() {
       {/* Toggle button */}
       <button
         onClick={toggleSidebar}
+        aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        aria-expanded={sidebarOpen}
         className="absolute right-0 top-16 transform translate-x-full bg-slate-800 p-1 rounded-r hover:bg-slate-700 transition-colors z-50"
       >
         <ChevronLeft
           size={16}
           className={`text-slate-400 transition-transform ${!sidebarOpen ? 'rotate-180' : ''}`}
+          aria-hidden="true"
         />
       </button>
+
+      {/* Logo - centered and larger */}
+      <div className="flex justify-center py-6">
+        <img src="/o.png" alt="RTGS" className="h-20 w-auto" />
+      </div>
 
       {/* YOLO Mode indicator */}
       {yoloMode.enabled && (
@@ -136,13 +159,15 @@ function NavItem({ item, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
+      aria-label={`${item.label}: ${item.description}`}
+      aria-current={isActive ? 'page' : undefined}
       className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
         isActive
           ? 'bg-rtgs-blue text-white shadow-lg shadow-blue-500/20'
           : 'text-slate-400 hover:text-white hover:bg-slate-800'
       }`}
     >
-      <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'} />
+      <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'} aria-hidden="true" />
       <div className="flex-1 text-left">
         <div className="text-sm font-medium">{item.label}</div>
         {!isActive && (
@@ -152,7 +177,7 @@ function NavItem({ item, isActive, onClick }) {
         )}
       </div>
       {item.badge && (
-        <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
+        <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30" aria-label={`${item.badge} feature`}>
           {item.badge}
         </span>
       )}

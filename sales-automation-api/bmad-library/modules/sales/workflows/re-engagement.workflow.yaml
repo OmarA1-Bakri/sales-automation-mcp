@@ -294,11 +294,11 @@ workflow:
           meetings_booked: number
           vs_original_campaign: object
       alerts:
-        if_reply_rate_exceeds: 0.10  # 10%+ reply rate
-          action: alert_sales_team
+        - trigger: "reply_rate > 0.10"
+          action: "alert_sales_team"
           message: "Re-engagement performing exceptionally well"
-        if_unsubscribe_rate_exceeds: 0.05  # 5%+
-          action: pause_campaign
+        - trigger: "unsubscribe_rate > 0.05"
+          action: "pause_campaign"
           message: "High unsubscribe rate - review messaging"
 
     - id: handle-responses

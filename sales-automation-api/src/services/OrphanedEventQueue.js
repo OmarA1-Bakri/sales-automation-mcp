@@ -87,9 +87,18 @@ class OrphanedEventQueue {
 
   /**
    * Initialize Redis connection with retry logic
+   * Gracefully degrades to in-memory queue if Redis is unavailable
    * @private
    */
   async _initializeRedis() {
+    // Check if Redis is explicitly disabled
+    if (process.env.REDIS_DISABLED === 'true') {
+      logger.info('Redis disabled via REDIS_DISABLED=true, using in-memory queue');
+      this.redisConnected = false;
+      this.redis = null;
+      return;
+    }
+
     try {
       const redisConfig = process.env.REDIS_URL || {
         host: process.env.REDIS_HOST || 'localhost',
@@ -99,55 +108,61 @@ class OrphanedEventQueue {
 
       this.redis = new Redis(redisConfig, {
         retryStrategy: (times) => {
-          const delay = Math.min(times * 50, 2000);
-          logger.warn('Redis connection retry', { attempt: times, delay });
+          // Only retry 3 times during initial connection, then give up
+          if (times > 3) {
+            logger.warn('Redis connection retries exhausted, giving up');
+            return null; // Stop retrying
+          }
+          const delay = Math.min(times * 100, 1000);
           return delay;
         },
-        maxRetriesPerRequest: 3,
+        maxRetriesPerRequest: 1,
         enableReadyCheck: true,
-        lazyConnect: true
+        lazyConnect: true,
+        connectTimeout: 3000,
+        commandTimeout: 5000
       });
 
-      // Set up event handlers BEFORE connecting
+      // Set up error handler IMMEDIATELY to prevent unhandled rejection
+      this.redis.on('error', (error) => {
+        // Log but don't crash - this handles connection errors gracefully
+        if (this.redisConnected) {
+          logger.error('Redis connection error', { error: error.message, code: error.code });
+          metrics.counter('orphaned_queue.redis_errors', 1, { error_type: error.code || 'unknown' });
+        }
+        this.redisConnected = false;
+      });
+
+      // Try to connect with timeout
       const connectionPromise = new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('Redis connection timeout'));
-        }, 5000);
+          reject(new Error('Redis connection timeout (3s)'));
+        }, 3000);
 
         this.redis.once('ready', () => {
           clearTimeout(timeout);
           this.redisConnected = true;
-          logger.info('[_initializeRedis] Redis connected successfully, setting redisConnected=true', {
+          logger.info('Redis connected successfully', {
             host: this.redis.options.host,
-            port: this.redis.options.port,
-            redisConnected: this.redisConnected
+            port: this.redis.options.port
           });
           resolve();
         });
 
-        this.redis.once('error', (error) => {
+        // Also listen for end event (connection closed before ready)
+        this.redis.once('end', () => {
           clearTimeout(timeout);
-          reject(error);
+          reject(new Error('Redis connection ended before ready'));
         });
       });
 
-      // Now connect
-      await this.redis.connect();
+      // Connect and wait for ready
+      await this.redis.connect().catch(() => {
+        // Swallow the connect() rejection, we'll handle it via the promise
+      });
       await connectionPromise;
 
-      // Set up ongoing event listeners after connection established
-      this.redis.on('error', (error) => {
-        this.redisConnected = false;
-        logger.error('Redis connection error', {
-          error: error.message,
-          code: error.code
-        });
-
-        metrics.counter('orphaned_queue.redis_errors', 1, {
-          error_type: error.code || 'unknown'
-        });
-      });
-
+      // Set up additional event listeners after connection established
       this.redis.on('close', () => {
         this.redisConnected = false;
         logger.warn('Redis connection closed');
@@ -158,9 +173,22 @@ class OrphanedEventQueue {
       });
 
     } catch (error) {
-      logger.error('Failed to initialize Redis', { error: error.message });
+      logger.warn('Redis not available - OrphanedEventQueue will use in-memory fallback', {
+        error: error.message,
+        hint: 'Set REDIS_URL environment variable or start Redis for production persistence'
+      });
       this.redisConnected = false;
-      throw error;
+
+      // Clean up failed Redis connection
+      if (this.redis) {
+        try {
+          this.redis.disconnect();
+        } catch (e) {
+          // Ignore disconnect errors
+        }
+        this.redis = null;
+      }
+      // Don't throw - gracefully degrade to in-memory queue
     }
   }
 

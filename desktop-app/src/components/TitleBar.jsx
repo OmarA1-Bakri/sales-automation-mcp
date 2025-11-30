@@ -9,13 +9,8 @@ function TitleBar() {
   return (
     <div className="h-12 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-4 select-none drag-region">
       {/* App branding */}
-      <div className="flex items-center space-x-3">
-        <div className="w-6 h-6 bg-gradient-primary rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-sm">R</span>
-        </div>
-        <div>
-          <h1 className="text-sm font-semibold text-white">RTGS Sales Automation</h1>
-        </div>
+      <div className="flex items-center ml-2">
+        <img src="/o.png" alt="RTGS" className="h-10 w-auto" />
       </div>
 
       {/* Window controls */}

@@ -9,6 +9,9 @@
 import { EmailProvider } from '../interfaces/EmailProvider.js';
 import { createLogger } from '../../utils/logger.js';
 import { providerConfig } from '../../config/provider-config.js';
+import { metrics } from '../../utils/metrics.js';
+import { replaceMultiple } from '../utils/variable-replacer.js';
+import crypto from 'crypto';
 
 const logger = createLogger('PostmarkEmailProvider');
 
@@ -40,6 +43,7 @@ export class PostmarkEmailProvider extends EmailProvider {
    */
   async _makeRequest(endpoint, method = 'GET', body = null) {
     const url = `${this.apiUrl}${endpoint}`;
+    const startTime = Date.now();
 
     const options = {
       method,
@@ -59,8 +63,26 @@ export class PostmarkEmailProvider extends EmailProvider {
     try {
       const response = await fetch(url, options);
       const data = await response.json();
+      const latency = Date.now() - startTime;
+
+      // Track API latency
+      metrics.histogram('provider.api_latency_ms', latency, {
+        provider: 'postmark',
+        endpoint: endpoint.split('/')[1] || endpoint
+      });
 
       if (!response.ok) {
+        // Track API error
+        metrics.counter('provider.api_calls', 1, {
+          provider: 'postmark',
+          endpoint: endpoint.split('/')[1] || endpoint,
+          status: 'error'
+        });
+        metrics.counter('provider.api_errors', 1, {
+          provider: 'postmark',
+          error_type: this._mapPostmarkErrorType(data.ErrorCode)
+        });
+
         logger.error('Postmark API error', {
           status: response.status,
           endpoint,
@@ -73,8 +95,28 @@ export class PostmarkEmailProvider extends EmailProvider {
         );
       }
 
+      // Track successful API call
+      metrics.counter('provider.api_calls', 1, {
+        provider: 'postmark',
+        endpoint: endpoint.split('/')[1] || endpoint,
+        status: 'success'
+      });
+
       return data;
     } catch (error) {
+      // Track network/timeout errors
+      if (!error.message.includes('Postmark API error')) {
+        metrics.counter('provider.api_calls', 1, {
+          provider: 'postmark',
+          endpoint: endpoint.split('/')[1] || endpoint,
+          status: 'error'
+        });
+        metrics.counter('provider.api_errors', 1, {
+          provider: 'postmark',
+          error_type: 'network'
+        });
+      }
+
       logger.error('Postmark API request failed', {
         endpoint,
         error: error.message
@@ -105,15 +147,11 @@ export class PostmarkEmailProvider extends EmailProvider {
       throw new Error('Sender email not configured. Set POSTMARK_SENDER_EMAIL or provide "from" parameter');
     }
 
-    // Replace variables in subject and body
-    let personalizedSubject = subject;
-    let personalizedBody = body;
-
-    Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      personalizedSubject = personalizedSubject.replace(regex, value || '');
-      personalizedBody = personalizedBody.replace(regex, value || '');
-    });
+    // Replace variables in subject and body using shared utility
+    const { subject: personalizedSubject, body: personalizedBody } = replaceMultiple(
+      { subject, body },
+      variables
+    );
 
     const requestBody = {
       From: fromEmail,
@@ -189,15 +227,11 @@ export class PostmarkEmailProvider extends EmailProvider {
         throw new Error('Sender email required for each email in batch or set POSTMARK_SENDER_EMAIL');
       }
 
-      // Replace variables
-      let personalizedSubject = subject;
-      let personalizedBody = body;
-
-      Object.entries(variables).forEach(([key, value]) => {
-        const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-        personalizedSubject = personalizedSubject.replace(regex, value || '');
-        personalizedBody = personalizedBody.replace(regex, value || '');
-      });
+      // Replace variables using shared utility
+      const { subject: personalizedSubject, body: personalizedBody } = replaceMultiple(
+        { subject, body },
+        variables
+      );
 
       return {
         From: fromEmail,
@@ -300,26 +334,52 @@ export class PostmarkEmailProvider extends EmailProvider {
    * Recommend using Basic Auth + HTTPS + IP whitelisting instead
    */
   verifyWebhookSignature(req, secret) {
-    // Postmark doesn't support webhook signatures
-    // Security should be handled via:
-    // 1. Basic Authentication on webhook endpoint
-    // 2. HTTPS only
-    // 3. IP whitelisting (Postmark IPs: 3.134.147.250, 50.31.156.6, 50.31.156.77, 18.217.206.57)
+    // SECURITY FIX: FAIL CLOSED - Reject ALL webhooks if secret not configured
+    // Postmark doesn't support HMAC signatures, so we use Basic Auth
+    // Additional security via IP whitelisting middleware (see webhook-ip-whitelist.js)
 
-    logger.debug('Postmark webhook received (no signature verification available)');
+    // P0 SECURITY: FAIL CLOSED - Never allow webhooks without secret configured
+    if (!secret) {
+      logger.error('POSTMARK_WEBHOOK_SECRET not configured - REJECTING all webhooks for security');
+      return false;
+    }
 
     // Check if Basic Auth header is present
     const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Basic ')) {
-      const credentials = Buffer.from(authHeader.substring(6), 'base64').toString();
-      const [username, password] = credentials.split(':');
-
-      // Compare with configured secret (username:password format)
-      return secret && credentials === secret;
+    if (!authHeader) {
+      logger.warn('Postmark webhook missing Authorization header');
+      return false;
     }
 
-    // If no auth required, allow (not recommended for production)
-    return !secret || secret === '';
+    if (!authHeader.startsWith('Basic ')) {
+      logger.warn('Postmark webhook has invalid Authorization header format');
+      return false;
+    }
+
+    try {
+      const credentials = Buffer.from(authHeader.substring(6), 'base64').toString();
+
+      // Timing-safe comparison to prevent timing attacks
+      const secretBuffer = Buffer.from(secret);
+      const credentialsBuffer = Buffer.from(credentials);
+
+      // Lengths must match for timingSafeEqual
+      if (secretBuffer.length !== credentialsBuffer.length) {
+        logger.warn('Postmark webhook credentials length mismatch');
+        return false;
+      }
+
+      const isValid = crypto.timingSafeEqual(secretBuffer, credentialsBuffer);
+
+      if (!isValid) {
+        logger.warn('Postmark webhook credentials mismatch');
+      }
+
+      return isValid;
+    } catch (error) {
+      logger.error('Postmark webhook signature verification error', { error: error.message });
+      return false;
+    }
   }
 
   /**
@@ -475,6 +535,30 @@ export class PostmarkEmailProvider extends EmailProvider {
       });
       throw error;
     }
+  }
+
+  /**
+   * Map Postmark error codes to standardized error types for metrics
+   * @private
+   */
+  _mapPostmarkErrorType(errorCode) {
+    // Postmark error codes: https://postmarkapp.com/developer/api/overview#error-codes
+    const errorMap = {
+      10: 'auth',           // Bad or missing API token
+      300: 'validation',    // Invalid email request
+      400: 'validation',    // Sender signature not found
+      401: 'validation',    // Sender signature not confirmed
+      402: 'validation',    // Invalid JSON
+      403: 'validation',    // Incompatible JSON
+      405: 'validation',    // Not allowed to send
+      406: 'validation',    // Inactive recipient
+      409: 'validation',    // Attachment size limit exceeded
+      429: 'rate_limit',    // Rate limit exceeded
+      500: 'server_error',  // Internal server error
+      503: 'server_error'   // Service unavailable
+    };
+
+    return errorMap[errorCode] || 'other';
   }
 }
 

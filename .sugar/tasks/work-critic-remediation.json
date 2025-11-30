@@ -1,0 +1,211 @@
+{
+  "id": "work-critic-remediation-2025-11-26",
+  "title": "Work-Critic v2 Remediation: Frontend Bug Fix Technical Debt",
+  "description": "Address technical debt and improvements identified during UI/UX testing bug fix session",
+  "priority": "HIGH",
+  "complexity": "moderate",
+  "estimated_hours": "6-8",
+  "status": "pending",
+  "phase": "Frontend Stabilization",
+  "source": "work-critic-v2-review",
+  "created_at": "2025-11-26T12:00:00Z",
+
+  "context": {
+    "background": "During UI/UX testing, 6 of 8 pages were crashing due to API response format mismatches. Quick fixes were applied using defensive programming patterns. This task addresses the technical debt introduced.",
+    "files_affected": [
+      "desktop-app/src/pages/CampaignsPage.jsx",
+      "desktop-app/src/pages/ContactsPage.jsx",
+      "desktop-app/src/pages/ICPPage.jsx",
+      "desktop-app/src/pages/WorkflowsPage.jsx"
+    ],
+    "review_grade": "B+ (85/100)",
+    "deployment_status": "APPROVED - Safe to deploy"
+  },
+
+  "tasks": [
+    {
+      "id": "WC-001",
+      "title": "Add validation logging for malformed API responses",
+      "type": "refactor",
+      "priority": 4,
+      "severity": "CRITICAL",
+      "estimated_minutes": 30,
+      "status": "pending",
+      "files": ["CampaignsPage.jsx", "ICPPage.jsx"],
+      "description": "Add console.warn when API returns unexpected data formats to aid debugging",
+      "technical_requirements": [
+        "Add type checking before normalization",
+        "Log warnings in development mode only",
+        "Do not break existing functionality"
+      ],
+      "success_criteria": [
+        "Malformed API responses logged to console",
+        "No user-visible errors",
+        "Only in development environment"
+      ],
+      "code_snippet": "if (c.performance && typeof c.performance !== 'object') {\n  console.warn('Unexpected performance format:', c.performance);\n}"
+    },
+    {
+      "id": "WC-002",
+      "title": "Implement actual API calls for status toggles",
+      "type": "feature",
+      "priority": 4,
+      "severity": "HIGH",
+      "estimated_minutes": 180,
+      "status": "pending",
+      "files": ["CampaignsPage.jsx", "ICPPage.jsx"],
+      "description": "Replace TODO comments with actual API persistence calls",
+      "technical_requirements": [
+        "Implement api.updateCampaignStatus()",
+        "Implement api.updateICPProfile()",
+        "Add optimistic updates with rollback on failure",
+        "Show toast notifications on success/failure"
+      ],
+      "success_criteria": [
+        "Status changes persist after page refresh",
+        "Error handling with rollback",
+        "User feedback via toast notifications"
+      ],
+      "todo_locations": [
+        "CampaignsPage.jsx:96 - // TODO: Call API",
+        "ICPPage.jsx:87 - // TODO: Call API to persist change",
+        "ICPPage.jsx:97 - // TODO: Call actual API"
+      ]
+    },
+    {
+      "id": "WC-003",
+      "title": "Fix memory leak in WorkflowsPage polling",
+      "type": "bug_fix",
+      "priority": 4,
+      "severity": "HIGH",
+      "estimated_minutes": 30,
+      "status": "pending",
+      "files": ["WorkflowsPage.jsx"],
+      "description": "Add isMounted flag to prevent state updates on unmounted component",
+      "technical_requirements": [
+        "Add isMounted ref to track component lifecycle",
+        "Check isMounted before setState calls",
+        "Clear interval on unmount"
+      ],
+      "success_criteria": [
+        "No React warnings about state updates on unmounted components",
+        "Clean interval cleanup",
+        "No memory leaks in DevTools profiler"
+      ],
+      "code_snippet": "useEffect(() => {\n  let isMounted = true;\n  loadData().then(() => {\n    if (!isMounted) return;\n  });\n  const interval = setInterval(() => {\n    if (isMounted) loadWorkflowExecutions();\n  }, 10000);\n  return () => { isMounted = false; clearInterval(interval); };\n}, []);"
+    },
+    {
+      "id": "WC-004",
+      "title": "Extract normalization functions to utilities",
+      "type": "refactor",
+      "priority": 3,
+      "severity": "MEDIUM",
+      "estimated_minutes": 60,
+      "status": "pending",
+      "files": ["desktop-app/src/utils/normalizers.js (new)"],
+      "description": "Extract 35+ line normalization objects to reusable utility functions",
+      "technical_requirements": [
+        "Create src/utils/normalizers.js",
+        "Export normalizeCampaign()",
+        "Export normalizeICPProfile()",
+        "Export normalizeWorkflow()",
+        "Add JSDoc documentation",
+        "Update imports in page components"
+      ],
+      "success_criteria": [
+        "Normalization logic in single location",
+        "Reduced code duplication",
+        "Easier to test and maintain",
+        "Components import from utils"
+      ]
+    },
+    {
+      "id": "WC-005",
+      "title": "Fix inconsistent API import patterns",
+      "type": "refactor",
+      "priority": 2,
+      "severity": "MEDIUM",
+      "estimated_minutes": 15,
+      "status": "pending",
+      "files": ["CampaignsPage.jsx", "WorkflowsPage.jsx", "ICPPage.jsx", "ContactsPage.jsx"],
+      "description": "Standardize API imports across all page components",
+      "technical_requirements": [
+        "Use consistent import style: import api from '../services/api'",
+        "Or use named export: import { api } from '../services/api'",
+        "Ensure api service exports both default and named"
+      ],
+      "success_criteria": [
+        "All page components use same import pattern",
+        "No import-related runtime errors"
+      ]
+    },
+    {
+      "id": "WC-006",
+      "title": "Add background refresh indicator for polling",
+      "type": "feature",
+      "priority": 2,
+      "severity": "MEDIUM",
+      "estimated_minutes": 45,
+      "status": "pending",
+      "files": ["WorkflowsPage.jsx"],
+      "description": "Show subtle indicator when background data refresh is happening",
+      "technical_requirements": [
+        "Add isRefreshing state",
+        "Show spinner/indicator during poll",
+        "Don't block UI during refresh",
+        "Optional: debounce mechanism"
+      ],
+      "success_criteria": [
+        "User knows when data is refreshing",
+        "No UI blocking",
+        "Subtle, non-intrusive indicator"
+      ]
+    },
+    {
+      "id": "WC-007",
+      "title": "Remove console.error in production builds",
+      "type": "refactor",
+      "priority": 2,
+      "severity": "LOW",
+      "estimated_minutes": 30,
+      "status": "pending",
+      "files": ["All page components"],
+      "description": "Replace console.error with structured logging or remove in production",
+      "technical_requirements": [
+        "Create logger utility that checks NODE_ENV",
+        "Replace direct console.error calls",
+        "Or use build-time stripping"
+      ],
+      "success_criteria": [
+        "No error details in production console",
+        "Errors still logged in development"
+      ]
+    }
+  ],
+
+  "execution_plan": {
+    "sprint_1_immediate": ["WC-003"],
+    "sprint_1_should_do": ["WC-001", "WC-002"],
+    "sprint_2_plan": ["WC-004", "WC-005"],
+    "backlog": ["WC-006", "WC-007"]
+  },
+
+  "agent_assignments": {
+    "frontend_developer": ["WC-001", "WC-002", "WC-003", "WC-004", "WC-005", "WC-006"],
+    "qa_test_engineer": ["Verify fixes", "Test edge cases"],
+    "tech_lead": ["Review architecture changes", "Code review"]
+  },
+
+  "dependencies": {
+    "WC-004": ["Requires WC-001, WC-002 to be done first to know final normalization logic"],
+    "WC-007": ["Can be done independently"]
+  },
+
+  "acceptance_criteria": [
+    "All pages render without crashes",
+    "Status toggles persist to database",
+    "No memory leaks in DevTools",
+    "Code duplication reduced by 50%",
+    "Consistent import patterns across all files"
+  ]
+}

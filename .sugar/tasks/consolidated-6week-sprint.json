@@ -1,0 +1,288 @@
+{
+  "id": "consolidated-6week-sprint",
+  "title": "6-Week Sprint: Outreach Quality, AI Learning & Knowledge Repository",
+  "type": "feature",
+  "priority": 10,
+  "status": "pending",
+  "created_at": "2025-11-27T00:00:00Z",
+  "estimated_effort_hours": 78,
+  "source": "Consolidated Deep Dive Analysis",
+
+  "context": "10-person sales team focused on maximizing outreach quality. Combines security fixes, agentic performance, and the three user priorities: outreach quality, AI learning, and knowledge repository.",
+
+  "business_context": "The system's value comes from intelligent automation. Without AI learning from outcomes and accessible knowledge, outreach quality plateaus. This sprint creates a learning system.",
+
+  "user_priorities": [
+    "Maximize outreach quality",
+    "Ensure AI is learning from outcomes",
+    "Create knowledge repository accessible to AI"
+  ],
+
+  "sprints": [
+    {
+      "name": "Week 1-2: Foundation",
+      "hours": 26,
+      "tasks": [
+        {
+          "id": "SEC-001",
+          "title": "Fix SQL injection in WorkflowStateManager",
+          "hours": 2,
+          "priority": "CRITICAL",
+          "file": "sales-automation-api/src/bmad/WorkflowStateManager.js:224"
+        },
+        {
+          "id": "KNOW-001",
+          "title": "Create knowledge/ folder structure",
+          "hours": 1,
+          "priority": "HIGH"
+        },
+        {
+          "id": "KNOW-002",
+          "title": "Migrate case studies from YAML to markdown",
+          "hours": 2,
+          "priority": "HIGH",
+          "source": "config/rtgs-global-templates.yaml"
+        },
+        {
+          "id": "KNOW-003",
+          "title": "Create value propositions document",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "KNOW-004",
+          "title": "Write PSP industry playbook",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "KNOW-005",
+          "title": "Create competitive battle cards",
+          "hours": 3,
+          "priority": "HIGH"
+        },
+        {
+          "id": "KNOW-006",
+          "title": "Build KnowledgeService",
+          "hours": 2,
+          "priority": "HIGH",
+          "file": "sales-automation-api/src/services/KnowledgeService.js"
+        },
+        {
+          "id": "AGENT-001",
+          "title": "Create data-quality-guardian agent",
+          "hours": 2,
+          "priority": "HIGH",
+          "file": "sales-automation-api/bmad-library/modules/sales/agents/data-quality-guardian.agent.yaml"
+        },
+        {
+          "id": "AGENT-002",
+          "title": "Implement email validation",
+          "hours": 3,
+          "priority": "HIGH"
+        },
+        {
+          "id": "AGENT-003",
+          "title": "Implement duplicate detection",
+          "hours": 2,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "AGENT-004",
+          "title": "Add data completeness scoring",
+          "hours": 2,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "AGENT-005",
+          "title": "Integrate into prospect-discovery workflow",
+          "hours": 3,
+          "priority": "HIGH"
+        }
+      ]
+    },
+    {
+      "name": "Week 3-4: Intelligence",
+      "hours": 28,
+      "tasks": [
+        {
+          "id": "LEARN-001",
+          "title": "Create OutcomeTracking database schema",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "LEARN-002",
+          "title": "Hook Lemlist webhooks for opens/replies",
+          "hours": 4,
+          "priority": "HIGH"
+        },
+        {
+          "id": "LEARN-003",
+          "title": "Link outcomes to templates used",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "LEARN-004",
+          "title": "Build outcome summary queries",
+          "hours": 2,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "LEARN-005",
+          "title": "Auto-update learnings files",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "METRIC-001",
+          "title": "Add agent execution metrics to metrics.js",
+          "hours": 2,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "METRIC-002",
+          "title": "Track agent success/failure rates",
+          "hours": 2,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "METRIC-003",
+          "title": "Track agent execution time",
+          "hours": 2,
+          "priority": "LOW"
+        },
+        {
+          "id": "METRIC-004",
+          "title": "Create Grafana dashboard",
+          "hours": 2,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "RANK-001",
+          "title": "Build TemplateRanker service",
+          "hours": 3,
+          "priority": "HIGH"
+        },
+        {
+          "id": "RANK-002",
+          "title": "Calculate performance by persona",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "RANK-003",
+          "title": "Create best template selector",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "RANK-004",
+          "title": "Add weekly performance digest",
+          "hours": 1,
+          "priority": "MEDIUM"
+        }
+      ]
+    },
+    {
+      "name": "Week 5-6: Quality",
+      "hours": 24,
+      "tasks": [
+        {
+          "id": "QUAL-001",
+          "title": "Build QualityScorer service",
+          "hours": 4,
+          "priority": "HIGH"
+        },
+        {
+          "id": "QUAL-002",
+          "title": "Implement data quality checks",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "QUAL-003",
+          "title": "Implement message quality checks",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "QUAL-004",
+          "title": "Add quality gates (block low scores)",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "DASH-001",
+          "title": "Create Performance Dashboard page",
+          "hours": 4,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "DASH-002",
+          "title": "Display agent metrics and template rankings",
+          "hours": 4,
+          "priority": "MEDIUM"
+        },
+        {
+          "id": "INSIGHT-001",
+          "title": "Auto-generate weekly insights",
+          "hours": 2,
+          "priority": "HIGH"
+        },
+        {
+          "id": "INSIGHT-002",
+          "title": "Surface learnings to conversation-strategist",
+          "hours": 2,
+          "priority": "HIGH"
+        }
+      ]
+    }
+  ],
+
+  "files_to_create": [
+    "knowledge/company/case-studies.md",
+    "knowledge/company/value-propositions.md",
+    "knowledge/company/product-facts.md",
+    "knowledge/competitive/battle-cards.md",
+    "knowledge/competitive/switch-stories.md",
+    "knowledge/industry/psp-playbook.md",
+    "knowledge/industry/treasury-playbook.md",
+    "knowledge/learnings/what-works.md",
+    "knowledge/learnings/what-doesnt-work.md",
+    "sales-automation-api/src/services/KnowledgeService.js",
+    "sales-automation-api/src/services/OutcomeTracker.js",
+    "sales-automation-api/src/services/TemplateRanker.js",
+    "sales-automation-api/src/services/QualityScorer.js",
+    "sales-automation-api/src/models/OutreachOutcome.cjs",
+    "sales-automation-api/bmad-library/modules/sales/agents/data-quality-guardian.agent.yaml",
+    "desktop-app/src/pages/PerformanceDashboard.jsx"
+  ],
+
+  "files_to_modify": [
+    "sales-automation-api/src/bmad/WorkflowStateManager.js",
+    "sales-automation-api/src/utils/metrics.js",
+    "sales-automation-api/bmad-library/modules/sales/workflows/prospect-discovery.workflow.yaml"
+  ],
+
+  "success_criteria": [
+    "SQL injection fixed and tested",
+    "Knowledge repository with 5+ case studies, 4 value props, 2 battle cards",
+    "AI can load knowledge at runtime via KnowledgeService",
+    "Outcome tracking captures opens, replies, meetings from Lemlist",
+    "Template performance auto-ranked by persona",
+    "Data quality agent blocks bad contacts before outreach",
+    "Quality score >= 70 required to send",
+    "Dashboard shows agent success rates and template rankings",
+    "Weekly insights auto-generated"
+  ],
+
+  "target_metrics": {
+    "reply_rate": "10% -> 15%",
+    "meeting_rate": "2% -> 4%",
+    "data_quality": "unknown -> >90%",
+    "agent_success_rate": "unknown -> >95%",
+    "blocked_bad_sends": "0 -> 10+/week"
+  }
+}

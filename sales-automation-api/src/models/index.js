@@ -18,6 +18,9 @@ const CampaignEventModel = require('./CampaignEvent.cjs');
 const DeadLetterEventModel = require('./DeadLetterEvent.cjs');  // FIX #6: DLQ
 const ApiKeyModel = require('./ApiKey.cjs');  // API key management with Argon2id
 const ApiKeyLogModel = require('./ApiKeyLog.cjs');  // API key audit trail
+const OutreachOutcomeModel = require('./OutreachOutcome.cjs');  // AI learning outcomes
+const LinkedInRateLimitModel = require('./LinkedInRateLimit.cjs');  // LinkedIn rate limit tracking
+const VideoGenerationModel = require('./VideoGeneration.cjs');  // HeyGen video tracking
 
 // Initialize models
 const CampaignTemplate = CampaignTemplateModel(sequelize);
@@ -29,6 +32,9 @@ const CampaignEvent = CampaignEventModel(sequelize);
 const DeadLetterEvent = DeadLetterEventModel(sequelize);  // FIX #6: DLQ
 const ApiKey = ApiKeyModel(sequelize, sequelize.Sequelize.DataTypes);
 const ApiKeyLog = ApiKeyLogModel(sequelize, sequelize.Sequelize.DataTypes);
+const OutreachOutcome = OutreachOutcomeModel(sequelize);
+const LinkedInRateLimit = LinkedInRateLimitModel(sequelize);
+const VideoGeneration = VideoGenerationModel(sequelize);
 
 // ============================================================================
 // ASSOCIATIONS
@@ -114,6 +120,17 @@ ApiKeyLog.belongsTo(ApiKey, {
   as: 'apiKey'
 });
 
+// OutreachOutcome associations
+OutreachOutcome.belongsTo(CampaignEnrollment, {
+  foreignKey: 'enrollment_id',
+  as: 'enrollment'
+});
+
+CampaignEnrollment.hasOne(OutreachOutcome, {
+  foreignKey: 'enrollment_id',
+  as: 'outcome'
+});
+
 // ============================================================================
 // SYNC DATABASE (Development only)
 // ============================================================================
@@ -160,6 +177,9 @@ export {
   DeadLetterEvent,  // FIX #6: DLQ
   ApiKey,  // API key management
   ApiKeyLog,  // API key audit trail
+  OutreachOutcome,  // AI learning outcomes
+  LinkedInRateLimit,  // LinkedIn rate limit tracking
+  VideoGeneration,  // HeyGen video tracking
 
   // Utilities
   syncDatabase

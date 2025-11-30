@@ -13,6 +13,12 @@
  * - Compliance (unsubscribe handling)
  */
 
+// ARCH-004 FIX: Import structured logger
+import { createLogger } from '../utils/logger.js';
+import KnowledgeService from '../services/KnowledgeService.js';
+
+const logger = createLogger('OutreachWorker');
+
 export class OutreachWorker {
   constructor(lemlistClient, database) {
     this.lemlist = lemlistClient;
@@ -42,7 +48,7 @@ export class OutreachWorker {
     const { name, emails, linkedinEnabled = true, settings = {} } = campaignData;
 
     try {
-      console.log(`[Outreach] Creating campaign: ${name}`);
+      logger.info(`[Outreach] Creating campaign: ${name}`);
 
       // Default settings
       const defaultSettings = {
@@ -72,14 +78,14 @@ export class OutreachWorker {
 
       this.stats.campaignsCreated++;
 
-      console.log(`[Outreach] Campaign created: ${campaign.id}`);
+      logger.info(`[Outreach] Campaign created: ${campaign.id}`);
 
       return {
         success: true,
         campaign,
       };
     } catch (error) {
-      console.error(`[Outreach] Failed to create campaign:`, error.message);
+      logger.error(`[Outreach] Failed to create campaign:`, error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -106,7 +112,7 @@ export class OutreachWorker {
         },
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[Outreach] Failed to get campaign ${campaignId}:`,
         error.message
       );
@@ -126,7 +132,7 @@ export class OutreachWorker {
       const campaigns = await this.lemlist.getCampaigns({ status: 'active' });
       return campaigns;
     } catch (error) {
-      console.error('[Outreach] Failed to get campaigns:', error.message);
+      logger.error('[Outreach] Failed to get campaigns:', error.message);
       return [];
     }
   }
@@ -152,13 +158,30 @@ export class OutreachWorker {
     const { email, firstName, lastName, companyName, intelligence } = lead;
 
     try {
-      console.log(`[Outreach] Enrolling ${email} in campaign ${campaignId}`);
+      logger.info(`[Outreach] Enrolling ${email} in campaign ${campaignId}`);
 
-      // Step 1: Prepare personalization variables
+      // Step 0: Load knowledge context for this persona (non-blocking enhancement)
+      let knowledgeContext = {};
+      try {
+        const persona = lead.title?.toLowerCase().includes('cto') || lead.title?.toLowerCase().includes('tech') 
+          ? 'tech_leader'
+          : lead.title?.toLowerCase().includes('cfo') || lead.title?.toLowerCase().includes('finance')
+            ? 'finance_leader'
+            : 'executive';
+        
+        const industry = lead.company?.industry || lead.companyIndustry || 'payments';
+        
+        knowledgeContext = await KnowledgeService.getContextForPersona(persona, industry);
+        logger.debug(`[Outreach] Loaded knowledge context for ${persona}/${industry}`);
+      } catch (knowledgeError) {
+        logger.warn(`[Outreach] Knowledge context unavailable: ${knowledgeError.message}`);
+      }
+
+      // Step 1: Prepare personalization variables (with knowledge enhancement)
       const variables = this._preparePersonalizationVariables(
         lead,
         intelligence,
-        customVariables
+        { ...customVariables, ...knowledgeContext }
       );
 
       // Step 2: Add lead to campaign
@@ -175,11 +198,11 @@ export class OutreachWorker {
       if (enrichLinkedIn && enrollment.leadId) {
         try {
           await this.lemlist.enrichLeadWithLinkedIn(enrollment.leadId);
-          console.log(
+          logger.info(
             `[Outreach] LinkedIn enrichment requested for ${enrollment.leadId}`
           );
         } catch (error) {
-          console.warn(
+          logger.warn(
             `[Outreach] LinkedIn enrichment failed for ${email}:`,
             error.message
           );
@@ -198,7 +221,7 @@ export class OutreachWorker {
         variables,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[Outreach] Failed to enroll ${email}:`,
         error.message
       );
@@ -221,7 +244,7 @@ export class OutreachWorker {
   async batchEnrollLeads(leads, campaignId, options = {}) {
     const { batchSize = 100, continueOnError = true } = options;
 
-    console.log(
+    logger.info(
       `[Outreach] Starting batch enrollment of ${leads.length} leads in campaign ${campaignId}`
     );
 
@@ -234,7 +257,7 @@ export class OutreachWorker {
     // Process in batches
     for (let i = 0; i < leads.length; i += batchSize) {
       const batch = leads.slice(i, i + batchSize);
-      console.log(
+      logger.info(
         `[Outreach] Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(leads.length / batchSize)}`
       );
 
@@ -272,7 +295,7 @@ export class OutreachWorker {
           (r) => r.success
         ).length;
       } catch (error) {
-        console.error('[Outreach] Batch enrollment error:', error.message);
+        logger.error('[Outreach] Batch enrollment error:', error.message);
         if (!continueOnError) break;
       }
 
@@ -282,7 +305,7 @@ export class OutreachWorker {
       }
     }
 
-    console.log(
+    logger.info(
       `[Outreach] Batch enrollment complete: ${results.enrolled.length}/${leads.length} enrolled`
     );
 
@@ -354,7 +377,7 @@ export class OutreachWorker {
    */
   async checkForReplies() {
     try {
-      console.log('[Outreach] Checking for new replies...');
+      logger.info('[Outreach] Checking for new replies...');
 
       const campaigns = await this.getActiveCampaigns();
       const allReplies = {
@@ -391,13 +414,13 @@ export class OutreachWorker {
 
       this.stats.repliesReceived += allReplies.total;
 
-      console.log(
+      logger.info(
         `[Outreach] Found ${allReplies.total} replies (${allReplies.positive.length} positive, ${allReplies.negative.length} negative)`
       );
 
       return allReplies;
     } catch (error) {
-      console.error('[Outreach] Failed to check replies:', error.message);
+      logger.error('[Outreach] Failed to check replies:', error.message);
       return {
         positive: [],
         negative: [],
@@ -532,7 +555,7 @@ export class OutreachWorker {
         suggestions,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[Outreach] Failed to analyze campaign ${campaignId}:`,
         error.message
       );
@@ -554,14 +577,14 @@ export class OutreachWorker {
    */
   async handleUnsubscribe(email) {
     try {
-      console.log(`[Outreach] Processing unsubscribe for ${email}`);
+      logger.info(`[Outreach] Processing unsubscribe for ${email}`);
 
       await this.lemlist.addToUnsubscribes(email);
 
       // Record in database
       await this._recordUnsubscribe(email);
 
-      console.log(`[Outreach] ${email} unsubscribed successfully`);
+      logger.info(`[Outreach] ${email} unsubscribed successfully`);
 
       return {
         success: true,
@@ -569,7 +592,7 @@ export class OutreachWorker {
         unsubscribedAt: new Date().toISOString(),
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[Outreach] Failed to process unsubscribe for ${email}:`,
         error.message
       );
@@ -590,7 +613,7 @@ export class OutreachWorker {
       const unsubscribes = await this.lemlist.getUnsubscribes();
       return unsubscribes.some((unsub) => unsub.email === email);
     } catch (error) {
-      console.error('[Outreach] Failed to check unsubscribe status:', error.message);
+      logger.error('[Outreach] Failed to check unsubscribe status:', error.message);
       return false;
     }
   }
@@ -613,7 +636,10 @@ export class OutreachWorker {
         JSON.stringify(campaign.settings || {})
       );
     } catch (error) {
-      console.error('[Outreach] Failed to store campaign:', error.message);
+      logger.error('[Outreach] Failed to store campaign:', error.message);
+      this.stats.errors = (this.stats.errors || 0) + 1;
+      // SEC-004 FIX: Re-throw to prevent silent data loss
+      throw new Error(`Failed to store campaign ${campaign.id}: ${error.message}`);
     }
   }
 
@@ -626,7 +652,10 @@ export class OutreachWorker {
 
       stmt.run(campaignId, email, leadId);
     } catch (error) {
-      console.error('[Outreach] Failed to record enrollment:', error.message);
+      logger.error('[Outreach] Failed to record enrollment:', error.message);
+      this.stats.errors = (this.stats.errors || 0) + 1;
+      // SEC-004 FIX: Re-throw to prevent silent data loss
+      throw new Error(`Failed to record enrollment for ${email}: ${error.message}`);
     }
   }
 
@@ -639,7 +668,10 @@ export class OutreachWorker {
 
       stmt.run(email);
     } catch (error) {
-      console.error('[Outreach] Failed to record unsubscribe:', error.message);
+      logger.error('[Outreach] Failed to record unsubscribe:', error.message);
+      this.stats.errors = (this.stats.errors || 0) + 1;
+      // SEC-004 FIX: Re-throw - unsubscribe failures are critical for compliance
+      throw new Error(`Failed to record unsubscribe for ${email}: ${error.message}`);
     }
   }
 

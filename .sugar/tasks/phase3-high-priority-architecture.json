@@ -1,0 +1,246 @@
+{
+  "phase": "3-high-priority-architecture",
+  "phase_name": "High Priority Architecture Refactoring",
+  "blocking": false,
+  "depends_on": ["2-critical-performance"],
+  "estimated_hours": 20,
+  "parallel_tracks": 4,
+  "tasks": [
+    {
+      "id": "ARCH-001",
+      "title": "Split campaign-controller.js into domain-specific modules",
+      "type": "refactor",
+      "priority": 3,
+      "status": "pending",
+      "context": "campaign-controller.js is 1498 lines with 40+ functions handling enrollment, scheduling, analytics, and lifecycle. This violates single responsibility and makes testing difficult.",
+      "business_context": "Large files increase bug risk, slow code reviews, and make onboarding new developers harder.",
+      "technical_requirements": [
+        "Create src/controllers/campaign/enrollment-controller.js",
+        "Create src/controllers/campaign/scheduling-controller.js",
+        "Create src/controllers/campaign/analytics-controller.js",
+        "Create src/controllers/campaign/lifecycle-controller.js",
+        "Create src/controllers/campaign/index.js as facade",
+        "Move functions to appropriate modules",
+        "Update all imports throughout codebase",
+        "Ensure all tests pass after refactor"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/controllers/campaign-controller.js"
+      ],
+      "agent_assignments": {
+        "architecture_strategist": "Design module boundaries and interfaces",
+        "pattern_recognition_specialist": "Identify function groupings"
+      },
+      "success_criteria": [
+        "No single file exceeds 400 lines",
+        "Each module has single responsibility",
+        "All existing tests pass",
+        "API behavior unchanged"
+      ],
+      "estimated_hours": 5
+    },
+    {
+      "id": "ARCH-002",
+      "title": "Extract server.js route handlers into dedicated controller modules",
+      "type": "refactor",
+      "priority": 3,
+      "status": "pending",
+      "context": "server.js is 2564 lines with inline route handlers, middleware, and business logic mixed together. This makes the codebase difficult to navigate and test.",
+      "business_context": "Monolithic server files are a major contributor to development velocity issues.",
+      "technical_requirements": [
+        "Extract DLQ handlers to src/controllers/dlq-controller.js",
+        "Extract chat handlers to src/controllers/chat-controller.js",
+        "Extract import handlers to src/controllers/import-controller.js",
+        "Keep server.js focused on app setup and middleware",
+        "Update route registrations to use controllers",
+        "Maintain all existing middleware chains"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/server.js"
+      ],
+      "agent_assignments": {
+        "architecture_strategist": "Design extraction strategy",
+        "code_simplicity_reviewer": "Ensure clean separation"
+      },
+      "success_criteria": [
+        "server.js reduced to <500 lines",
+        "Each controller handles one domain",
+        "All routes functional",
+        "Middleware order preserved"
+      ],
+      "estimated_hours": 5
+    },
+    {
+      "id": "ARCH-003",
+      "title": "Add HubSpot batch API deduplication to prevent duplicate syncs",
+      "type": "bug_fix",
+      "priority": 3,
+      "status": "pending",
+      "context": "HubSpot batch operations don't deduplicate before sending. If same contact appears multiple times in batch, HubSpot API may reject or create duplicates.",
+      "business_context": "Duplicate CRM records cause sales team confusion and inaccurate reporting.",
+      "technical_requirements": [
+        "Add deduplication before batchCreate calls",
+        "Use email as primary deduplication key",
+        "Log when duplicates are filtered",
+        "Add metrics for duplicate detection rate"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/services/HubSpotService.js"
+      ],
+      "agent_assignments": {
+        "data_integrity_guardian": "Implement deduplication logic"
+      },
+      "success_criteria": [
+        "No duplicate contacts sent to HubSpot",
+        "Batch operations handle 1000+ contacts",
+        "Metrics track deduplication rate"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "ARCH-004",
+      "title": "Replace console.log statements with structured logger in workers",
+      "type": "refactor",
+      "priority": 3,
+      "status": "pending",
+      "context": "Worker files use console.log instead of the structured logger utility. This loses log levels, timestamps, and correlation IDs needed for debugging.",
+      "business_context": "Cannot effectively debug production issues without structured logging.",
+      "technical_requirements": [
+        "Import createLogger from utils/logger.js",
+        "Replace console.log with logger.info",
+        "Replace console.error with logger.error",
+        "Replace console.warn with logger.warn",
+        "Add contextual metadata to log calls"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/workers/enrichment-worker.js",
+        "sales-automation-api/src/workers/import-worker.js",
+        "sales-automation-api/src/workers/outreach-worker.js",
+        "sales-automation-api/src/workers/crm-sync-worker.js"
+      ],
+      "agent_assignments": {
+        "pattern_recognition_specialist": "Find all console.* usages"
+      },
+      "success_criteria": [
+        "Zero console.log in worker files",
+        "All logs have appropriate level",
+        "Logs include worker name context"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "ARCH-005",
+      "title": "Add missing database indexes for frequently queried columns",
+      "type": "refactor",
+      "priority": 3,
+      "status": "pending",
+      "context": "Several queries filter on columns without indexes: campaign_enrollments.status, contacts.email, dead_letter_events.created_at. Full table scans on large tables cause slowdowns.",
+      "business_context": "Query performance degrades as data grows, affecting user experience.",
+      "technical_requirements": [
+        "Create migration for new indexes",
+        "Add index on campaign_enrollments(campaign_id, status)",
+        "Add index on contacts(email)",
+        "Add index on dead_letter_events(created_at)",
+        "Add index on outreach_outcomes(template_used, sent_at)",
+        "Test migration on staging before production"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/db/migrations/"
+      ],
+      "agent_assignments": {
+        "data_integrity_guardian": "Design and test indexes"
+      },
+      "success_criteria": [
+        "All identified columns indexed",
+        "Query explain plans show index usage",
+        "No full table scans on common queries"
+      ],
+      "estimated_hours": 2
+    },
+    {
+      "id": "ARCH-006",
+      "title": "Disable YOLO_MODE or add production safeguard",
+      "type": "bug_fix",
+      "priority": 3,
+      "status": "pending",
+      "context": "YOLO_MODE flag bypasses safety checks. If accidentally enabled in production, it could cause mass unauthorized actions or data corruption.",
+      "business_context": "Production safety bypass could lead to customer impact or compliance violations.",
+      "technical_requirements": [
+        "Add environment check that prevents YOLO_MODE in production",
+        "Log warning if YOLO_MODE is requested in production",
+        "Add explicit documentation about YOLO_MODE purpose",
+        "Consider removing YOLO_MODE entirely if not needed"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/utils/yolo-manager.js"
+      ],
+      "agent_assignments": {
+        "security_sentinel": "Implement production safeguard"
+      },
+      "success_criteria": [
+        "YOLO_MODE cannot be enabled in NODE_ENV=production",
+        "Warning logged if attempted",
+        "Feature documented"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "id": "ARCH-007",
+      "title": "Fix company data cache TTL being too short",
+      "type": "bug_fix",
+      "priority": 3,
+      "status": "pending",
+      "context": "Company enrichment data is cached with very short TTL, causing repeated API calls for same company. This wastes enrichment credits and adds latency.",
+      "business_context": "Unnecessary API calls increase costs and slow down bulk operations.",
+      "technical_requirements": [
+        "Audit all cache TTL values in enrichment services",
+        "Increase company data cache to 24 hours minimum",
+        "Add cache-control headers for HTTP responses",
+        "Consider making TTL configurable via environment"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/services/EnrichmentService.js",
+        "sales-automation-api/src/services/ExplorerService.js"
+      ],
+      "agent_assignments": {
+        "performance_oracle": "Optimize cache strategy"
+      },
+      "success_criteria": [
+        "Company data cached for 24+ hours",
+        "Cache hit rate >80% for repeat queries",
+        "API call count reduced significantly"
+      ],
+      "estimated_hours": 1
+    },
+    {
+      "id": "ARCH-008",
+      "title": "Consolidate duplicate validation logic across services",
+      "type": "refactor",
+      "priority": 3,
+      "status": "pending",
+      "context": "Email validation, data completeness scoring, and ICP matching are implemented in multiple places with slight variations. This leads to inconsistent behavior.",
+      "business_context": "Inconsistent validation causes confusion when same contact passes in one flow but fails in another.",
+      "technical_requirements": [
+        "Audit all validation implementations",
+        "Consolidate into DataQualityService",
+        "Update all callers to use centralized service",
+        "Remove duplicate implementations"
+      ],
+      "files_affected": [
+        "sales-automation-api/src/services/DataQualityService.js",
+        "sales-automation-api/src/services/QualityScorer.js",
+        "sales-automation-api/src/workers/import-worker.js"
+      ],
+      "agent_assignments": {
+        "pattern_recognition_specialist": "Find duplicate validation code",
+        "code_simplicity_reviewer": "Design consolidated interface"
+      },
+      "success_criteria": [
+        "Single source of truth for validation",
+        "All services use DataQualityService",
+        "No duplicate validation implementations"
+      ],
+      "estimated_hours": 2
+    }
+  ]
+}

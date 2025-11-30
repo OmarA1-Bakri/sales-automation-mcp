@@ -12,6 +12,8 @@ import crypto from 'crypto';
 import fs from 'fs';
 import https from 'https';
 import { providerConfig } from '../../config/provider-config.js';
+import { metrics } from '../../utils/metrics.js';
+import { replaceTemplateVariables } from '../utils/variable-replacer.js';
 
 const logger = createLogger('HeyGenVideoProvider');
 
@@ -38,6 +40,7 @@ export class HeyGenVideoProvider extends VideoProvider {
    */
   async _makeRequest(endpoint, method = 'GET', body = null) {
     const url = `${this.apiUrl}${endpoint}`;
+    const startTime = Date.now();
 
     const options = {
       method,
@@ -56,8 +59,26 @@ export class HeyGenVideoProvider extends VideoProvider {
     try {
       const response = await fetch(url, options);
       const data = await response.json();
+      const latency = Date.now() - startTime;
+
+      // Track API latency
+      metrics.histogram('provider.api_latency_ms', latency, {
+        provider: 'heygen',
+        endpoint: endpoint.split('/')[1] || endpoint
+      });
 
       if (!response.ok) {
+        // Track API error
+        metrics.counter('provider.api_calls', 1, {
+          provider: 'heygen',
+          endpoint: endpoint.split('/')[1] || endpoint,
+          status: 'error'
+        });
+        metrics.counter('provider.api_errors', 1, {
+          provider: 'heygen',
+          error_type: response.status >= 500 ? 'server_error' : 'validation'
+        });
+
         logger.error('HeyGen API error', {
           status: response.status,
           endpoint,
@@ -71,8 +92,28 @@ export class HeyGenVideoProvider extends VideoProvider {
         );
       }
 
+      // Track successful API call
+      metrics.counter('provider.api_calls', 1, {
+        provider: 'heygen',
+        endpoint: endpoint.split('/')[1] || endpoint,
+        status: 'success'
+      });
+
       return data;
     } catch (error) {
+      // Track network/timeout errors
+      if (!error.message.includes('HeyGen API error')) {
+        metrics.counter('provider.api_calls', 1, {
+          provider: 'heygen',
+          endpoint: endpoint.split('/')[1] || endpoint,
+          status: 'error'
+        });
+        metrics.counter('provider.api_errors', 1, {
+          provider: 'heygen',
+          error_type: 'network'
+        });
+      }
+
       logger.error('HeyGen API request failed', {
         endpoint,
         error: error.message
@@ -96,12 +137,8 @@ export class HeyGenVideoProvider extends VideoProvider {
       metadata = {}
     } = params;
 
-    // Replace variables in script
-    let personalizedScript = script;
-    Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      personalizedScript = personalizedScript.replace(regex, value || '');
-    });
+    // Replace variables in script using shared utility
+    const personalizedScript = replaceTemplateVariables(script, variables);
 
     // Build HeyGen API request
     const requestBody = {
@@ -137,9 +174,14 @@ export class HeyGenVideoProvider extends VideoProvider {
       requestBody.caption = true;
     }
 
-    // Add callback URL for webhook if configured
+    // P1 FIX: Add BOTH callback_url AND callback_id for webhooks
+    // callback_url is REQUIRED for HeyGen to send webhooks
+    // callback_id is metadata to identify the video in our system
     if (process.env.API_SERVER_URL) {
+      requestBody.callback_url = `${process.env.API_SERVER_URL}/api/campaigns/events/webhook?provider=heygen`;
       requestBody.callback_id = `${campaignId}:${enrollmentId}`;
+    } else {
+      logger.warn('API_SERVER_URL not configured - HeyGen webhooks will not be received');
     }
 
     logger.info('Generating HeyGen video', {
@@ -153,6 +195,9 @@ export class HeyGenVideoProvider extends VideoProvider {
     try {
       const response = await this._makeRequest('/v2/video/generate', 'POST', requestBody);
 
+      // Track video generation initiated
+      metrics.counter('video.generations', 1, { status: 'pending' });
+
       return {
         videoId: response.data.video_id,
         status: this._normalizeStatus(response.data.status),
@@ -164,6 +209,9 @@ export class HeyGenVideoProvider extends VideoProvider {
         }
       };
     } catch (error) {
+      // Track video generation failure
+      metrics.counter('video.generations', 1, { status: 'failed' });
+
       logger.error('Failed to generate HeyGen video', {
         error: error.message,
         campaignId,
@@ -291,6 +339,12 @@ export class HeyGenVideoProvider extends VideoProvider {
    * HeyGen uses HMAC-SHA256 signature verification
    */
   verifyWebhookSignature(req, secret) {
+    // P0 SECURITY: FAIL CLOSED - Never allow webhooks without secret configured
+    if (!secret) {
+      logger.error('HEYGEN_WEBHOOK_SECRET not configured - REJECTING all webhooks for security');
+      return false;
+    }
+
     const signature = req.headers['x-heygen-signature'];
 
     if (!signature) {

@@ -67,9 +67,24 @@ import { JobQueue } from './utils/job-queue.js';
 import { RateLimiter } from './utils/rate-limiter.js';
 import AIUsageTracker from './utils/ai-usage-tracker.js';
 
+// Import ConversationalResponder for dynamic AI replies
+import ConversationalResponder from './services/ConversationalResponder.js';
+
+// Import multi-channel providers for ConversationalResponder
+import PostmarkEmailProvider from './providers/postmark/PostmarkEmailProvider.js';
+import PhantomBusterLinkedInProvider from './providers/phantombuster/PhantombusterLinkedInProvider.js';
+import HeyGenVideoProvider from './providers/heygen/HeyGenVideoProvider.js';
+
 // Import campaign management routes (Phase 6B)
 import campaignRoutes from './routes/campaigns.js';
 import { saveRawBody } from './middleware/webhook-auth.js';
+
+// Import B-MAD workflow integration (Phase 1 MVP)
+import workflowRoutes from './routes/workflows.js';
+import { WorkflowExecutionService } from './services/WorkflowExecutionService.js';
+
+// Import performance/analytics routes
+import performanceRoutes from './routes/performance.js';
 
 // Import orphaned event queue for background processing
 import OrphanedEventQueue from './services/OrphanedEventQueue.js';
@@ -230,6 +245,32 @@ class SalesAutomationAPIServer {
       this.explorium = null;
     }
 
+    // Initialize multi-channel outreach providers
+    // Note: Providers read config from providerConfig singleton (set via environment variables)
+    try {
+      this.postmarkProvider = new PostmarkEmailProvider();
+      console.log('[Server] ✓ Postmark email provider initialized');
+    } catch (e) {
+      console.warn('⚠️  Postmark provider disabled:', e.message);
+      this.postmarkProvider = null;
+    }
+
+    try {
+      this.phantombusterProvider = new PhantomBusterLinkedInProvider();
+      console.log('[Server] ✓ PhantomBuster LinkedIn provider initialized');
+    } catch (e) {
+      console.warn('⚠️  PhantomBuster provider disabled:', e.message);
+      this.phantombusterProvider = null;
+    }
+
+    try {
+      this.heygenProvider = new HeyGenVideoProvider();
+      console.log('[Server] ✓ HeyGen video provider initialized');
+    } catch (e) {
+      console.warn('⚠️  HeyGen provider disabled:', e.message);
+      this.heygenProvider = null;
+    }
+
     // Initialize utilities
     this.db = new Database();
     this.jobQueue = new JobQueue(this.db);
@@ -256,16 +297,23 @@ class SalesAutomationAPIServer {
       this.db
     );
 
+    // Initialize B-MAD Workflow Execution Service (Phase 1 MVP)
+    this.workflowService = new WorkflowExecutionService({
+      jobQueue: this.jobQueue,
+      db: this.db,
+      wss: this.wss
+    });
+
     // State
     this.jobs = new Map();
     this.campaigns = new Map();
     this.cronJobs = [];
     this.orphanedEventProcessor = null;  // Interval for orphaned event queue processing
 
-    // Model configuration
+    // Model configuration (updated November 2025)
     this.models = {
-      haiku: 'claude-4-5-haiku',    // Fast, efficient for most tasks (default)
-      sonnet: 'claude-4-5-sonnet',   // High intelligence for content creation
+      haiku: 'claude-haiku-4-5-20251001',     // Fast, efficient for most tasks (default)
+      sonnet: 'claude-sonnet-4-5-20250929',   // High intelligence for content creation
     };
 
     this.setupMiddleware();
@@ -459,9 +507,11 @@ class SalesAutomationAPIServer {
     // CRITICAL: Must be BEFORE logging to prevent log flooding attacks
     // Attackers could DOS by filling disk with logs without rate limiting
     // ================================================================
+    // Higher limits for development, stricter for production
+    const isDev = process.env.NODE_ENV === 'development';
     const limiter = rateLimit({
-      windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000,
-      max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+      windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW) || (isDev ? 1 : 15)) * 60 * 1000,
+      max: parseInt(process.env.RATE_LIMIT_MAX) || (isDev ? 1000 : 100),
       message: {
         success: false,
         error: 'Too Many Requests',
@@ -597,6 +647,9 @@ class SalesAutomationAPIServer {
   }
 
   setupRoutes() {
+    // Environment check for development-specific behavior
+    const isDev = process.env.NODE_ENV === 'development';
+
     // Health check with queue status (FIX #5: Monitoring)
     this.app.get('/health', async (req, res) => {
       try {
@@ -646,6 +699,110 @@ class SalesAutomationAPIServer {
           status: 'unhealthy',
           service: 'sales-automation-api',
           version: '1.0.0',
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    // Provider health check endpoint - status of all integrations
+    this.app.get('/health/providers', async (req, res) => {
+      try {
+        const providers = {
+          email: {
+            lemlist: {
+              configured: !!this.lemlist,
+              status: this.lemlist ? 'ready' : 'not_configured'
+            },
+            postmark: {
+              configured: !!this.postmarkProvider,
+              status: this.postmarkProvider ? 'ready' : 'not_configured'
+            }
+          },
+          linkedin: {
+            phantombuster: {
+              configured: !!this.phantombusterProvider,
+              status: this.phantombusterProvider ? 'ready' : 'not_configured'
+            }
+          },
+          video: {
+            heygen: {
+              configured: !!this.heygenProvider,
+              status: this.heygenProvider ? 'ready' : 'not_configured'
+            }
+          },
+          enrichment: {
+            explorium: {
+              configured: !!this.explorium,
+              status: this.explorium ? 'ready' : 'not_configured'
+            }
+          },
+          crm: {
+            hubspot: {
+              configured: !!this.hubspot,
+              status: this.hubspot ? 'ready' : 'not_configured'
+            }
+          },
+          ai: {
+            anthropic: {
+              configured: !!this.aiProvider,
+              status: this.aiProvider ? 'ready' : 'not_configured'
+            }
+          }
+        };
+
+        // Check ConversationalResponder status
+        const dynamicAI = {
+          enabled: !!this.conversationalResponder,
+          availableChannels: []
+        };
+
+        if (this.conversationalResponder) {
+          if (this.lemlist || this.postmarkProvider) dynamicAI.availableChannels.push('email');
+          if (this.phantombusterProvider) dynamicAI.availableChannels.push('linkedin');
+          if (this.heygenProvider) dynamicAI.availableChannels.push('video');
+        }
+
+        // Calculate overall readiness
+        const emailReady = providers.email.lemlist.configured || providers.email.postmark.configured;
+        const linkedinReady = providers.linkedin.phantombuster.configured;
+        const videoReady = providers.video.heygen.configured;
+        const aiReady = providers.ai.anthropic.configured;
+
+        const response = {
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+          providers,
+          dynamicAI,
+          capabilities: {
+            email_outreach: emailReady,
+            linkedin_outreach: linkedinReady,
+            video_outreach: videoReady,
+            ai_responses: aiReady && emailReady,
+            full_multichannel: emailReady && linkedinReady && aiReady
+          },
+          recommendations: []
+        };
+
+        // Add recommendations for missing providers
+        if (!emailReady) {
+          response.recommendations.push('Configure POSTMARK_API_KEY or LEMLIST_API_KEY for email outreach');
+        }
+        if (!linkedinReady) {
+          response.recommendations.push('Configure PHANTOMBUSTER_API_KEY for LinkedIn automation');
+        }
+        if (!videoReady) {
+          response.recommendations.push('Configure HEYGEN_API_KEY for personalized video outreach');
+        }
+        if (!aiReady) {
+          response.recommendations.push('Configure ANTHROPIC_API_KEY for AI-powered responses');
+        }
+
+        res.json(response);
+      } catch (error) {
+        logger.error('Provider health check failed', { error: error.message });
+        res.status(500).json({
+          status: 'error',
           error: error.message,
           timestamp: new Date().toISOString()
         });
@@ -1071,6 +1228,83 @@ class SalesAutomationAPIServer {
     this.app.use('/api/keys', dbHealthCheck, apiKeysRoutes);
 
     // ========================================================================
+    // B-MAD WORKFLOW EXECUTION (Phase 1 MVP)
+    // ========================================================================
+    // Store workflow service in app.locals for controller access
+    this.app.locals.workflowService = this.workflowService;
+
+    // Initialize ConversationalResponder for dynamic AI replies with multi-channel providers
+    if (this.aiProvider && this.db) {
+      const providers = {
+        lemlist: this.lemlist,
+        postmark: this.postmarkProvider,
+        phantombuster: this.phantombusterProvider,
+        heygen: this.heygenProvider
+      };
+
+      // Log which providers are available
+      const availableProviders = Object.entries(providers)
+        .filter(([_, v]) => v)
+        .map(([k]) => k);
+      logger.info('ConversationalResponder providers available', { providers: availableProviders });
+
+      // Safe parseInt with validation and bounds checking
+      const safeParseInt = (value, defaultVal, min = 0, max = Infinity) => {
+        const parsed = parseInt(value, 10);
+        if (isNaN(parsed)) {
+          logger.warn(`Invalid integer value "${value}", using default ${defaultVal}`);
+          return defaultVal;
+        }
+        if (parsed < min || parsed > max) {
+          logger.warn(`Integer value ${parsed} out of bounds [${min}, ${max}], using default ${defaultVal}`);
+          return defaultVal;
+        }
+        return parsed;
+      };
+
+      const responseDelayMs = safeParseInt(
+        process.env.DYNAMIC_AI_RESPONSE_DELAY_MS || '30000',
+        30000, 0, 300000  // 0 to 5 minutes
+      );
+      const maxResponsesPerThread = safeParseInt(
+        process.env.DYNAMIC_AI_MAX_RESPONSES || '5',
+        5, 1, 50  // 1 to 50 responses
+      );
+
+      this.conversationalResponder = new ConversationalResponder(
+        this.db,
+        this.aiProvider,
+        providers,
+        {
+          senderName: process.env.SENDER_NAME || 'Sales Team',
+          senderRole: process.env.SENDER_ROLE || 'Business Development',
+          companyName: process.env.COMPANY_NAME || 'RTGS.global',
+          senderEmail: process.env.POSTMARK_SENDER_EMAIL || process.env.SENDER_EMAIL,
+          responseDelayMs,
+          maxResponsesPerThread,
+          requireReview: process.env.DYNAMIC_AI_REQUIRE_REVIEW === 'true',
+          enableVideo: process.env.ENABLE_VIDEO_OUTREACH === 'true',
+          videoThreshold: process.env.VIDEO_OUTREACH_THRESHOLD || 'meeting_request',
+          model: process.env.DYNAMIC_AI_MODEL || 'claude-sonnet-4-20250514'
+        }
+      );
+      this.app.locals.conversationalResponder = this.conversationalResponder;
+      logger.info('ConversationalResponder initialized for dynamic AI replies');
+    } else {
+      logger.warn('ConversationalResponder not initialized - missing AI provider or database');
+    }
+
+    // Mount workflow routes
+    // These routes expose WorkflowEngine via REST API
+    // Endpoints: /execute, /definitions, /:jobId, etc.
+    this.app.use('/api/workflows', dbHealthCheck, workflowRoutes);
+
+    // Mount performance/analytics routes
+    // These routes provide performance metrics and analytics data
+    // Endpoints: /summary, /templates, /agents, /quality
+    this.app.use('/api/performance', dbHealthCheck, performanceRoutes);
+
+    // ========================================================================
     // JOB MANAGEMENT
     // ========================================================================
 
@@ -1089,15 +1323,21 @@ class SalesAutomationAPIServer {
     });
 
     // List all jobs
-    this.app.get('/api/jobs', validate(GetJobsSchema), async (req, res) => {
+    this.app.get('/api/jobs', async (req, res) => {
       try {
-        const validated = req.validatedData;
+        // Use query params directly with defaults
+        const status = req.query.status || undefined;
+        const type = req.query.type || undefined;
+        const priority = req.query.priority || undefined;
+        const limit = parseInt(req.query.limit, 10) || 100;
+        const offset = parseInt(req.query.offset, 10) || 0;
+
         const jobs = await this.db.listJobs({
-          status: validated.status,
-          type: validated.type,
-          priority: validated.priority,
-          limit: validated.limit,
-          offset: validated.offset,
+          status,
+          type,
+          priority,
+          limit: Math.min(limit, 1000), // Cap at 1000
+          offset: Math.max(offset, 0),
         });
         res.json({ success: true, jobs });
       } catch (error) {
@@ -1131,6 +1371,15 @@ class SalesAutomationAPIServer {
 
     // List campaigns
     this.app.get('/api/campaigns', async (req, res) => {
+      // P0 FIX: Add null check for lemlist provider
+      if (!this.lemlist) {
+        return res.status(503).json({
+          success: false,
+          error: 'Lemlist integration not configured. Set LEMLIST_API_KEY environment variable.',
+          hint: 'Required environment variables: LEMLIST_API_KEY'
+        });
+      }
+
       try {
         const campaigns = await this.lemlist.getCampaigns();
         res.json(campaigns);
@@ -1144,6 +1393,15 @@ class SalesAutomationAPIServer {
 
     // Get campaign stats
     this.app.get('/api/campaigns/:campaignId/stats', validate(GetCampaignStatsSchema), async (req, res) => {
+      // P0 FIX: Add null check for lemlist provider
+      if (!this.lemlist) {
+        return res.status(503).json({
+          success: false,
+          error: 'Lemlist integration not configured. Set LEMLIST_API_KEY environment variable.',
+          hint: 'Required environment variables: LEMLIST_API_KEY'
+        });
+      }
+
       try {
         const validated = req.validatedData;
         const stats = await this.lemlist.getCampaignStats(
@@ -1167,7 +1425,7 @@ class SalesAutomationAPIServer {
     // ========================================================================
 
     // Import from Lemlist
-    this.app.post('/api/import/lemlist', authenticate, async (req, res) => {
+    this.app.post('/api/import/lemlist', authenticateDb, async (req, res) => {
       try {
         const { campaignId, status, limit, deduplicate } = req.body;
 
@@ -1189,7 +1447,7 @@ class SalesAutomationAPIServer {
     });
 
     // Import from HubSpot
-    this.app.post('/api/import/hubspot', authenticate, async (req, res) => {
+    this.app.post('/api/import/hubspot', authenticateDb, async (req, res) => {
       try {
         const { listId, filters, properties, limit, deduplicate } = req.body;
 
@@ -1212,7 +1470,7 @@ class SalesAutomationAPIServer {
     });
 
     // Import from CSV (accepts CSV data in request body)
-    this.app.post('/api/import/csv', authenticate, async (req, res) => {
+    this.app.post('/api/import/csv', authenticateDb, async (req, res) => {
       try {
         const { csvData, fieldMapping, deduplicate } = req.body;
 
@@ -1223,14 +1481,16 @@ class SalesAutomationAPIServer {
           });
         }
 
-        // Write CSV data to temporary file
+        // PERF-003 FIX: Use async file operations to avoid blocking event loop
         const tempDir = join(__dirname, '../temp');
-        if (!fs.existsSync(tempDir)) {
-          fs.mkdirSync(tempDir, { recursive: true });
+        try {
+          await fs.promises.access(tempDir);
+        } catch {
+          await fs.promises.mkdir(tempDir, { recursive: true });
         }
 
         const tempFile = join(tempDir, `import-${Date.now()}.csv`);
-        fs.writeFileSync(tempFile, csvData);
+        await fs.promises.writeFile(tempFile, csvData);
 
         try {
           const result = await this.importWorker.importFromCSV({
@@ -1240,14 +1500,16 @@ class SalesAutomationAPIServer {
             deduplicate: deduplicate !== false
           });
 
-          // Clean up temp file
-          fs.unlinkSync(tempFile);
+          // Clean up temp file asynchronously
+          await fs.promises.unlink(tempFile);
 
           res.json(result);
         } catch (error) {
-          // Clean up temp file on error
-          if (fs.existsSync(tempFile)) {
-            fs.unlinkSync(tempFile);
+          // Clean up temp file on error (async)
+          try {
+            await fs.promises.unlink(tempFile);
+          } catch (unlinkError) {
+            // File may not exist, ignore
           }
           throw error;
         }
@@ -1261,7 +1523,7 @@ class SalesAutomationAPIServer {
     });
 
     // Enrich contacts with Explorium data (direct call, not job-based)
-    this.app.post('/api/import/enrich', authenticate, async (req, res) => {
+    this.app.post('/api/import/enrich', authenticateDb, async (req, res) => {
       try {
         const { contacts, options = {} } = req.body;
 
@@ -1289,7 +1551,7 @@ class SalesAutomationAPIServer {
     });
 
     // Sync enriched contacts to HubSpot (direct call, not job-based)
-    this.app.post('/api/import/sync/hubspot', authenticate, async (req, res) => {
+    this.app.post('/api/import/sync/hubspot', authenticateDb, async (req, res) => {
       try {
         const { contacts, options = {} } = req.body;
 
@@ -1319,7 +1581,7 @@ class SalesAutomationAPIServer {
     });
 
     // Get contacts from database with filters (for import workflow)
-    this.app.get('/api/import/contacts', authenticate, async (req, res) => {
+    this.app.get('/api/import/contacts', authenticateDb, async (req, res) => {
       try {
         const {
           status,      // imported, enriched, synced
@@ -1351,14 +1613,54 @@ class SalesAutomationAPIServer {
       }
     });
 
+    // Get contacts from database (main contacts list endpoint)
+    this.app.get('/api/contacts', authenticateDb, async (req, res) => {
+      try {
+        const {
+          status,
+          source,
+          limit = 50,
+          offset = 0
+        } = req.query;
+
+        // Query database for contacts
+        const contacts = this.db.getContacts({
+          status,
+          source,
+          limit: parseInt(limit),
+          offset: parseInt(offset)
+        });
+
+        // Get total count for pagination
+        const totalCount = this.db.getContactsCount({ status, source });
+
+        res.json({
+          success: true,
+          contacts: contacts || [],
+          total: totalCount || (contacts ? contacts.length : 0),
+          limit: parseInt(limit),
+          offset: parseInt(offset)
+        });
+      } catch (error) {
+        logger.error(`[Contacts] Failed to get contacts: ${error.message}`);
+        res.status(500).json({
+          success: false,
+          error: error.message,
+          contacts: [],
+          total: 0
+        });
+      }
+    });
+
     // ========================================================================
     // AI CHAT
     // ========================================================================
 
     // Chat-specific rate limiter (more restrictive to protect Claude API quota)
+    // Higher limits in development for testing
     const chatLimiter = rateLimit({
       windowMs: 60 * 1000, // 1 minute
-      max: parseInt(process.env.CHAT_RATE_LIMIT_MAX) || 10, // Default 10 messages per minute
+      max: parseInt(process.env.CHAT_RATE_LIMIT_MAX) || (isDev ? 60 : 10), // Higher in dev
       message: {
         success: false,
         error: 'Chat rate limit exceeded',
@@ -1453,7 +1755,7 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
 
         // Call Claude API
         const response = await this.anthropic.messages.create({
-          model: 'claude-4-5-haiku',
+          model: this.models.haiku,
           max_tokens: 2048,
           system: systemPrompt,
           messages: messages
@@ -1473,7 +1775,7 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
           message: assistantMessage,
           conversationId: finalConversationId,
           metadata: {
-            model: 'claude-4-5-haiku',
+            model: this.models.haiku,
             tokens: response.usage
           }
         });
@@ -1488,7 +1790,7 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
     });
 
     // Get chat history
-    this.app.get('/api/chat/history', authenticate, async (req, res) => {
+    this.app.get('/api/chat/history', authenticateDb, async (req, res) => {
       try {
         const { conversationId = null } = req.query;
 
@@ -1755,8 +2057,20 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
     // Create job in database (enqueue takes: type, parameters, priority)
     const job = await this.jobQueue.enqueue(type, params, 'normal');
 
-    // Execute via Claude API in background
-    this.processJobAsync(job.id, type, params);
+    // PERF-005 FIX: Add error handling for background async operation
+    // Execute via Claude API in background with proper error handling
+    this.processJobAsync(job.id, type, params).catch(error => {
+      logger.error('Background job processing failed', {
+        jobId: job.id,
+        workflowType: type,
+        error: error.message,
+        stack: error.stack
+      });
+      // Update job status to failed so it can be retried/investigated
+      this.db.updateJobStatus(job.id, 'failed', { error: error.message }).catch(dbError => {
+        logger.error('Failed to update job status after error', { jobId: job.id, dbError: dbError.message });
+      });
+    });
 
     return job.id;
   }
@@ -2184,10 +2498,124 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
     };
   }
 
+  /**
+   * Validate provider configurations at startup
+   *
+   * P0 SECURITY: This method ensures that when a provider is enabled,
+   * all required security configurations are present. Fail fast on missing
+   * security-critical configs to prevent insecure deployments.
+   *
+   * @throws {Error} If required provider configs are missing
+   */
+  async _validateProviderConfigs() {
+    const errors = [];
+    const warnings = [];
+
+    // ========================================================================
+    // EMAIL PROVIDER VALIDATION
+    // ========================================================================
+    const emailProvider = process.env.EMAIL_PROVIDER;
+
+    if (emailProvider === 'postmark') {
+      if (!process.env.POSTMARK_SERVER_TOKEN) {
+        errors.push('POSTMARK_SERVER_TOKEN required when EMAIL_PROVIDER=postmark');
+      }
+      if (!process.env.POSTMARK_WEBHOOK_SECRET) {
+        errors.push('POSTMARK_WEBHOOK_SECRET required for webhook security when EMAIL_PROVIDER=postmark');
+      }
+      if (!process.env.POSTMARK_SENDER_EMAIL) {
+        warnings.push('POSTMARK_SENDER_EMAIL not set - must provide "from" on each email');
+      }
+    }
+
+    // ========================================================================
+    // LINKEDIN PROVIDER VALIDATION
+    // ========================================================================
+    const linkedinProvider = process.env.LINKEDIN_PROVIDER;
+
+    if (linkedinProvider === 'phantombuster') {
+      if (!process.env.PHANTOMBUSTER_API_KEY) {
+        errors.push('PHANTOMBUSTER_API_KEY required when LINKEDIN_PROVIDER=phantombuster');
+      }
+      if (!process.env.PHANTOMBUSTER_WEBHOOK_SECRET) {
+        errors.push('PHANTOMBUSTER_WEBHOOK_SECRET required for webhook security when LINKEDIN_PROVIDER=phantombuster');
+      }
+
+      // Agent IDs are optional at startup but required at runtime
+      const agentIds = [
+        'PHANTOMBUSTER_PROFILE_VISITOR_AGENT_ID',
+        'PHANTOMBUSTER_AUTO_CONNECT_AGENT_ID',
+        'PHANTOMBUSTER_MESSAGE_SENDER_AGENT_ID'
+      ];
+
+      const missingAgents = agentIds.filter(id => !process.env[id]);
+      if (missingAgents.length > 0) {
+        warnings.push(`PhantomBuster agent IDs not configured: ${missingAgents.join(', ')}. Actions requiring these will fail.`);
+      }
+
+      if (!process.env.LINKEDIN_SESSION_COOKIE) {
+        warnings.push('LINKEDIN_SESSION_COOKIE not set - PhantomBuster LinkedIn actions will fail');
+      }
+    }
+
+    // ========================================================================
+    // VIDEO PROVIDER VALIDATION
+    // ========================================================================
+    const videoProvider = process.env.VIDEO_PROVIDER;
+
+    if (videoProvider === 'heygen') {
+      if (!process.env.HEYGEN_API_KEY) {
+        errors.push('HEYGEN_API_KEY required when VIDEO_PROVIDER=heygen');
+      }
+      if (!process.env.HEYGEN_WEBHOOK_SECRET) {
+        errors.push('HEYGEN_WEBHOOK_SECRET required for webhook security when VIDEO_PROVIDER=heygen');
+      }
+      if (!process.env.HEYGEN_AVATAR_ID) {
+        warnings.push('HEYGEN_AVATAR_ID not set - video generation will use default avatar');
+      }
+      if (!process.env.HEYGEN_VOICE_ID) {
+        warnings.push('HEYGEN_VOICE_ID not set - video generation will use default voice');
+      }
+      if (!process.env.API_SERVER_URL) {
+        errors.push('API_SERVER_URL required for HeyGen webhooks when VIDEO_PROVIDER=heygen');
+      }
+    }
+
+    // ========================================================================
+    // REPORT VALIDATION RESULTS
+    // ========================================================================
+
+    // Log warnings (non-blocking)
+    if (warnings.length > 0) {
+      console.warn('⚠️  Provider configuration warnings:');
+      warnings.forEach(w => console.warn(`   - ${w}`));
+    }
+
+    // Throw on errors (blocking)
+    if (errors.length > 0) {
+      console.error('❌ Provider configuration errors (BLOCKING):');
+      errors.forEach(e => console.error(`   - ${e}`));
+
+      throw new Error(
+        `Missing required provider configuration:\n` +
+        errors.map(e => `  • ${e}`).join('\n') +
+        `\n\nServer cannot start with insecure provider configuration.`
+      );
+    }
+  }
+
   async start() {
     // Initialize database first
     await this.db.initialize();
     console.log('✓ Database initialized');
+
+    // ============================================================================
+    // PROVIDER CONFIGURATION VALIDATION
+    // P0 SECURITY: Validate required provider configs at startup
+    // Fail fast if security-critical configs are missing
+    // ============================================================================
+    await this._validateProviderConfigs();
+    console.log('✓ Provider configurations validated');
 
     // ============================================================================
     // ORPHANED EVENT QUEUE PROCESSOR

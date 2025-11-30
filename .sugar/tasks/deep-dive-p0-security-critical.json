@@ -1,0 +1,112 @@
+{
+  "id": "deep-dive-p0-security-critical",
+  "title": "P0 CRITICAL: Security Vulnerability Remediation",
+  "type": "security",
+  "priority": 10,
+  "status": "pending",
+  "created_at": "2025-11-27T00:00:00Z",
+  "estimated_effort_hours": 8,
+  "source": "Deep Dive Analysis - November 2025",
+
+  "context": "Critical security vulnerabilities identified in comprehensive codebase audit. These must be fixed IMMEDIATELY before any production deployment. 4 CRITICAL issues identified with potential for complete system compromise.",
+
+  "business_context": "Any of these vulnerabilities could result in: complete data breach, unauthorized API access, compliance violations, and reputation damage. Fix within 48 hours.",
+
+  "vulnerabilities": [
+    {
+      "id": "SEC-001",
+      "severity": "CRITICAL",
+      "location": "sales-automation-api/src/bmad/WorkflowStateManager.js:224",
+      "issue": "SQL Injection via string interpolation",
+      "code": "DELETE FROM workflow_states WHERE completed_at < NOW() - INTERVAL '${retentionDays} days'",
+      "risk": "Complete database compromise, data exfiltration",
+      "fix": "Use parameterized query with input validation",
+      "estimated_hours": 1
+    },
+    {
+      "id": "SEC-002",
+      "severity": "CRITICAL",
+      "location": "sales-automation-api/src/controllers/campaign-controller.js:549-620",
+      "issue": "Multiple SQL injection vulnerabilities in campaign queries",
+      "risk": "Unauthorized data access, query manipulation",
+      "fix": "Convert all raw queries to parameterized Sequelize queries",
+      "estimated_hours": 2
+    },
+    {
+      "id": "SEC-003",
+      "severity": "CRITICAL",
+      "location": "sales-automation-api/src/middleware/authenticate-db.js:109-111",
+      "issue": "Empty scopes grant full access - broken authorization",
+      "code": "if (!scopes || scopes.length === 0) return true",
+      "risk": "Any compromised API key = complete system access",
+      "fix": "Deny empty scopes, implement explicit permission grants",
+      "estimated_hours": 2
+    },
+    {
+      "id": "SEC-004",
+      "severity": "HIGH",
+      "location": ".env file",
+      "issue": "Hardcoded production secrets",
+      "risk": "Credential exposure in source control",
+      "fix": "Revoke all keys, implement secrets manager, update .gitignore",
+      "estimated_hours": 3
+    }
+  ],
+
+  "technical_requirements": [
+    "Replace string interpolation with parameterized queries",
+    "Implement deny-by-default authorization model",
+    "Add input validation with strict type checking",
+    "Use PostgreSQL $1, $2 syntax for parameterization",
+    "Audit and revoke all exposed API keys",
+    "Update CI/CD to fail on secrets detection"
+  ],
+
+  "files_to_modify": [
+    {
+      "path": "sales-automation-api/src/bmad/WorkflowStateManager.js",
+      "line": 224,
+      "change": "Convert cleanupOldWorkflows to use parameterized query"
+    },
+    {
+      "path": "sales-automation-api/src/controllers/campaign-controller.js",
+      "lines": "549-620",
+      "change": "Refactor all raw SQL queries to Sequelize parameterized format"
+    },
+    {
+      "path": "sales-automation-api/src/middleware/authenticate-db.js",
+      "lines": "109-111",
+      "change": "Remove empty scope bypass, implement explicit permission model"
+    }
+  ],
+
+  "agent_assignments": {
+    "primary": "compounding-engineering:security-sentinel",
+    "review": "sugar:quality-guardian"
+  },
+
+  "success_criteria": [
+    "Zero SQL injection vulnerabilities (verified by static analysis)",
+    "Empty scopes denied - tested with explicit test case",
+    "All exposed credentials rotated and new ones in secrets manager",
+    "Security audit passes with A grade"
+  ],
+
+  "acceptance_tests": [
+    {
+      "test": "SQL Injection Prevention",
+      "action": "Call cleanupOldWorkflows with malicious retentionDays value",
+      "expected": "Input rejected or sanitized, no SQL execution"
+    },
+    {
+      "test": "Empty Scope Denial",
+      "action": "Authenticate with API key that has empty scopes array",
+      "expected": "403 Forbidden response"
+    },
+    {
+      "test": "Secrets Scan",
+      "action": "Run trufflehog or gitleaks on repository",
+      "expected": "Zero high-confidence secret findings"
+    }
+  ]
+}

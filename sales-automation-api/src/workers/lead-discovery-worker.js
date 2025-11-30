@@ -17,9 +17,12 @@ import fs from 'fs';
 import yaml from 'yaml';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+// ARCH-004 FIX: Import structured logger
+import { createLogger } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const logger = createLogger('LeadDiscoveryWorker');
 
 export class LeadDiscoveryWorker {
   constructor(clients, database) {
@@ -58,7 +61,7 @@ export class LeadDiscoveryWorker {
     } = params;
 
     try {
-      console.log(`[Discovery] Starting ICP discovery: ${icpProfileName}`);
+      logger.info(`[Discovery] Starting ICP discovery: ${icpProfileName}`);
 
       // Step 1: Load ICP profile
       const icpProfile = this.icpProfiles[icpProfileName];
@@ -72,7 +75,7 @@ export class LeadDiscoveryWorker {
       // Step 3: Discover companies via Explorium
       const companies = await this.explorium.discoverCompanies(searchCriteria);
 
-      console.log(
+      logger.info(
         `[Discovery] Found ${companies.length} potential companies`
       );
 
@@ -111,7 +114,7 @@ export class LeadDiscoveryWorker {
         finalCompanies.reduce((sum, c) => sum + c.icpScore, 0) /
         finalCompanies.length;
 
-      console.log(
+      logger.info(
         `[Discovery] Completed: ${finalCompanies.length} companies (avg score: ${this.stats.avgIcpScore.toFixed(2)})`
       );
 
@@ -123,7 +126,7 @@ export class LeadDiscoveryWorker {
         icpProfile: icpProfileName,
       };
     } catch (error) {
-      console.error('[Discovery] ICP discovery failed:', error.message);
+      logger.error('[Discovery] ICP discovery failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -141,7 +144,7 @@ export class LeadDiscoveryWorker {
     const { companies, titles = [], departments = [], seniority = [] } = params;
 
     try {
-      console.log(
+      logger.info(
         `[Discovery] Finding contacts at ${companies.length} companies`
       );
 
@@ -180,7 +183,7 @@ export class LeadDiscoveryWorker {
 
       this.stats.contactsDiscovered += allContacts.length;
 
-      console.log(`[Discovery] Found ${allContacts.length} contacts`);
+      logger.info(`[Discovery] Found ${allContacts.length} contacts`);
 
       return {
         success: true,
@@ -188,7 +191,7 @@ export class LeadDiscoveryWorker {
         total: allContacts.length,
       };
     } catch (error) {
-      console.error('[Discovery] Contact discovery failed:', error.message);
+      logger.error('[Discovery] Contact discovery failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -215,7 +218,7 @@ export class LeadDiscoveryWorker {
     } = params;
 
     try {
-      console.log(
+      logger.info(
         `[Discovery] Finding companies with intent signals: ${signals.join(', ')}`
       );
 
@@ -252,7 +255,7 @@ export class LeadDiscoveryWorker {
 
       this.stats.companiesDiscovered += finalCompanies.length;
 
-      console.log(
+      logger.info(
         `[Discovery] Found ${finalCompanies.length} companies with strong intent`
       );
 
@@ -263,7 +266,7 @@ export class LeadDiscoveryWorker {
         signals,
       };
     } catch (error) {
-      console.error('[Discovery] Intent discovery failed:', error.message);
+      logger.error('[Discovery] Intent discovery failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -292,7 +295,7 @@ export class LeadDiscoveryWorker {
     } = params;
 
     try {
-      console.log(
+      logger.info(
         `[Discovery] Finding contacts at ${companyDomain || companyName}`
       );
 
@@ -329,7 +332,7 @@ export class LeadDiscoveryWorker {
 
       this.stats.contactsDiscovered += scoredContacts.length;
 
-      console.log(
+      logger.info(
         `[Discovery] Found ${scoredContacts.length} contacts at ${company.name}`
       );
 
@@ -340,7 +343,7 @@ export class LeadDiscoveryWorker {
         total: scoredContacts.length,
       };
     } catch (error) {
-      console.error('[Discovery] Account discovery failed:', error.message);
+      logger.error('[Discovery] Account discovery failed:', error.message);
       this.stats.errors++;
       return {
         success: false,
@@ -556,7 +559,7 @@ export class LeadDiscoveryWorker {
         const content = fs.readFileSync(icpPath, 'utf-8');
         const profiles = yaml.parse(content);
 
-        console.log(
+        logger.info(
           `[Discovery] Loaded ${Object.keys(profiles).length} ICP profiles`
         );
 
@@ -566,7 +569,7 @@ export class LeadDiscoveryWorker {
         return this._getDefaultIcpProfiles();
       }
     } catch (error) {
-      console.error('[Discovery] Failed to load ICP profiles:', error.message);
+      logger.error('[Discovery] Failed to load ICP profiles:', error.message);
       return this._getDefaultIcpProfiles();
     }
   }
@@ -620,7 +623,7 @@ export class LeadDiscoveryWorker {
         if (!existing) {
           filtered.push(company);
         } else {
-          console.log(
+          logger.info(
             `[Discovery] Skipping existing company: ${company.domain}`
           );
         }
@@ -655,7 +658,10 @@ export class LeadDiscoveryWorker {
         );
       }
     } catch (error) {
-      console.error('[Discovery] Failed to store companies:', error.message);
+      logger.error('[Discovery] Failed to store companies:', error.message);
+      this.stats.errors = (this.stats.errors || 0) + 1;
+      // SEC-004 FIX: Re-throw to prevent silent data loss
+      throw new Error(`Failed to store ${companies.length} discovered companies: ${error.message}`);
     }
   }
 
@@ -678,7 +684,10 @@ export class LeadDiscoveryWorker {
         );
       }
     } catch (error) {
-      console.error('[Discovery] Failed to store contacts:', error.message);
+      logger.error('[Discovery] Failed to store contacts:', error.message);
+      this.stats.errors = (this.stats.errors || 0) + 1;
+      // SEC-004 FIX: Re-throw to prevent silent data loss
+      throw new Error(`Failed to store ${contacts.length} discovered contacts: ${error.message}`);
     }
   }
 
