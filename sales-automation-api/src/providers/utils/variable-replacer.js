@@ -28,8 +28,11 @@ export function replaceTemplateVariables(template, variables = {}) {
   let result = template;
 
   Object.entries(variables).forEach(([key, value]) => {
+    // Escape special regex characters in key to prevent pattern breakage
+    // Keys like "user.name" or "price$" would otherwise break the regex
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // Match {{key}} with optional whitespace: {{ key }} or {{key}}
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+    const regex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
     result = result.replace(regex, value || '');
   });
 

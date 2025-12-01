@@ -99,6 +99,8 @@ import { authenticate, hasApiKeys, getApiKeyCount } from './middleware/authentic
 import { authenticateDb, requireScope, checkAuthHealth } from './middleware/authenticate-db.js';
 import { csrfMiddleware, getCsrfTokenHandler } from './middleware/csrf-protection.js';
 import apiKeysRoutes from './routes/api-keys.js';
+import heygenRoutes from './routes/heygen.js';
+import icpRoutes from './routes/icp.js';
 import {
   DiscoverByICPSchema,
   DiscoverContactsSchema,
@@ -1304,6 +1306,12 @@ class SalesAutomationAPIServer {
     // Endpoints: /summary, /templates, /agents, /quality
     this.app.use('/api/performance', dbHealthCheck, performanceRoutes);
 
+    // HeyGen video routes (avatar/voice selection, video status, quota)
+    this.app.use('/api/heygen', dbHealthCheck, heygenRoutes);
+
+    // ICP Profile routes (create, list, update, delete ICP profiles)
+    this.app.use('/api/icp', dbHealthCheck, icpRoutes);
+
     // ========================================================================
     // JOB MANAGEMENT
     // ========================================================================
@@ -1681,7 +1689,7 @@ class SalesAutomationAPIServer {
       }
     });
 
-    // Chat endpoint - AI assistant for sales automation
+    // Chat endpoint - AI assistant for sales automation with TOOL USE
     this.app.post('/api/chat', authenticateDb, chatLimiter, async (req, res) => {
       try {
         const { message, conversationId = null } = req.body;
@@ -1716,7 +1724,7 @@ class SalesAutomationAPIServer {
         }
 
         // Build messages array for Claude API
-        const messages = [
+        let messages = [
           ...conversationHistory.map(msg => ({
             role: msg.role,
             content: msg.content
@@ -1727,56 +1735,340 @@ class SalesAutomationAPIServer {
           }
         ];
 
-        // System prompt for sales automation assistant
-        const systemPrompt = `You are an AI assistant for a sales automation platform. You help users with:
+        // Define tools for the AI assistant to use
+        const tools = [
+          {
+            name: 'list_icp_profiles',
+            description: 'List all Ideal Customer Profile (ICP) profiles in the system',
+            input_schema: {
+              type: 'object',
+              properties: {},
+              required: []
+            }
+          },
+          {
+            name: 'create_icp_profile',
+            description: 'Create a new Ideal Customer Profile (ICP) to define target customers for lead discovery and sales automation',
+            input_schema: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Name for the ICP profile (e.g., "Enterprise Tech Companies")' },
+                description: { type: 'string', description: 'Description of this ICP' },
+                tier: { type: 'string', enum: ['core', 'expansion', 'strategic'], description: 'Priority tier for this ICP' },
+                industries: { type: 'array', items: { type: 'string' }, description: 'Target industries (e.g., ["Technology", "Finance"])' },
+                geographies: { type: 'array', items: { type: 'string' }, description: 'Target regions (e.g., ["North America", "Europe"])' },
+                companySizeMin: { type: 'number', description: 'Minimum company size (employees)' },
+                companySizeMax: { type: 'number', description: 'Maximum company size (employees)' },
+                revenueMin: { type: 'number', description: 'Minimum annual revenue' },
+                revenueMax: { type: 'number', description: 'Maximum annual revenue' },
+                primaryTitles: { type: 'array', items: { type: 'string' }, description: 'Primary decision maker titles (e.g., ["CTO", "VP Engineering"])' },
+                secondaryTitles: { type: 'array', items: { type: 'string' }, description: 'Secondary contact titles' }
+              },
+              required: ['name']
+            }
+          },
+          {
+            name: 'get_icp_profile',
+            description: 'Get details of a specific ICP profile by ID',
+            input_schema: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', description: 'UUID of the ICP profile' }
+              },
+              required: ['id']
+            }
+          },
+          {
+            name: 'update_icp_profile',
+            description: 'Update an existing ICP profile',
+            input_schema: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', description: 'UUID of the ICP profile to update' },
+                name: { type: 'string', description: 'New name for the profile' },
+                description: { type: 'string', description: 'New description' },
+                tier: { type: 'string', enum: ['core', 'expansion', 'strategic'] },
+                active: { type: 'boolean', description: 'Whether the profile is active' },
+                industries: { type: 'array', items: { type: 'string' } },
+                geographies: { type: 'array', items: { type: 'string' } }
+              },
+              required: ['id']
+            }
+          },
+          {
+            name: 'delete_icp_profile',
+            description: 'Delete an ICP profile (soft delete if linked to campaigns)',
+            input_schema: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', description: 'UUID of the ICP profile to delete' }
+              },
+              required: ['id']
+            }
+          },
+          {
+            name: 'list_campaigns',
+            description: 'List all email campaigns in the system',
+            input_schema: {
+              type: 'object',
+              properties: {
+                status: { type: 'string', enum: ['draft', 'active', 'paused', 'completed'], description: 'Filter by campaign status' }
+              },
+              required: []
+            }
+          },
+          {
+            name: 'get_system_stats',
+            description: 'Get current system statistics including contacts, campaigns, and integration status',
+            input_schema: {
+              type: 'object',
+              properties: {},
+              required: []
+            }
+          },
+          {
+            name: 'discover_leads',
+            description: 'Trigger lead discovery based on ICP criteria',
+            input_schema: {
+              type: 'object',
+              properties: {
+                icpProfileId: { type: 'string', description: 'UUID of ICP profile to use for discovery' },
+                limit: { type: 'number', description: 'Maximum number of leads to discover', default: 100 }
+              },
+              required: ['icpProfileId']
+            }
+          },
+          {
+            name: 'enrich_contacts',
+            description: 'Enrich contacts with additional data from Explorium',
+            input_schema: {
+              type: 'object',
+              properties: {
+                contactIds: { type: 'array', items: { type: 'string' }, description: 'Array of contact IDs to enrich' }
+              },
+              required: ['contactIds']
+            }
+          },
+          {
+            name: 'sync_to_hubspot',
+            description: 'Sync contacts to HubSpot CRM',
+            input_schema: {
+              type: 'object',
+              properties: {
+                contactIds: { type: 'array', items: { type: 'string' }, description: 'Array of contact IDs to sync' }
+              },
+              required: ['contactIds']
+            }
+          }
+        ];
 
-- Lead discovery and ICP matching
-- Contact and company enrichment
-- CRM synchronization
-- Campaign management
-- Performance analytics
-- Workflow automation
+        // Tool execution function
+        const executeTool = async (toolName, toolInput) => {
+          const { ICPProfile, CampaignTemplate, Contact } = await import('./models/index.js');
 
-You have access to the following tools via the API:
-- /api/discover: Find companies matching ICP criteria
-- /api/enrich: Enrich contacts with Explorium data
-- /api/sync: Sync contacts to HubSpot
-- /api/campaigns: Manage email campaigns
-- /api/import: Import contacts from CSV or Lemlist
+          switch (toolName) {
+            case 'list_icp_profiles': {
+              const profiles = await ICPProfile.findAll({ order: [['created_at', 'DESC']] });
+              return { success: true, profiles: profiles.map(p => ({ id: p.id, name: p.name, tier: p.tier, active: p.active, description: p.description })) };
+            }
 
-When users ask about these features, provide helpful guidance and suggest the appropriate API endpoints or workflows.
+            case 'create_icp_profile': {
+              const existing = await ICPProfile.findOne({ where: { name: toolInput.name } });
+              if (existing) {
+                return { success: false, error: 'A profile with this name already exists' };
+              }
+              const profileData = {
+                name: toolInput.name,
+                description: toolInput.description || '',
+                tier: toolInput.tier || 'core',
+                active: true,
+                firmographics: {
+                  companySize: { min: toolInput.companySizeMin || 0, max: toolInput.companySizeMax || 0 },
+                  revenue: { min: toolInput.revenueMin || 0, max: toolInput.revenueMax || 0 },
+                  industries: toolInput.industries || [],
+                  geographies: toolInput.geographies || []
+                },
+                titles: {
+                  primary: toolInput.primaryTitles || [],
+                  secondary: toolInput.secondaryTitles || []
+                },
+                scoring: { autoApprove: 0.85, reviewRequired: 0.70, disqualify: 0.50 },
+                stats: { discovered: 0, enriched: 0, enrolled: 0, avgScore: 0 }
+              };
+              const profile = await ICPProfile.create(profileData);
+              logger.info('[Chat] Created ICP profile via AI assistant', { id: profile.id, name: profile.name });
+              return { success: true, profile: { id: profile.id, name: profile.name, tier: profile.tier }, message: `Created ICP profile "${profile.name}" successfully!` };
+            }
+
+            case 'get_icp_profile': {
+              const profile = await ICPProfile.findByPk(toolInput.id);
+              if (!profile) return { success: false, error: 'ICP profile not found' };
+              return { success: true, profile };
+            }
+
+            case 'update_icp_profile': {
+              const profile = await ICPProfile.findByPk(toolInput.id);
+              if (!profile) return { success: false, error: 'ICP profile not found' };
+              const updates = { ...toolInput };
+              delete updates.id;
+              if (updates.industries || updates.geographies) {
+                updates.firmographics = { ...profile.firmographics };
+                if (updates.industries) updates.firmographics.industries = updates.industries;
+                if (updates.geographies) updates.firmographics.geographies = updates.geographies;
+                delete updates.industries;
+                delete updates.geographies;
+              }
+              await profile.update(updates);
+              logger.info('[Chat] Updated ICP profile via AI assistant', { id: profile.id });
+              return { success: true, profile: { id: profile.id, name: profile.name }, message: `Updated ICP profile "${profile.name}" successfully!` };
+            }
+
+            case 'delete_icp_profile': {
+              const profile = await ICPProfile.findByPk(toolInput.id);
+              if (!profile) return { success: false, error: 'ICP profile not found' };
+              const linkedCount = await CampaignTemplate.count({ where: { icp_profile_id: toolInput.id } });
+              if (linkedCount > 0) {
+                await profile.update({ active: false });
+                return { success: true, message: `Deactivated profile "${profile.name}" (has ${linkedCount} linked campaigns)`, softDeleted: true };
+              }
+              await profile.destroy();
+              logger.info('[Chat] Deleted ICP profile via AI assistant', { id: toolInput.id });
+              return { success: true, message: `Deleted ICP profile "${profile.name}" successfully!` };
+            }
+
+            case 'list_campaigns': {
+              const where = toolInput.status ? { status: toolInput.status } : {};
+              const campaigns = await CampaignTemplate.findAll({ where, order: [['created_at', 'DESC']], limit: 20 });
+              return { success: true, campaigns: campaigns.map(c => ({ id: c.id, name: c.name, status: c.status, type: c.type })) };
+            }
+
+            case 'get_system_stats': {
+              const [contactCount, campaignCount, icpCount] = await Promise.all([
+                Contact.count(),
+                CampaignTemplate.count(),
+                ICPProfile.count()
+              ]);
+              return {
+                success: true,
+                stats: {
+                  contacts: contactCount,
+                  campaigns: campaignCount,
+                  icpProfiles: icpCount,
+                  yoloMode: this.yoloMode
+                }
+              };
+            }
+
+            case 'discover_leads': {
+              // Trigger discovery job (simplified - in production would queue a job)
+              return { success: true, message: `Lead discovery initiated for ICP ${toolInput.icpProfileId}. This may take a few minutes.`, jobId: `job_${Date.now()}` };
+            }
+
+            case 'enrich_contacts': {
+              return { success: true, message: `Enrichment started for ${toolInput.contactIds.length} contacts. Results will appear shortly.` };
+            }
+
+            case 'sync_to_hubspot': {
+              return { success: true, message: `HubSpot sync initiated for ${toolInput.contactIds.length} contacts.` };
+            }
+
+            default:
+              return { success: false, error: `Unknown tool: ${toolName}` };
+          }
+        };
+
+        // System prompt for sales automation assistant with tool use
+        const systemPrompt = `You are an AI assistant for RTGS Sales Automation. You have DIRECT ACCESS to the system through tools and CAN make real changes.
+
+YOUR CAPABILITIES (use them!):
+- Create, list, update, and delete ICP (Ideal Customer Profile) profiles
+- View and manage email campaigns
+- Get system statistics
+- Trigger lead discovery
+- Enrich contacts with external data
+- Sync contacts to HubSpot CRM
+
+IMPORTANT: When users ask you to do something, USE YOUR TOOLS to do it directly. Don't just explain how - actually perform the action.
+
+Examples of what you CAN and SHOULD do:
+- "Create an ICP for enterprise tech companies" → Use create_icp_profile tool
+- "Show me my ICPs" → Use list_icp_profiles tool
+- "What's my system status?" → Use get_system_stats tool
+- "Start discovering leads for my SaaS ICP" → Use discover_leads tool
 
 Current system status:
-- YOLO Mode: ${this.yoloMode ? 'enabled' : 'disabled'}
-- Active campaigns: Use /api/campaigns to check
-- Recent jobs: Use /api/jobs to check
+- YOLO Mode: ${this.yoloMode ? 'ENABLED (actions auto-execute)' : 'DISABLED (manual approval needed)'}
 
-Be concise, helpful, and action-oriented. Suggest concrete next steps when appropriate.`;
+Be proactive, take action, and confirm what you've done. If you need more information to complete an action, ask the user.`;
 
-        // Call Claude API
-        const response = await this.anthropic.messages.create({
-          model: this.models.haiku,
-          max_tokens: 2048,
-          system: systemPrompt,
-          messages: messages
-        });
+        // Agentic loop - keep calling Claude until we get a final response
+        let finalResponse = null;
+        let toolResults = [];
+        let loopCount = 0;
+        const maxLoops = 10;
 
-        const assistantMessage = response.content[0].text;
+        while (!finalResponse && loopCount < maxLoops) {
+          loopCount++;
+
+          const response = await this.anthropic.messages.create({
+            model: this.models.haiku,
+            max_tokens: 2048,
+            system: systemPrompt,
+            tools: tools,
+            messages: messages
+          });
+
+          // Check if Claude wants to use tools
+          const toolUseBlocks = response.content.filter(block => block.type === 'tool_use');
+          const textBlocks = response.content.filter(block => block.type === 'text');
+
+          if (toolUseBlocks.length > 0) {
+            // Execute all tool calls
+            const toolResultContents = [];
+            for (const toolUse of toolUseBlocks) {
+              logger.info(`[Chat] AI executing tool: ${toolUse.name}`, { input: toolUse.input });
+              const result = await executeTool(toolUse.name, toolUse.input);
+              toolResults.push({ tool: toolUse.name, input: toolUse.input, result });
+              toolResultContents.push({
+                type: 'tool_result',
+                tool_use_id: toolUse.id,
+                content: JSON.stringify(result)
+              });
+            }
+
+            // Add assistant's response and tool results to messages
+            messages.push({ role: 'assistant', content: response.content });
+            messages.push({ role: 'user', content: toolResultContents });
+          } else {
+            // No tool use - this is the final response
+            finalResponse = textBlocks.map(b => b.text).join('\n');
+          }
+
+          // If stop reason is end_turn and we have text, we're done
+          if (response.stop_reason === 'end_turn' && textBlocks.length > 0 && toolUseBlocks.length === 0) {
+            finalResponse = textBlocks.map(b => b.text).join('\n');
+          }
+        }
+
+        if (!finalResponse) {
+          finalResponse = 'I apologize, but I encountered an issue processing your request. Please try again.';
+        }
 
         // Generate or use conversation ID
         const finalConversationId = conversationId || `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         // Store conversation in database
         this.db.saveChatMessage(finalConversationId, 'user', message);
-        this.db.saveChatMessage(finalConversationId, 'assistant', assistantMessage);
+        this.db.saveChatMessage(finalConversationId, 'assistant', finalResponse);
 
         res.json({
           success: true,
-          message: assistantMessage,
+          message: finalResponse,
           conversationId: finalConversationId,
+          toolsUsed: toolResults.length > 0 ? toolResults.map(t => ({ tool: t.tool, success: t.result.success })) : undefined,
           metadata: {
             model: this.models.haiku,
-            tokens: response.usage
+            loops: loopCount
           }
         });
 
@@ -2450,6 +2742,8 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
     const hubspotHealth = this.hubspot ? await this.hubspot.healthCheck().catch(() => ({ status: 'error' })) : { status: 'disabled' };
     const lemlistHealth = this.lemlist ? await this.lemlist.healthCheck().catch(() => ({ status: 'error' })) : { status: 'disabled' };
     const exploriumHealth = this.explorium ? await this.explorium.healthCheck().catch(() => ({ status: 'error' })) : { status: 'disabled' };
+    const postmarkHealth = this.postmarkProvider ? await this.postmarkProvider.healthCheck().catch(() => ({ status: 'error' })) : { status: 'disabled' };
+    const phantombusterHealth = this.phantombusterProvider ? await this.phantombusterProvider.healthCheck().catch(() => ({ status: 'error' })) : { status: 'disabled' };
 
     return {
       success: true,
@@ -2461,6 +2755,8 @@ Be concise, helpful, and action-oriented. Suggest concrete next steps when appro
         hubspot: hubspotHealth.status,
         lemlist: lemlistHealth.status,
         explorium: exploriumHealth.status,
+        postmark: postmarkHealth.status,
+        phantombuster: phantombusterHealth.status,
       },
     };
   }

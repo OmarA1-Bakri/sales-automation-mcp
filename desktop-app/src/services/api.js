@@ -11,6 +11,10 @@ class APIService {
     // For local development, set VITE_API_KEY in .env.local file
     this.apiKey = import.meta.env.VITE_API_KEY || null;
 
+    // Debug: Log API key status (first 30 chars only for security)
+    console.log('[API] API Key loaded:', this.apiKey ? `${this.apiKey.substring(0, 30)}...` : 'NOT SET');
+    console.log('[API] Base URL:', this.baseURL);
+
     if (!this.apiKey && import.meta.env.MODE === 'production') {
       console.warn('[SECURITY] No API key configured. Set VITE_API_KEY environment variable.');
     }
@@ -43,9 +47,9 @@ class APIService {
         'Content-Type': 'application/json',
       };
 
-      // Add API key if available
+      // Add API key if available (backend expects X-API-Key header)
       if (this.apiKey) {
-        headers['Authorization'] = `Bearer ${this.apiKey}`;
+        headers['X-API-Key'] = this.apiKey;
       }
 
       const options = {
@@ -383,6 +387,24 @@ class APIService {
   }
 
   /**
+   * Get campaign instances from database (PostgreSQL)
+   * These are the actual running campaigns that can be paused/resumed
+   * @param {Object} options - Query options
+   * @param {string} options.status - Filter by status
+   * @param {number} options.limit - Max results
+   * @returns {Promise<Object>} Campaign instances list
+   */
+  async getCampaignInstances(options = {}) {
+    const params = new URLSearchParams();
+    if (options.status) params.append('status', options.status);
+    if (options.limit) params.append('limit', options.limit.toString());
+
+    const query = params.toString();
+    const endpoint = query ? `/api/campaigns/instances?${query}` : '/api/campaigns/instances';
+    return this.call(endpoint, 'GET');
+  }
+
+  /**
    * Update campaign instance status (pause/resume/complete)
    * @param {string} campaignId - Campaign instance ID
    * @param {string} status - New status ('active', 'paused', 'completed')
@@ -390,6 +412,44 @@ class APIService {
    */
   async updateCampaignStatus(campaignId, status) {
     return this.call(`/api/campaigns/instances/${campaignId}`, 'PATCH', { status });
+  }
+
+  /**
+   * Get campaign instance performance metrics
+   * @param {string} campaignId - Campaign instance ID
+   * @returns {Promise<Object>} Performance metrics including replies, opens, clicks
+   */
+  async getCampaignPerformance(campaignId) {
+    return this.call(`/api/campaigns/instances/${campaignId}/performance`, 'GET');
+  }
+
+  /**
+   * Bulk enroll contacts in a campaign instance
+   * @param {string} campaignId - Campaign instance ID
+   * @param {string[]} contactIds - Array of contact IDs to enroll
+   * @returns {Promise<Object>} Enrollment results
+   */
+  async bulkEnrollContacts(campaignId, contactIds) {
+    return this.call(`/api/campaigns/instances/${campaignId}/enrollments/bulk`, 'POST', {
+      contact_ids: contactIds
+    });
+  }
+
+  /**
+   * List enrollments for a campaign instance
+   * @param {string} campaignId - Campaign instance ID
+   * @param {Object} options - Query options
+   * @returns {Promise<Object>} List of enrollments
+   */
+  async listEnrollments(campaignId, options = {}) {
+    const params = new URLSearchParams();
+    if (options.status) params.append('status', options.status);
+    if (options.limit) params.append('limit', options.limit.toString());
+    if (options.offset) params.append('offset', options.offset.toString());
+
+    const query = params.toString();
+    const endpoint = `/api/campaigns/instances/${campaignId}/enrollments${query ? '?' + query : ''}`;
+    return this.call(endpoint, 'GET');
   }
 
   /**
@@ -526,6 +586,119 @@ class APIService {
    */
   async cancelWorkflow(jobId, reason = 'User requested cancellation') {
     return this.call(`/api/workflows/${jobId}`, 'DELETE', { reason });
+  }
+
+  // ==========================================================================
+  // HEYGEN VIDEO (Avatar/Voice Selection, Video Generation)
+  // ==========================================================================
+
+  /**
+   * List available HeyGen avatars
+   * @returns {Promise<Object>} List of avatars with preview URLs
+   */
+  async getHeyGenAvatars() {
+    return this.call('/api/heygen/avatars', 'GET');
+  }
+
+  /**
+   * List available HeyGen voices
+   * @param {Object} filters - Optional filters
+   * @param {string} filters.language - Filter by language code (e.g., 'en', 'es')
+   * @param {string} filters.gender - Filter by gender ('male', 'female')
+   * @returns {Promise<Object>} List of voices with sample URLs
+   */
+  async getHeyGenVoices(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.language) params.append('language', filters.language);
+    if (filters.gender) params.append('gender', filters.gender);
+
+    const query = params.toString();
+    const endpoint = query ? `/api/heygen/voices?${query}` : '/api/heygen/voices';
+    return this.call(endpoint, 'GET');
+  }
+
+  /**
+   * Get HeyGen quota/credits status
+   * @returns {Promise<Object>} Quota info { remaining, total, used, resetsAt }
+   */
+  async getHeyGenQuota() {
+    return this.call('/api/heygen/quota', 'GET');
+  }
+
+  /**
+   * Get video generation status
+   * NOTE: HeyGen video URLs expire - call this to get fresh URLs
+   * @param {string} videoId - HeyGen video ID
+   * @returns {Promise<Object>} Video status and URLs when completed
+   */
+  async getHeyGenVideoStatus(videoId) {
+    return this.call(`/api/heygen/videos/${videoId}/status`, 'GET');
+  }
+
+  /**
+   * Generate a preview video to test avatar/voice combination
+   * @param {Object} params - Generation parameters
+   * @param {string} params.avatarId - Selected avatar ID
+   * @param {string} params.voiceId - Selected voice ID
+   * @param {string} params.script - Text to speak (max 500 chars)
+   * @returns {Promise<Object>} Video job { videoId, status }
+   */
+  async generateHeyGenPreview({ avatarId, voiceId, script }) {
+    return this.call('/api/heygen/videos/preview', 'POST', {
+      avatarId,
+      voiceId,
+      script
+    });
+  }
+
+  /**
+   * Get HeyGen provider capabilities
+   * @returns {Promise<Object>} Capabilities info
+   */
+  async getHeyGenCapabilities() {
+    return this.call('/api/heygen/capabilities', 'GET');
+  }
+
+  /**
+   * Validate HeyGen API configuration
+   * @returns {Promise<Object>} Validation result { valid, message }
+   */
+  async validateHeyGenConfig() {
+    return this.call('/api/heygen/validate', 'GET');
+  }
+
+  /**
+   * Poll video status until completion or timeout
+   * Utility method for UI components that need to wait for video generation
+   * @param {string} videoId - Video ID to poll
+   * @param {Object} options - Polling options
+   * @param {number} options.interval - Poll interval in ms (default: 3000)
+   * @param {number} options.timeout - Max wait time in ms (default: 300000 = 5min)
+   * @param {Function} options.onProgress - Callback for progress updates
+   * @returns {Promise<Object>} Final video status
+   */
+  async pollHeyGenVideoUntilComplete(videoId, options = {}) {
+    const interval = options.interval || 3000;
+    const timeout = options.timeout || 300000;
+    const onProgress = options.onProgress || (() => {});
+
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+      const result = await this.getHeyGenVideoStatus(videoId);
+      const status = result.data || result;
+
+      onProgress(status);
+
+      if (status.status === 'completed' || status.status === 'failed') {
+        return status;
+      }
+
+      // Wait before next poll
+      await new Promise(resolve => setTimeout(resolve, interval));
+    }
+
+    throw new Error('Video generation timed out');
   }
 }
 

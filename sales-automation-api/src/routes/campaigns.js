@@ -17,6 +17,7 @@ import {
   UpdateCampaignTemplateSchema,
   ListCampaignTemplatesSchema,
   CampaignTemplateParamSchema,
+  CampaignInstanceParamSchema,
   CreateCampaignInstanceSchema,
   ListCampaignInstancesSchema,
   GetCampaignInstanceSchema,
@@ -276,20 +277,22 @@ router.post(
 /**
  * GET /api/campaigns/instances/:id
  * Get campaign instance with statistics
+ * Uses CampaignInstanceParamSchema to accept both UUID and MongoDB-style IDs
  */
 router.get(
   '/instances/:id',
-  validate(CampaignTemplateParamSchema),
+  validate(CampaignInstanceParamSchema),
   asyncHandler(controller.getInstance)
 );
 
 /**
  * PATCH /api/campaigns/instances/:id
  * Update instance status (pause/resume/complete)
+ * Uses CampaignInstanceParamSchema to accept both UUID and MongoDB-style IDs
  */
 router.patch(
   '/instances/:id',
-  validate(CampaignTemplateParamSchema),
+  validate(CampaignInstanceParamSchema),
   validate(UpdateCampaignInstanceStatusSchema),
   asyncHandler(controller.updateInstanceStatus)
 );
@@ -298,11 +301,12 @@ router.patch(
  * GET /api/campaigns/instances/:id/performance
  * Get detailed performance analytics
  * Note: Has additional rate limiting (20 req/5min) due to expensive queries
+ * Uses CampaignInstanceParamSchema to accept both UUID and MongoDB-style IDs
  */
 router.get(
   '/instances/:id/performance',
   analyticsRateLimit,  // Additional rate limit for analytics
-  validate(CampaignTemplateParamSchema),
+  validate(CampaignInstanceParamSchema),
   asyncHandler(controller.getInstancePerformance)
 );
 
@@ -313,10 +317,11 @@ router.get(
 /**
  * POST /api/campaigns/instances/:id/enrollments
  * Enroll a contact in a campaign instance
+ * Uses CampaignInstanceParamSchema to accept both UUID and MongoDB-style IDs
  */
 router.post(
   '/instances/:id/enrollments',
-  validate(CampaignTemplateParamSchema),
+  validate(CampaignInstanceParamSchema),
   validate(CreateEnrollmentSchema),
   asyncHandler(controller.createEnrollment)
 );
@@ -324,10 +329,11 @@ router.post(
 /**
  * POST /api/campaigns/instances/:id/enrollments/bulk
  * Bulk enroll multiple contacts in a campaign instance
+ * Uses CampaignInstanceParamSchema to accept both UUID and MongoDB-style IDs
  */
 router.post(
   '/instances/:id/enrollments/bulk',
-  validate(CampaignTemplateParamSchema),
+  validate(CampaignInstanceParamSchema),
   validate(BulkEnrollSchema),
   asyncHandler(controller.bulkEnroll)
 );
@@ -335,10 +341,11 @@ router.post(
 /**
  * GET /api/campaigns/instances/:id/enrollments
  * List all enrollments for a campaign instance
+ * Uses CampaignInstanceParamSchema to accept both UUID and MongoDB-style IDs
  */
 router.get(
   '/instances/:id/enrollments',
-  validate(CampaignTemplateParamSchema),
+  validate(CampaignInstanceParamSchema),
   asyncHandler(controller.listEnrollments)
 );
 

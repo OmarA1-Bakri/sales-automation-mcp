@@ -21,6 +21,7 @@ const ApiKeyLogModel = require('./ApiKeyLog.cjs');  // API key audit trail
 const OutreachOutcomeModel = require('./OutreachOutcome.cjs');  // AI learning outcomes
 const LinkedInRateLimitModel = require('./LinkedInRateLimit.cjs');  // LinkedIn rate limit tracking
 const VideoGenerationModel = require('./VideoGeneration.cjs');  // HeyGen video tracking
+const ICPProfileModel = require('./ICPProfile.cjs');  // ICP profile management
 
 // Initialize models
 const CampaignTemplate = CampaignTemplateModel(sequelize);
@@ -35,6 +36,7 @@ const ApiKeyLog = ApiKeyLogModel(sequelize, sequelize.Sequelize.DataTypes);
 const OutreachOutcome = OutreachOutcomeModel(sequelize);
 const LinkedInRateLimit = LinkedInRateLimitModel(sequelize);
 const VideoGeneration = VideoGenerationModel(sequelize);
+const ICPProfile = ICPProfileModel(sequelize);
 
 // ============================================================================
 // ASSOCIATIONS
@@ -131,6 +133,17 @@ CampaignEnrollment.hasOne(OutreachOutcome, {
   as: 'outcome'
 });
 
+// ICPProfile associations
+ICPProfile.hasMany(CampaignTemplate, {
+  foreignKey: 'icp_profile_id',
+  as: 'campaigns'
+});
+
+CampaignTemplate.belongsTo(ICPProfile, {
+  foreignKey: 'icp_profile_id',
+  as: 'icpProfile'
+});
+
 // ============================================================================
 // SYNC DATABASE (Development only)
 // ============================================================================
@@ -180,6 +193,7 @@ export {
   OutreachOutcome,  // AI learning outcomes
   LinkedInRateLimit,  // LinkedIn rate limit tracking
   VideoGeneration,  // HeyGen video tracking
+  ICPProfile,  // ICP profile management
 
   // Utilities
   syncDatabase

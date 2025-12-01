@@ -124,6 +124,12 @@ class CSRFProtection {
       '/api/execute',  // Execute endpoint (protected by API key)
       '/api/import',  // Import endpoints (protected by API key)
       '/api/workflows',  // Workflow endpoints (protected by API key)
+      '/api/campaigns',  // Campaign endpoints (protected by API key)
+      '/api/contacts',  // Contact endpoints (protected by API key)
+      '/api/enrich',  // Enrichment endpoints (protected by API key)
+      '/api/sync',  // Sync endpoints (protected by API key)
+      '/api/heygen',  // HeyGen endpoints (protected by API key)
+      '/api/icp',  // ICP endpoints (protected by API key)
     ];
     return exemptPaths.some(e => path.startsWith(e));
   }

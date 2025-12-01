@@ -80,6 +80,59 @@ export const campaignSchema = {
 };
 
 /**
+ * Normalize campaign instance data from PostgreSQL API response
+ * Maps database fields to frontend format
+ * @param {Object} c - Raw campaign instance from /api/campaigns/instances
+ * @returns {Object} Normalized campaign
+ */
+export const normalizeCampaignInstance = (c) => ({
+  id: c.id,
+  name: c.name || c.template?.name || 'Untitled Campaign',
+  status: c.status || 'draft',
+  createdAt: c.created_at || c.createdAt || new Date().toISOString(),
+  type: c.template?.type || 'email',
+  icpProfile: c.template?.icp_profile || 'Default',
+  templateId: c.template_id,
+  templateName: c.template?.name,
+  performance: {
+    enrolled: c.total_enrolled || 0,
+    contacted: c.total_sent || 0,
+    opened: c.total_opened || 0,
+    clicked: c.total_clicked || 0,
+    replied: c.total_replied || 0,
+    bounced: 0, // Not tracked at instance level currently
+    unsubscribed: 0, // Not tracked at instance level currently
+    openRate: c.total_sent > 0 ? c.total_opened / c.total_sent : 0,
+    clickRate: c.total_sent > 0 ? c.total_clicked / c.total_sent : 0,
+    replyRate: c.total_sent > 0 ? c.total_replied / c.total_sent : 0,
+    bounceRate: 0,
+    linkedinSent: 0,
+    linkedinAccepted: 0,
+    linkedinMessaged: 0,
+    linkedinReplied: 0,
+    linkedinAcceptRate: 0,
+    linkedinReplyRate: 0,
+  },
+  sequence: {
+    currentStep: 1,
+    totalSteps: 1,
+  },
+  nextAction: c.status === 'active' ? 'Continue sequence' : 'Campaign paused',
+  emailPerformance: [],
+  linkedinPerformance: [],
+  startedAt: c.started_at,
+  pausedAt: c.paused_at,
+  completedAt: c.completed_at,
+});
+
+/**
+ * Schema for campaign instance validation
+ */
+export const campaignInstanceSchema = {
+  template: 'object',
+};
+
+/**
  * Normalize ICP profile data from API response
  * @param {Object} p - Raw profile from API
  * @returns {Object} Normalized profile

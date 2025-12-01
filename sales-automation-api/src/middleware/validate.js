@@ -15,9 +15,15 @@ function validate(schema) {
         params: req.params || {}
       });
 
+      // Update original properties with validated data
       req.body = validated.body || req.body;
       req.query = validated.query || req.query;
       req.params = validated.params || req.params;
+
+      // Also set separate validated* properties for controllers that expect them
+      req.validatedBody = validated.body;
+      req.validatedQuery = validated.query;
+      req.validatedParams = validated.params;
       req.validated = true;
 
       next();
@@ -65,9 +71,15 @@ function validateOptional(schema) {
         params: req.params || {}
       });
 
+      // Update original properties with validated data
       req.body = validated.body || req.body;
       req.query = validated.query || req.query;
       req.params = validated.params || req.params;
+
+      // Also set separate validated* properties for controllers that expect them
+      req.validatedBody = validated.body;
+      req.validatedQuery = validated.query;
+      req.validatedParams = validated.params;
       req.validated = true;
 
       next();

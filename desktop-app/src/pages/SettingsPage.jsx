@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import useStore from '../store/useStore';
+import { VideoQuotaDisplay } from '../components/video';
 
 function SettingsPage() {
   const { apiKeys, updateApiKeys } = useStore();
@@ -501,12 +502,13 @@ function SettingsPage() {
           {/* Integration Status Display */}
           {integrationStatus && (
             <div className="mb-4 p-4 bg-slate-700/50 rounded-lg">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div className="text-center">
                   <div className={`text-3xl font-bold mb-2 ${getStatusColor(integrationStatus.hubspot)}`}>
                     {getStatusIcon(integrationStatus.hubspot)}
                   </div>
                   <div className="text-sm font-medium text-white">HubSpot</div>
+                  <div className="text-xs text-slate-400">CRM</div>
                   <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.hubspot)}`}>
                     {integrationStatus.hubspot}
                   </div>
@@ -516,6 +518,7 @@ function SettingsPage() {
                     {getStatusIcon(integrationStatus.lemlist)}
                   </div>
                   <div className="text-sm font-medium text-white">Lemlist</div>
+                  <div className="text-xs text-slate-400">Outreach</div>
                   <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.lemlist)}`}>
                     {integrationStatus.lemlist}
                   </div>
@@ -525,8 +528,29 @@ function SettingsPage() {
                     {getStatusIcon(integrationStatus.explorium)}
                   </div>
                   <div className="text-sm font-medium text-white">Explorium</div>
+                  <div className="text-xs text-slate-400">Enrichment</div>
                   <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.explorium)}`}>
                     {integrationStatus.explorium}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-3xl font-bold mb-2 ${getStatusColor(integrationStatus.postmark)}`}>
+                    {getStatusIcon(integrationStatus.postmark)}
+                  </div>
+                  <div className="text-sm font-medium text-white">Postmark</div>
+                  <div className="text-xs text-slate-400">Email</div>
+                  <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.postmark)}`}>
+                    {integrationStatus.postmark}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-3xl font-bold mb-2 ${getStatusColor(integrationStatus.phantombuster)}`}>
+                    {getStatusIcon(integrationStatus.phantombuster)}
+                  </div>
+                  <div className="text-sm font-medium text-white">PhantomBuster</div>
+                  <div className="text-xs text-slate-400">LinkedIn</div>
+                  <div className={`text-xs mt-1 ${getStatusColor(integrationStatus.phantombuster)}`}>
+                    {integrationStatus.phantombuster}
                   </div>
                 </div>
               </div>
@@ -537,6 +561,21 @@ function SettingsPage() {
             <p className="text-sm text-blue-400">
               <strong>Configuration:</strong> To configure integration API keys, edit the <code className="bg-slate-700 px-1 rounded">.env</code> file
               in the <code className="bg-slate-700 px-1 rounded">sales-automation-api</code> directory and restart the API server.
+            </p>
+          </div>
+        </div>
+
+        {/* HeyGen Video Quota */}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-slate-700">
+          <h2 className="text-xl font-semibold text-white mb-4">Video Generation (HeyGen)</h2>
+          <p className="text-slate-400 mb-6">
+            Monitor your HeyGen video generation credits and usage.
+          </p>
+          <VideoQuotaDisplay refreshInterval={60000} />
+          <div className="mt-4 p-3 bg-amber-900/30 border border-amber-700 rounded-lg">
+            <p className="text-sm text-amber-400">
+              <strong>Note:</strong> Videos are generated on-demand during campaign execution.
+              Each video consumes credits from your HeyGen account.
             </p>
           </div>
         </div>

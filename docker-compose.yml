@@ -68,6 +68,7 @@ services:
       - API_SECRET_KEY=${API_SECRET_KEY:-}
       - NODE_ENV=${NODE_ENV:-development}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - API_SERVER_URL=${API_SERVER_URL:-http://localhost:3000}
 
       # ============================================================================
       # DATABASE CONFIG

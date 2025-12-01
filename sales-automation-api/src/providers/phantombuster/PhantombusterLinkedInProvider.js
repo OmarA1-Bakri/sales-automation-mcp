@@ -340,12 +340,8 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
       metadata = {}
     } = params;
 
-    // Replace variables in message
-    let personalizedMessage = message;
-    Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      personalizedMessage = personalizedMessage.replace(regex, value || '');
-    });
+    // Replace variables in message using shared utility
+    const personalizedMessage = replaceTemplateVariables(message, variables);
 
     logger.info('Sending LinkedIn message via PhantomBuster', {
       profileUrl,
@@ -854,6 +850,33 @@ export class PhantombusterLinkedInProvider extends LinkedInProvider {
     } catch (error) {
       logger.error('Failed to list PhantomBuster agents', { error: error.message });
       throw error;
+    }
+  }
+
+  /**
+   * Health check for the PhantomBuster provider
+   * @returns {Promise<{status: string, message: string}>}
+   */
+  async healthCheck() {
+    if (!this.apiKey) {
+      return { status: 'disabled', message: 'PhantomBuster not configured' };
+    }
+
+    try {
+      // Use PhantomBuster's user endpoint to verify API key
+      const response = await this._makeRequest('/user', 'GET');
+
+      return {
+        status: 'healthy',
+        message: 'PhantomBuster connection successful',
+        email: response.email || 'Unknown'
+      };
+    } catch (error) {
+      logger.error('PhantomBuster health check failed:', error);
+      return {
+        status: 'unhealthy',
+        message: error.message || 'Health check failed'
+      };
     }
   }
 }

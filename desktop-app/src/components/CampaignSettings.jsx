@@ -25,7 +25,7 @@ export default function CampaignSettings({ campaign, onChange }) {
           </label>
           <input
             type="text"
-            value={campaign.name}
+            value={campaign.name || ''}
             onChange={(e) => handleChange('name', e.target.value)}
             className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., PSP Treasury Q1 2025"
@@ -198,10 +198,10 @@ export default function CampaignSettings({ campaign, onChange }) {
 
 CampaignSettings.propTypes = {
   campaign: PropTypes.shape({
-    name: PropTypes.string.isRequired,
+    name: PropTypes.string,
     type: PropTypes.string,
     icpProfile: PropTypes.string,
-    status: PropTypes.string.isRequired,
+    status: PropTypes.string,
     autoEnroll: PropTypes.bool,
     autoRespond: PropTypes.bool,
     autoPauseOnBounce: PropTypes.bool,

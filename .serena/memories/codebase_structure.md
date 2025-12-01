@@ -1,177 +1,143 @@
-# Codebase Structure
+# Codebase Structure (Updated December 2025)
 
 ## Top-Level Directories
 
-### `/desktop-app` - Frontend Application
+### `/desktop-app` - Electron Frontend Application
 Electron-based desktop UI with React 18, Vite 5, and Tailwind CSS
 
 **Key Subdirectories:**
 - `src/components/` - Reusable UI components (StatsCard, Badge, Button, Sidebar, TitleBar)
-- `src/pages/` - Main views (Dashboard, ChatPage, CampaignsPage, ContactsPage, ImportPage, ICPPage, SettingsPage)
-- `src/services/` - API client for backend communication
-- `src/store/` - Zustand global state management
-- `src/mocks/` - Mock data for development/testing
+- `src/pages/` - Main views (Dashboard, ChatPage, CampaignsPage, ContactsPage, ImportPage, ICPPage, WorkflowsPage, SettingsPage)
+- `src/services/` - API client (`api.js`) for backend communication
+- `src/stores/` - Zustand global state management
 - `electron/` - Electron main process configuration
 - `public/` - Static assets (images, icons)
 
 **Entry Point:** `src/main.jsx` → `src/App.jsx`
 
-### `/mcp-server` - Backend API Server
-Express.js API server with worker processes, database, and integrations
+### `/sales-automation-api` - Backend API Server
+Express.js API server with Docker deployment, PostgreSQL, Redis
 
 **Key Subdirectories:**
-- `src/api-server.js` - Main API server class (2,099 lines)
-- `src/clients/` - Integration clients
-  - `hubspot-client.js` - HubSpot CRM v3 API
-  - `lemlist-client.js` - Lemlist campaign management
-  - `explorium-client.js` - Explorium enrichment (8 endpoints)
-- `src/workers/` - Background workers
-  - `import-worker.js` - CSV, Lemlist, HubSpot import
-  - `enrichment-worker.js` - Contact/company enrichment
-  - `crm-sync-worker.js` - HubSpot synchronization
-  - `outreach-worker.js` - Campaign enrollment
-- `src/controllers/` - Campaign controllers (Phase 6B)
-- `src/routes/` - API route definitions
-  - `campaigns.js` - Campaign management routes
+- `src/server.js` - Main API server class (~2,100 lines) with:
+  - REST API endpoints
+  - Agentic AI chat with tool use (10 tools)
+  - WebSocket server
+  - YOLO Mode manager
+- `src/routes/` - API route handlers
+  - `campaigns.js` - Campaign management
+  - `icp.js` - ICP profile CRUD
+  - `heygen.js` - Video personalization
+- `src/providers/` - Integration providers
+  - `postmark/` - Email delivery
+  - `phantombuster/` - LinkedIn automation
+  - `hubspot/` - CRM sync
+  - `explorium/` - Data enrichment
 - `src/middleware/` - Express middleware
-  - `authenticate.js` - API key authentication
-  - `validate.js` - Request validation
-  - `webhook-auth.js` - Webhook signature verification
+  - `authenticate.js` - API key auth (Argon2id)
+  - `validate.js` - Zod request validation
+  - `csrf-protection.js` - CSRF tokens
+  - `webhook-auth.js` - Webhook signatures
 - `src/models/` - Sequelize ORM models
-  - Database models for campaigns, events, enrollments
-- `src/services/` - Business logic services
-  - `OrphanedEventQueue.js` - Background event processing
-- `src/utils/` - Utility modules
-  - `database.js` - SQLite database wrapper
-  - `job-queue.js` - Job queue management
-  - `rate-limiter.js` - Rate limiting
+  - `Contact.cjs`, `CampaignTemplate.cjs`, `ICPProfile.cjs`
+  - `ApiKey.cjs`, `OutreachOutcome.cjs`
+- `src/services/` - Business logic
+  - `ConversationalResponder.js` - AI email replies
+  - `OrphanedEventQueue.js` - Background processing
+- `src/utils/` - Utilities
   - `logger.js` - Structured logging
-  - `validation-schemas.js` - Zod validation schemas
-  - `prototype-protection.js` - Security utilities
-  - `metrics.js` - Prometheus metrics
-- `src/db/` - Database layer
-  - `connection.js` - Sequelize connection
-  - `migrations/` - Database migrations
-- `agents/` - AI agent prompts for Claude
-  - `lead-finder.md`
-  - `enrichment-specialist.md`
-  - `outreach-coordinator.md`
-  - `sales-orchestrator.md`
-- `tests/` - Integration tests
-  - `integration/` - Full pipeline tests
+  - `normalizers.js` - Data normalization
+- `src/validators/` - Zod schemas
+  - `complete-schemas.js` - All validation schemas
+- `src/db/init/` - Database initialization SQL
+- `tests/` - API tests
 
-**Entry Point:** `src/api-server.js` (CLI) or `src/server.js` (MCP server)
+**Entry Point:** `src/server.js`
 
-### `/config` - Configuration Files
-Project-wide configuration (not heavily used in current structure)
+### `/docs` - Documentation (reorganized Dec 2025)
+Now contains all documentation files:
+- `BACKEND_SECURITY_AUDIT_REPORT.md`
+- `SECURITY_FIXES_REQUIRED.md`
+- `CONVERSATIONAL_RESPONDER_PLAN.md`
+- `HANDOVER_NOTE.md`
+- `MIGRATION.md`, `ROADMAP.md`, `CHANGELOG.md`, `DOCKER.md`
+- `user-guides/`, `technical/`, `api-reference/`
 
-### `/docs` - Documentation
-Comprehensive documentation for users and developers
+### `/data` - Data Files
+CSV imports and data files (moved Dec 2025)
 
-**Key Files:**
-- `user-guides/` - Quickstart, Desktop App, YOLO Mode guides
-- `technical/` - Architecture, integrations, dual-path strategy
-- `api-reference/` - API endpoints, Explorium API docs
-- `development/` - Setup, contributing, testing guides
-- `archive/` - Historical implementation summaries
+### `/scripts` - Utility Scripts
+Shell scripts for setup and operations
 
-### `/templates` - Email & Campaign Templates
-Email sequences and campaign templates for outreach
+### `/.claude` - Claude Code Configuration
+- `settings.json` - Claude Code settings
+- `commands/` - Custom slash commands
+- `scripts/` - Hook scripts
 
-### `/logs` - Application Logs
-Runtime logs from API server and desktop app
-- `mcp-server.log`
-- `desktop-app.log`
+### `/.serena` - Serena MCP Configuration
+- `memories/` - Project memory files
+- `config.yaml` - Serena configuration
 
-### `/agents` - AI Agent Prompts
-Markdown files containing Claude agent instructions
+## Docker Architecture
 
-### `/commands` - Custom Slash Commands
-User-defined slash commands for automation
+### Containers (docker-compose.yml)
+```
+rtgs-sales-automation  - API Server (port 3000)
+  └─ Volume: ./sales-automation-api:/app/sales-automation-api
 
-### `/skills` - Plugin Skills
-Skills and capabilities for the sales automation system
+rtgs-postgres          - PostgreSQL database (port 5432)
+  └─ Database: rtgs_sales_automation
+  └─ User: rtgs_user
 
-### `/hooks` - Git Hooks
-Git hooks for automation and validation
-
-### `/.sales-automation` - Runtime Data
-SQLite database and cache files (gitignored)
-
-### `/.sugar`, `/.claude`, `/.serena` - Tool Metadata
-Metadata directories for various tools
+rtgs-redis             - Redis cache (port 6379)
+```
 
 ## Key Configuration Files
 
 ### Root Level
-- `package.json` - Root dependencies (dotenv only)
-- `.env.example` - Environment variables template
-- `.gitignore` - Ignored files and directories
-- `Dockerfile` - Docker container configuration
-- `docker-compose.yml` - Docker Compose setup
-- `rtgs-sales-automation.sh` - Launch script
-- `install.sh` - Installation script
-- `stop.sh` - Shutdown script
-- `start-postgres.sh` - PostgreSQL startup
+- `docker-compose.yml` - Container orchestration
+- `Dockerfile` - API container build
+- `.env` / `.env.example` - Environment variables
+- `package.json` - Root package
+- `README.md` - Project documentation (v2.0.0)
 
 ### Desktop App
-- `package.json` - Frontend dependencies (React, Vite, Electron, Tailwind)
-- `vite.config.js` - Vite build configuration
-- `tailwind.config.js` - Tailwind CSS configuration
-- `postcss.config.js` - PostCSS configuration
-- `index.html` - HTML entry point
+- `package.json` - React, Vite, Electron, Tailwind deps
+- `vite.config.js` - Vite build config
+- `tailwind.config.js` - Tailwind CSS config
+- `.env` - `VITE_API_URL`, `VITE_API_KEY`
 
-### MCP Server
-- `package.json` - Backend dependencies (Express, Sequelize, Anthropic SDK)
-- `jest.config.js` - Jest test configuration
-- `.sequelizerc` - Sequelize CLI configuration
+### Sales Automation API
+- `package.json` - Express, Sequelize, Anthropic SDK deps
+- `jest.config.js` - Jest test config
 
 ## Important File Patterns
 
 ### React Components
 - Location: `desktop-app/src/components/*.jsx`
-- Pattern: PascalCase, default export, PropTypes validation
+- Pattern: PascalCase, default export, PropTypes
 
 ### API Routes
-- Location: `mcp-server/src/routes/*.js`
-- Pattern: Express router exports
+- Location: `sales-automation-api/src/routes/*.js`
+- Pattern: Express router with Zod validation
 
 ### Database Models
-- Location: `mcp-server/src/models/*.js`
-- Pattern: Sequelize model definitions
+- Location: `sales-automation-api/src/models/*.cjs`
+- Pattern: Sequelize model (CommonJS for compatibility)
 
-### Integration Tests
-- Location: `mcp-server/tests/integration/*.test.js`
-- Pattern: Jest test files
-
-### Migrations
-- Location: `mcp-server/migrations/*.js`
-- Pattern: Sequelize migration files (timestamp-prefixed)
+### Chat Endpoint with Tool Use
+- Location: `sales-automation-api/src/server.js:1692-2082`
+- Pattern: Agentic loop with tool execution
 
 ## Data Flow
 
-1. **User Interaction** → Desktop App (React)
-2. **API Request** → API Server (Express)
-3. **Authentication** → Middleware (API key validation)
+1. **User** → Desktop App (Electron/React)
+2. **API Request** → Express server (port 3000)
+3. **Auth** → API key middleware (Argon2id verification)
 4. **Validation** → Zod schemas
-5. **Business Logic** → Workers/Controllers
-6. **External APIs** → Clients (HubSpot, Lemlist, Explorium)
-7. **Database** → SQLite/PostgreSQL (Sequelize ORM)
-8. **WebSocket** → Real-time updates to Desktop App
-9. **Job Queue** → Background processing
-10. **Logging** → Structured logs
-
-## Entry Points
-
-### Desktop App
-1. Browser → `index.html`
-2. Vite → `src/main.jsx`
-3. React → `src/App.jsx`
-4. Router → Pages based on Zustand state
-
-### API Server
-1. CLI → `src/api-server.js`
-2. Express → `setupMiddleware()` → `setupRoutes()`
-3. WebSocket → `setupWebSocket()`
-4. Workers → Background tasks
-5. YOLO Mode → `setupYoloMode()` (if enabled)
+5. **Logic** → Route handlers / Workers
+6. **AI** → Claude API (tool use for chat)
+7. **Database** → PostgreSQL via Sequelize
+8. **Cache** → Redis
+9. **External** → Postmark, PhantomBuster, HubSpot, Explorium
+10. **WebSocket** → Real-time updates

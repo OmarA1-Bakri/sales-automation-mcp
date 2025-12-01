@@ -560,6 +560,33 @@ export class PostmarkEmailProvider extends EmailProvider {
 
     return errorMap[errorCode] || 'other';
   }
+
+  /**
+   * Health check for the Postmark provider
+   * @returns {Promise<{status: string, message: string}>}
+   */
+  async healthCheck() {
+    if (!this.serverToken) {
+      return { status: 'disabled', message: 'Postmark not configured' };
+    }
+
+    try {
+      // Use Postmark's server info endpoint as health check
+      const response = await this._makeRequest('/server', 'GET');
+
+      return {
+        status: 'healthy',
+        message: 'Postmark connection successful',
+        serverName: response.Name || 'Unknown'
+      };
+    } catch (error) {
+      logger.error('Postmark health check failed:', error);
+      return {
+        status: 'unhealthy',
+        message: error.message || 'Health check failed'
+      };
+    }
+  }
 }
 
 export default PostmarkEmailProvider;

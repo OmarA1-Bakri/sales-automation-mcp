@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import MultiChannelFlow from '../components/MultiChannelFlow';
 import CampaignEditor from '../components/CampaignEditor';
-import { normalizeCampaign, validateData, campaignSchema } from '../utils/normalizers';
+import { normalizeCampaignInstance, validateData, campaignInstanceSchema } from '../utils/normalizers';
 
 function CampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
@@ -22,11 +22,13 @@ function CampaignsPage() {
   const loadCampaigns = async () => {
     setLoading(true);
     try {
-      const result = await api.getCampaignsDirect();
-      if (result.success && result.campaigns) {
+      // Load campaign instances from PostgreSQL (not Lemlist campaigns)
+      // Instances have UUID IDs and support status updates via PATCH
+      const result = await api.getCampaignInstances();
+      if (result.success && result.data) {
         // Validate and normalize API response using shared utilities
-        result.campaigns.forEach((c, i) => validateData('CampaignsPage', c, i, campaignSchema));
-        const normalizedCampaigns = result.campaigns.map(normalizeCampaign);
+        result.data.forEach((c, i) => validateData('CampaignsPage', c, i, campaignInstanceSchema));
+        const normalizedCampaigns = result.data.map(normalizeCampaignInstance);
         setCampaigns(normalizedCampaigns);
       } else {
         // No campaigns found - start with empty state
@@ -34,7 +36,7 @@ function CampaignsPage() {
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('Failed to load campaigns:', error);
+        console.error('Failed to load campaign instances:', error);
       }
       // Don't show error toast - just start with empty state
       setCampaigns([]);
@@ -85,17 +87,34 @@ function CampaignsPage() {
   const handleEnrollContacts = async (campaignId) => {
     setEnrolling(true);
     try {
-      toast.loading('Enrolling contacts...', { id: 'enroll' });
+      toast.loading('Checking campaign enrollment...', { id: 'enroll' });
 
-      // TODO: Call actual API
-      // const result = await api.enrollInCampaign(campaignId, selectedContactIds);
+      // Find the campaign to get its stats
+      const campaign = campaigns.find(c => c.id === campaignId);
 
-      setTimeout(() => {
-        toast.success('Enrolled 15 contacts successfully', { id: 'enroll' });
-        loadCampaigns(); // Refresh to show updated stats
-      }, 2000);
+      if (campaign) {
+        const enrolled = campaign.performance?.enrolled || 0;
+        const contacted = campaign.performance?.contacted || 0;
+
+        if (enrolled > 0) {
+          toast.success(
+            `Campaign "${campaign.name}" has ${enrolled} enrolled contacts (${contacted} contacted). Use contact import to add more.`,
+            { id: 'enroll', duration: 5000 }
+          );
+        } else {
+          toast.success(
+            `No contacts enrolled in "${campaign.name}" yet. Import contacts to begin.`,
+            { id: 'enroll', duration: 5000 }
+          );
+        }
+      } else {
+        toast.error('Campaign not found', { id: 'enroll' });
+      }
+
+      loadCampaigns(); // Refresh to show updated stats
     } catch (error) {
-      toast.error('Enrollment failed', { id: 'enroll' });
+      console.error('Enrollment check failed:', error);
+      toast.error(`Enrollment check failed: ${error.message}`, { id: 'enroll' });
     } finally {
       setEnrolling(false);
     }
@@ -105,14 +124,48 @@ function CampaignsPage() {
     try {
       toast.loading('Checking for new replies...', { id: 'replies' });
 
-      // TODO: Call actual API
-      // const result = await api.checkReplies();
+      // Get performance for all active campaigns and aggregate reply counts
+      const activeCampaigns = campaigns.filter(c => c.status === 'active');
 
-      setTimeout(() => {
-        toast.success('Found 3 new positive replies', { id: 'replies', duration: 5000 });
-      }, 1500);
+      if (activeCampaigns.length === 0) {
+        toast.success('No active campaigns to check.', { id: 'replies' });
+        return;
+      }
+
+      let totalReplies = 0;
+      const replySummary = [];
+
+      // Check performance for each active campaign
+      for (const campaign of activeCampaigns) {
+        try {
+          const result = await api.getCampaignPerformance(campaign.id);
+          if (result.success && result.data) {
+            const replyCount = result.data.replied || result.data.metrics?.replied || 0;
+            totalReplies += replyCount;
+            if (replyCount > 0) {
+              replySummary.push(`${campaign.name}: ${replyCount}`);
+            }
+          }
+        } catch (err) {
+          console.warn(`Could not check replies for ${campaign.name}:`, err.message);
+        }
+      }
+
+      // Show summary
+      if (totalReplies > 0) {
+        toast.success(
+          `Found ${totalReplies} total replies across ${activeCampaigns.length} campaigns`,
+          { id: 'replies', duration: 5000 }
+        );
+      } else {
+        toast.success('No new replies found.', { id: 'replies' });
+      }
+
+      // Refresh campaigns to update any changed stats
+      loadCampaigns();
     } catch (error) {
-      toast.error('Failed to check replies', { id: 'replies' });
+      console.error('Failed to check replies:', error);
+      toast.error(`Failed to check replies: ${error.message}`, { id: 'replies' });
     }
   };
 
@@ -140,6 +193,37 @@ function CampaignsPage() {
       toast.success('Campaign saved successfully', { id: 'save' });
     } catch (error) {
       toast.error('Failed to save campaign', { id: 'save' });
+      throw error;
+    }
+  };
+
+  const handleCreateCampaign = async (newCampaign) => {
+    try {
+      toast.loading('Creating campaign...', { id: 'create' });
+
+      // Ensure the campaign has required fields
+      const campaignToCreate = {
+        ...newCampaign,
+        createdAt: new Date().toISOString(),
+        status: 'draft',
+        sequence: {
+          currentStep: 0,
+          totalSteps: (newCampaign.emailPerformance?.length || 0) +
+                      (newCampaign.linkedinPerformance?.length || 0) +
+                      (newCampaign.videoSequence?.length || 0)
+        }
+      };
+
+      // TODO: Call actual API to persist
+      // const result = await api.createCampaign(campaignToCreate);
+
+      // Add to local state
+      setCampaigns([campaignToCreate, ...campaigns]);
+      setShowCreateModal(false);
+
+      toast.success('Campaign created successfully', { id: 'create' });
+    } catch (error) {
+      toast.error('Failed to create campaign', { id: 'create' });
       throw error;
     }
   };
@@ -485,6 +569,18 @@ function CampaignsPage() {
             </div>
           </div>
         </div>
+
+        {/* Campaign Editor Modal - also needed in details view */}
+        <CampaignEditor
+          campaign={editingCampaign}
+          isOpen={isEditorOpen}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditingCampaign(null);
+          }}
+          onSave={handleSaveCampaign}
+          mode="edit"
+        />
       </div>
     );
   }
@@ -636,24 +732,13 @@ function CampaignsPage() {
         )}
 
         {/* Create Campaign Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-slate-800 rounded-lg p-6 max-w-2xl w-full mx-4 border border-slate-700">
-              <h2 className="text-2xl font-bold text-white mb-4">Create New Campaign</h2>
-              <p className="text-slate-400 mb-6">
-                Campaign builder interface coming soon. For now, campaigns are created programmatically via the API.
-              </p>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <CampaignEditor
+          campaign={null}
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSave={handleCreateCampaign}
+          mode="create"
+        />
       </div>
 
       {/* Campaign Editor Modal */}

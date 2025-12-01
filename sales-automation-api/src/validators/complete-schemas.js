@@ -70,6 +70,27 @@ export const UUIDSchema = z
   .string()
   .uuid('Invalid UUID format');
 
+/**
+ * Flexible Campaign ID Schema
+ * Accepts both UUID format (PostgreSQL) and MongoDB-style cam_ prefix format
+ * This allows the system to work with campaigns from multiple data sources
+ */
+export const FlexibleCampaignIdSchema = z
+  .string()
+  .min(1, 'Campaign ID is required')
+  .refine(
+    (val) => {
+      // Accept UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      // Accept MongoDB-style cam_ prefix format
+      const mongoIdRegex = /^cam_[a-zA-Z0-9]+$/;
+      // Accept generic alphanumeric IDs (for backward compatibility)
+      const genericIdRegex = /^[a-zA-Z0-9_-]{8,}$/;
+      return uuidRegex.test(val) || mongoIdRegex.test(val) || genericIdRegex.test(val);
+    },
+    { message: 'Invalid campaign ID format' }
+  );
+
 export const URLSchema = z
   .string()
   .url('Invalid URL format')
@@ -369,6 +390,17 @@ export const CampaignTemplateParamSchema = z.object({
   })
 });
 
+/**
+ * Campaign Instance param validation
+ * Uses FlexibleCampaignIdSchema to accept both UUID and MongoDB-style IDs
+ * This is used for instance routes where IDs may come from external sources
+ */
+export const CampaignInstanceParamSchema = z.object({
+  params: z.object({
+    id: FlexibleCampaignIdSchema
+  })
+});
+
 // =============================================================================
 // EMAIL SEQUENCE SCHEMAS
 // =============================================================================
@@ -534,20 +566,22 @@ export const ListCampaignInstancesSchema = z.object({
 /**
  * GET /api/campaigns/instances/:id
  * Get campaign instance details
+ * Uses FlexibleCampaignIdSchema to accept both UUID and MongoDB-style IDs
  */
 export const GetCampaignInstanceSchema = z.object({
   params: z.object({
-    id: UUIDSchema
+    id: FlexibleCampaignIdSchema
   })
 });
 
 /**
  * PATCH /api/campaigns/instances/:id
  * Update campaign instance status
+ * Uses FlexibleCampaignIdSchema to accept both UUID and MongoDB-style IDs
  */
 export const UpdateCampaignInstanceStatusSchema = z.object({
   params: z.object({
-    id: UUIDSchema
+    id: FlexibleCampaignIdSchema
   }),
   body: z.object({
     status: z.enum(['active', 'paused', 'completed'])
@@ -557,10 +591,11 @@ export const UpdateCampaignInstanceStatusSchema = z.object({
 /**
  * GET /api/campaigns/instances/:id/performance
  * Get campaign performance analytics
+ * Uses FlexibleCampaignIdSchema to accept both UUID and MongoDB-style IDs
  */
 export const GetCampaignPerformanceSchema = z.object({
   params: z.object({
-    id: UUIDSchema
+    id: FlexibleCampaignIdSchema
   })
 });
 
@@ -573,10 +608,11 @@ const EnrollmentStatusEnum = z.enum(['enrolled', 'active', 'paused', 'completed'
 /**
  * POST /api/campaigns/instances/:id/enrollments
  * Enroll single contact in campaign
+ * Uses FlexibleCampaignIdSchema for campaign instance ID
  */
 export const CreateEnrollmentSchema = z.object({
   params: z.object({
-    id: UUIDSchema
+    id: FlexibleCampaignIdSchema
   }),
   body: z.object({
     contact_id: UUIDSchema,
@@ -587,10 +623,11 @@ export const CreateEnrollmentSchema = z.object({
 /**
  * POST /api/campaigns/instances/:id/enrollments/bulk
  * Bulk enroll contacts in campaign
+ * Uses FlexibleCampaignIdSchema for campaign instance ID
  */
 export const BulkEnrollSchema = z.object({
   params: z.object({
-    id: UUIDSchema
+    id: FlexibleCampaignIdSchema
   }),
   body: z.object({
     contact_ids: z.array(UUIDSchema)
@@ -602,10 +639,11 @@ export const BulkEnrollSchema = z.object({
 /**
  * GET /api/campaigns/instances/:id/enrollments
  * List enrollments for campaign instance
+ * Uses FlexibleCampaignIdSchema for campaign instance ID
  */
 export const ListEnrollmentsSchema = z.object({
   params: z.object({
-    id: UUIDSchema
+    id: FlexibleCampaignIdSchema
   }),
   query: z.object({
     status: EnrollmentStatusEnum.optional(),
@@ -1165,6 +1203,7 @@ export default {
   EmailSchema,
   DomainSchema,
   UUIDSchema,
+  FlexibleCampaignIdSchema,
   URLSchema,
   NonNegativeIntegerSchema,
   SafeJSONBSchema,
@@ -1182,6 +1221,7 @@ export default {
   UpdateCampaignTemplateSchema,
   ListCampaignTemplatesSchema,
   CampaignTemplateParamSchema,
+  CampaignInstanceParamSchema,
 
   // Email Sequences
   CreateEmailSequenceSchema,

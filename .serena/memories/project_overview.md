@@ -121,15 +121,18 @@ Production-ready autonomous sales prospecting system with a beautiful desktop UI
 ```
 
 ## Version
-**v1.1.0 (November 2025)** - Frontend Review Phase
-- All 8 UI pages fully functional
-- Contacts page displays 1082 imported contacts
-- ICP Profile creation form implemented
-- Sidebar logo centered and enlarged
-- E2E testing passed all pages
+**v2.0.0 (December 2025)** - Agentic AI & Docker Architecture
 
-## Recent Changes (Nov 2025)
-- Added `/api/contacts` endpoint for contact listing
-- Added `getContacts()` and `getContactsCount()` database methods
-- Full ICP profile creation form replacing placeholder
-- UI polish: centered sidebar logo
+### Key Features
+- **Agentic AI Assistant** - Claude with tool use (10 tools for ICP, campaigns, discovery, etc.)
+- **Docker Architecture** - PostgreSQL + Redis + API container
+- **Multi-Channel Outreach** - Postmark email + PhantomBuster LinkedIn
+- **ICP Management** - Full CRUD API at `/api/icp`
+
+## Recent Changes (Dec 2025)
+- Added tool use to chat endpoint (10 tools)
+- Agentic loop for autonomous multi-step actions
+- Updated system prompt to be action-oriented
+- Root directory cleanup (docs/, data/ folders)
+- README.md updated to v2.0.0
+- Serena memories updated
