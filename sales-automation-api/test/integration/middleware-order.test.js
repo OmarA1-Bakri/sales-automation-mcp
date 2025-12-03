@@ -2,7 +2,7 @@
  * Middleware Order Integration Tests
  *
  * CRITICAL: These tests validate the security-critical middleware ordering
- * in src/api-server.js setupMiddleware()
+ * in src/server.js setupMiddleware()
  *
  * The correct order is:
  * 1. Raw Body Preservation
@@ -41,7 +41,7 @@ describe('Middleware Order Validation', () => {
 
     // Import API server after setting env vars
     // DB auth will fail and fall back to env-based auth
-    const module = await import('../../src/api-server.js');
+    const module = await import('../../src/server.js');
     const { SalesAutomationAPIServer } = module;
     const server = new SalesAutomationAPIServer({ enableHttps: false, yoloMode: false });
     app = server.app;
@@ -77,7 +77,7 @@ describe('Middleware Order Validation', () => {
         .set('Origin', 'http://evil.com');
 
       // In test mode, CORS may not reject, but we verify the validation exists
-      // This is primarily tested by the CORS config in api-server.js
+      // This is primarily tested by the CORS config in server.js
       expect(response.status).toBeLessThan(500);
     });
   });

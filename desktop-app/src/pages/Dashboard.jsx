@@ -124,7 +124,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar bg-slate-900 p-8">
+    <div data-testid="dashboard-page" className="h-full overflow-y-auto custom-scrollbar bg-slate-900 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col items-center justify-center text-center mb-10 animate-fade-in">
@@ -143,7 +143,7 @@ function Dashboard() {
         </div>
 
         {/* YOLO Mode Card - Primary CTA */}
-        <div className="card bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-8">
+        <div data-testid="yolo-controls" className="card bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-8">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-4">
@@ -227,7 +227,7 @@ function Dashboard() {
             </div>
 
             <div className="flex flex-col space-y-2">
-              <button onClick={handleToggleYOLO} className="btn-primary flex items-center space-x-2">
+              <button onClick={handleToggleYOLO} data-testid="yolo-toggle-btn" className="btn-primary flex items-center space-x-2">
                 {yoloMode.enabled ? (
                   <>
                     <Pause size={16} />
@@ -312,7 +312,7 @@ function Dashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div>
+        <div data-testid="recent-activity">
           <h3 className="text-xl font-bold text-white mb-4">Recent Activity</h3>
           <div className="card space-y-3">
             {recentJobs.length > 0 ? (
@@ -364,7 +364,7 @@ function StatCard({ label, value, icon: Icon, color, trend }) {
   };
 
   return (
-    <div className={`card bg-gradient-to-br ${colorClasses[color]}`} role="figure" aria-label={`${label}: ${value}`}>
+    <div className={`card stat-card bg-gradient-to-br ${colorClasses[color]}`} data-testid="stat-card" role="figure" aria-label={`${label}: ${value}`}>
       <div className="flex items-center justify-between mb-4">
         <Icon size={24} className={iconColorClasses[color]} aria-hidden="true" />
         {trend && (
@@ -415,7 +415,7 @@ function ActivityItem({ icon: Icon, title, time, color }) {
   };
 
   return (
-    <div className="flex items-center space-x-4 py-2">
+    <div className="activity-item flex items-center space-x-4 py-2" data-testid="activity-item">
       <div className={`w-10 h-10 rounded-lg ${colorClasses[color] || colorClasses.blue} flex items-center justify-center`}>
         <Icon size={20} className={(colorClasses[color] || colorClasses.blue).split(' ')[0]} />
       </div>

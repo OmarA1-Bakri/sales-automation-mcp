@@ -1,0 +1,419 @@
+{
+  "persona": "Elena Rodriguez",
+  "role": "Marketing Operations Manager",
+  "flows": [
+    {
+      "flowName": "Review Active Campaigns",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to Campaigns",
+          "success": true,
+          "duration": 66275
+        },
+        {
+          "action": "wait",
+          "description": "Wait for campaigns to load",
+          "success": true,
+          "duration": 2002
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 104
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='campaigns-page']",
+          "passed": true
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=Create"
+        },
+        {
+          "type": "noErrors",
+          "passed": false
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-3/screenshots/campaigns-list-2025-12-03T10-55-47-506Z.png"
+      ],
+      "success": false,
+      "error": null
+    },
+    {
+      "flowName": "Create New Email Campaign",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66368
+        },
+        {
+          "action": "click",
+          "description": "Open create campaign modal",
+          "success": true,
+          "duration": 806
+        },
+        {
+          "action": "wait",
+          "description": "Wait for modal to appear",
+          "success": true,
+          "duration": 1348
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 1165
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='campaigns-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-3/screenshots/campaign-form-filled-2025-12-03T10-56-57-295Z.png",
+        "/app/test-results/persona-3/screenshots/campaign-created-2025-12-03T10-56-57-418Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Edit Campaign Settings",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66281
+        },
+        {
+          "action": "wait",
+          "description": "Wait for campaigns to load",
+          "success": true,
+          "duration": 1000
+        },
+        {
+          "action": "click",
+          "description": "Select first campaign",
+          "success": false,
+          "duration": 2,
+          "error": "clickElement failed: Element not found for selector \"[data-testid='campaign-card']\""
+        }
+      ],
+      "assertions": [],
+      "screenshots": [],
+      "success": false,
+      "error": null
+    },
+    {
+      "flowName": "Add LinkedIn Sequence to Campaign",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66320
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 803
+        },
+        {
+          "action": "click",
+          "description": "Navigate to LinkedIn tab",
+          "success": true,
+          "duration": 304
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 126
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='campaigns-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-3/screenshots/linkedin-campaign-created-2025-12-03T10-59-12-380Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Review Campaign Metrics",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66294
+        },
+        {
+          "action": "wait",
+          "description": "Wait for campaigns to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 129
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='campaigns-page']",
+          "passed": true
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=active"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-3/screenshots/campaign-metrics-2025-12-03T11-00-19-936Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "View Performance Analytics",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to Dashboard",
+          "success": true,
+          "duration": 66335
+        },
+        {
+          "action": "wait",
+          "description": "Wait for charts to load",
+          "success": true,
+          "duration": 2001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 192
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='performance-page']",
+          "passed": false
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "svg"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-3/screenshots/performance-dashboard-2025-12-03T11-01-28-596Z.png"
+      ],
+      "success": false,
+      "error": null
+    },
+    {
+      "flowName": "Configure Video Sequence",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66278
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 805
+        },
+        {
+          "action": "click",
+          "description": "Navigate to Video tab",
+          "success": true,
+          "duration": 305
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 107
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "text=Video",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Activate Draft Campaign",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66316
+        },
+        {
+          "action": "wait",
+          "description": "Wait for campaigns to load",
+          "success": true,
+          "duration": 1002
+        },
+        {
+          "action": "search",
+          "description": "Find campaign status",
+          "success": true,
+          "duration": 3,
+          "found": "text=active"
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 90
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=active"
+        },
+        {
+          "type": "noErrors",
+          "passed": false
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-3/screenshots/campaign-activated-2025-12-03T11-03-43-696Z.png"
+      ],
+      "success": false,
+      "error": null
+    },
+    {
+      "flowName": "Pause Active Campaign",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66269
+        },
+        {
+          "action": "wait",
+          "description": "Wait for campaigns to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 94
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='campaigns-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "AI-Assisted Campaign Creation",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 68199
+        },
+        {
+          "action": "wait",
+          "description": "Let AI page load",
+          "success": true,
+          "duration": 1000
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 75
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "textarea"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    }
+  ],
+  "passedFlows": 6,
+  "failedFlows": 4,
+  "totalDuration": 686904
+}

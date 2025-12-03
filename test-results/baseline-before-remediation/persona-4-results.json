@@ -1,0 +1,332 @@
+{
+  "persona": "David Park",
+  "role": "VP of Sales",
+  "flows": [
+    {
+      "flowName": "30-Second Executive Dashboard Check",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Open Dashboard",
+          "success": true,
+          "duration": 66384
+        },
+        {
+          "action": "wait",
+          "description": "Wait for dashboard to load",
+          "success": true,
+          "duration": 2002
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 197
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": ".bg-slate-800"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-4/screenshots/dashboard-executive-view-2025-12-03T08-10-58-495Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Verify YOLO Mode Running",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 68207
+        },
+        {
+          "action": "wait",
+          "description": "Wait for YOLO controls to render",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 195
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Quick Performance Page Glance",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Open Dashboard (has charts)",
+          "success": true,
+          "duration": 66330
+        },
+        {
+          "action": "wait",
+          "description": "Wait for charts to load",
+          "success": true,
+          "duration": 2001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 228
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "svg"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Quick Campaigns Status",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66329
+        },
+        {
+          "action": "wait",
+          "description": "Wait for campaigns to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 82
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=Campaigns"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Emergency YOLO Pause",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66324
+        },
+        {
+          "action": "wait",
+          "description": "Wait for YOLO controls to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "scroll",
+          "description": "scroll",
+          "success": true,
+          "duration": 509
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 349
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-4/screenshots/yolo-paused-2025-12-03T08-15-32-257Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Resume YOLO Mode",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66326
+        },
+        {
+          "action": "wait",
+          "description": "Wait for YOLO controls",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 355
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Quick Contact Count Check",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66351
+        },
+        {
+          "action": "wait",
+          "description": "Wait for contacts page to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 86
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=Contacts"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Fast Navigation Between Pages",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 65282
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 1304
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 3209
+        }
+      ],
+      "assertions": [
+        {
+          "type": "noErrors",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": "text=Dashboard",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    }
+  ],
+  "passedFlows": 8,
+  "failedFlows": 0,
+  "totalDuration": 552917
+}

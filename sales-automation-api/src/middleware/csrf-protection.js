@@ -130,6 +130,7 @@ class CSRFProtection {
       '/api/sync',  // Sync endpoints (protected by API key)
       '/api/heygen',  // HeyGen endpoints (protected by API key)
       '/api/icp',  // ICP endpoints (protected by API key)
+      '/api/yolo',  // YOLO mode endpoints (protected by API key)
     ];
     return exemptPaths.some(e => path.startsWith(e));
   }

@@ -2,11 +2,24 @@
  * Global State Management with Zustand
  *
  * Simple, intuitive state management for the entire app
+ * Persists critical state to localStorage for session continuity
  */
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-export const useStore = create((set, get) => ({
+// Define which state keys to persist (exclude large/ephemeral data)
+const PERSISTED_KEYS = [
+  'currentView',
+  'sidebarOpen',
+  'apiKeys',
+  'yoloMode',
+  'icpProfiles',
+];
+
+export const useStore = create(
+  persist(
+    (set, get) => ({
   // ==========================================================================
   // APP STATE
   // ==========================================================================
@@ -216,6 +229,24 @@ export const useStore = create((set, get) => ({
     set((state) => ({
       activityLog: [activity, ...state.activityLog],
     })),
-}));
+    }),
+    {
+      name: 'rtgs-sales-automation-storage', // localStorage key
+      storage: createJSONStorage(() => localStorage),
+      // Only persist selected keys (exclude large/ephemeral data like chatMessages, jobs)
+      partialize: (state) =>
+        Object.fromEntries(
+          Object.entries(state).filter(([key]) => PERSISTED_KEYS.includes(key))
+        ),
+      // Handle hydration for version migrations
+      version: 1,
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          console.log('[Store] Hydrated persisted state');
+        }
+      },
+    }
+  )
+);
 
 export default useStore;

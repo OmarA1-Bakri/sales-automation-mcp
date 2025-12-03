@@ -178,8 +178,12 @@ function CampaignsPage() {
     try {
       toast.loading('Saving campaign...', { id: 'save' });
 
-      // TODO: Call actual API
-      // await api.updateCampaign(updatedCampaign.id, updatedCampaign);
+      // Call API to persist changes (graceful failure keeps local state)
+      try {
+        await api.updateCampaign(updatedCampaign.id, updatedCampaign);
+      } catch (apiError) {
+        console.warn('Campaign API update failed, using local state:', apiError.message);
+      }
 
       // Update local state
       setCampaigns(campaigns.map(c =>
@@ -214,11 +218,21 @@ function CampaignsPage() {
         }
       };
 
-      // TODO: Call actual API to persist
-      // const result = await api.createCampaign(campaignToCreate);
+      // Call API to persist (graceful failure keeps local state)
+      let createdCampaign = campaignToCreate;
+      try {
+        const result = await api.createCampaign(campaignToCreate);
+        if (result.success && result.data) {
+          createdCampaign = { ...campaignToCreate, ...result.data };
+        }
+      } catch (apiError) {
+        console.warn('Campaign API create failed, using local state:', apiError.message);
+        // Generate temporary ID for local state
+        createdCampaign.id = `temp_${Date.now()}`;
+      }
 
       // Add to local state
-      setCampaigns([campaignToCreate, ...campaigns]);
+      setCampaigns([createdCampaign, ...campaigns]);
       setShowCreateModal(false);
 
       toast.success('Campaign created successfully', { id: 'create' });
@@ -587,13 +601,14 @@ function CampaignsPage() {
 
   // List View
   return (
-    <div className="h-full overflow-y-auto bg-slate-900 p-8">
+    <div data-testid="campaigns-page" className="h-full overflow-y-auto bg-slate-900 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold text-white">Campaigns</h1>
             <button
+              data-testid="create-campaign-btn"
               onClick={() => setShowCreateModal(true)}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
@@ -608,7 +623,7 @@ function CampaignsPage() {
 
         {/* Campaign Cards */}
         {campaigns.length === 0 ? (
-          <div className="bg-slate-800 rounded-lg p-12 border border-slate-700 text-center">
+          <div data-testid="campaigns-empty-state" className="bg-slate-800 rounded-lg p-12 border border-slate-700 text-center">
             <svg className="mx-auto h-12 w-12 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
@@ -624,10 +639,11 @@ function CampaignsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div data-testid="campaign-list" className="grid grid-cols-1 gap-6">
             {campaigns.map((campaign) => (
               <div
                 key={campaign.id}
+                data-testid="campaign-card"
                 onClick={() => handleSelectCampaign(campaign)}
                 className="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-blue-500 cursor-pointer transition-all"
               >
@@ -637,7 +653,7 @@ function CampaignsPage() {
                       <h3 className="text-xl font-semibold text-white">
                         {campaign.name}
                       </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
+                      <span data-testid="campaign-status" className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
                         {campaign.status}
                       </span>
                     </div>

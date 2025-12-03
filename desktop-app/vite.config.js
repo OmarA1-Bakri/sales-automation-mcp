@@ -12,6 +12,8 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0', // Listen on all interfaces for Docker
+    cors: true, // Enable CORS for E2E test containers
+    allowedHosts: true, // Allow all hosts (needed for Docker networking)
   },
   build: {
     outDir: 'dist',

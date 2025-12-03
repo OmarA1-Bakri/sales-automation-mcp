@@ -19,7 +19,7 @@ describe('CORS Security - T2.7 Fix Validation', () => {
     process.env.API_KEYS = 'test_cors_security_key_123';
 
     // Import API server
-    const module = await import('../../src/api-server.js');
+    const module = await import('../../src/server.js');
     const { SalesAutomationAPIServer } = module;
     server = new SalesAutomationAPIServer({
       enableHttps: false,

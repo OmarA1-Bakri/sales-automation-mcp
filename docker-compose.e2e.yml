@@ -1,0 +1,242 @@
+# E2E Testing Docker Compose
+# Runs all 5 personas in parallel containers against shared services
+#
+# Usage:
+#   docker-compose -f docker-compose.e2e.yml up --build
+#   docker-compose -f docker-compose.e2e.yml up --build persona-1 persona-3
+#   docker-compose -f docker-compose.e2e.yml logs -f persona-2
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # SHARED INFRASTRUCTURE
+  # ============================================================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: e2e-postgres
+    environment:
+      POSTGRES_DB: rtgs_sales_automation_test
+      POSTGRES_USER: rtgs_user
+      POSTGRES_PASSWORD: rtgs_password_test
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./sales-automation-api/src/db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtgs_user -d rtgs_sales_automation_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - e2e-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: e2e-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - e2e-network
+
+  # ============================================================================
+  # API SERVER
+  # ============================================================================
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: e2e-api
+    environment:
+      - NODE_ENV=test
+      - PORT=3000
+      - RATE_LIMIT_MAX=10000
+      - RATE_LIMIT_WINDOW=1
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rtgs_sales_automation_test
+      - POSTGRES_USER=rtgs_user
+      - POSTGRES_PASSWORD=rtgs_password_test
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - API_KEYS=test_api_key_e2e.e2e_secret_123
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-test_key}
+      - AI_PROVIDER=anthropic
+      - LOG_LEVEL=warn
+      - ALLOWED_ORIGINS=http://frontend:5173,http://localhost:5173
+    command: sh -c "cd /app/sales-automation-api && npm start"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - e2e-network
+
+  # ============================================================================
+  # FRONTEND SERVER
+  # ============================================================================
+
+  frontend:
+    build:
+      context: .
+      dockerfile: desktop-app/tests/e2e/docker/Dockerfile.frontend
+    container_name: e2e-frontend
+    environment:
+      - VITE_API_URL=http://api:3000
+      - VITE_API_KEY=test_api_key_e2e.e2e_secret_123
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - e2e-network
+
+  # ============================================================================
+  # PERSONA TEST CONTAINERS (Run in Parallel)
+  # ============================================================================
+
+  persona-1:
+    build:
+      context: .
+      dockerfile: desktop-app/tests/e2e/docker/Dockerfile.e2e-runner
+    container_name: e2e-persona-1-power-user
+    environment:
+      - PERSONA=1
+      - TEST_BASE_URL=http://frontend:5173
+      - TEST_API_URL=http://api:3000
+      - TEST_RESULTS_DIR=/app/test-results
+      - HEADLESS=true
+    volumes:
+      - ./test-results/persona-1:/app/test-results/persona-1
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - e2e-network
+
+  persona-2:
+    build:
+      context: .
+      dockerfile: desktop-app/tests/e2e/docker/Dockerfile.e2e-runner
+    container_name: e2e-persona-2-daily-driver
+    environment:
+      - PERSONA=2
+      - TEST_BASE_URL=http://frontend:5173
+      - TEST_API_URL=http://api:3000
+      - TEST_RESULTS_DIR=/app/test-results
+      - HEADLESS=true
+    volumes:
+      - ./test-results/persona-2:/app/test-results/persona-2
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - e2e-network
+
+  persona-3:
+    build:
+      context: .
+      dockerfile: desktop-app/tests/e2e/docker/Dockerfile.e2e-runner
+    container_name: e2e-persona-3-campaign-specialist
+    environment:
+      - PERSONA=3
+      - TEST_BASE_URL=http://frontend:5173
+      - TEST_API_URL=http://api:3000
+      - TEST_RESULTS_DIR=/app/test-results
+      - HEADLESS=true
+    volumes:
+      - ./test-results/persona-3:/app/test-results/persona-3
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - e2e-network
+
+  persona-4:
+    build:
+      context: .
+      dockerfile: desktop-app/tests/e2e/docker/Dockerfile.e2e-runner
+    container_name: e2e-persona-4-impatient-executive
+    environment:
+      - PERSONA=4
+      - TEST_BASE_URL=http://frontend:5173
+      - TEST_API_URL=http://api:3000
+      - TEST_RESULTS_DIR=/app/test-results
+      - HEADLESS=true
+    volumes:
+      - ./test-results/persona-4:/app/test-results/persona-4
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - e2e-network
+
+  persona-5:
+    build:
+      context: .
+      dockerfile: desktop-app/tests/e2e/docker/Dockerfile.e2e-runner
+    container_name: e2e-persona-5-onboarding-rookie
+    environment:
+      - PERSONA=5
+      - TEST_BASE_URL=http://frontend:5173
+      - TEST_API_URL=http://api:3000
+      - TEST_RESULTS_DIR=/app/test-results
+      - HEADLESS=true
+    volumes:
+      - ./test-results/persona-5:/app/test-results/persona-5
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - e2e-network
+
+  # ============================================================================
+  # RESULTS AGGREGATOR (Runs after all tests complete)
+  # ============================================================================
+
+  results-aggregator:
+    build:
+      context: .
+      dockerfile: desktop-app/tests/e2e/docker/Dockerfile.e2e-runner
+    container_name: e2e-results-aggregator
+    environment:
+      - TEST_RESULTS_DIR=/app/test-results
+    volumes:
+      - ./test-results:/app/test-results
+    command: node tests/e2e/aggregate-results.js
+    depends_on:
+      persona-1:
+        condition: service_completed_successfully
+      persona-2:
+        condition: service_completed_successfully
+      persona-3:
+        condition: service_completed_successfully
+      persona-4:
+        condition: service_completed_successfully
+      persona-5:
+        condition: service_completed_successfully
+    networks:
+      - e2e-network
+    profiles:
+      - aggregate
+
+networks:
+  e2e-network:
+    driver: bridge

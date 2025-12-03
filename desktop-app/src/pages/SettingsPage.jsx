@@ -260,7 +260,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="h-full overflow-auto bg-slate-900 p-8">
+    <div data-testid="settings-page" className="h-full overflow-auto bg-slate-900 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -282,6 +282,7 @@ function SettingsPage() {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk_live_..."
+              data-testid="api-key-input"
               className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="mt-2 text-sm text-slate-400">
@@ -297,6 +298,7 @@ function SettingsPage() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => handleProtocolChange(false)}
+                data-testid="protocol-http"
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   !useHttps
                     ? 'bg-blue-600 text-white'
@@ -307,6 +309,7 @@ function SettingsPage() {
               </button>
               <button
                 onClick={() => handleProtocolChange(true)}
+                data-testid="protocol-https"
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   useHttps
                     ? 'bg-blue-600 text-white'
@@ -336,6 +339,7 @@ function SettingsPage() {
               value={apiUrl}
               onChange={(e) => setApiUrl(e.target.value)}
               placeholder="http://localhost:3000"
+              data-testid="api-url-input"
               className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="mt-2 text-sm text-slate-400">
@@ -345,7 +349,9 @@ function SettingsPage() {
 
           {/* Connection Status */}
           {connectionStatus && (
-            <div className={`mb-6 p-4 rounded-lg ${
+            <div
+              data-testid="connection-status"
+              className={`mb-6 p-4 rounded-lg ${
               connectionStatus.success
                 ? 'bg-green-900/30 border border-green-700'
                 : 'bg-red-900/30 border border-red-700'
@@ -381,6 +387,7 @@ function SettingsPage() {
             <button
               onClick={handleTestConnection}
               disabled={testingConnection}
+              data-testid="test-connection-btn"
               className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {testingConnection ? (
@@ -403,6 +410,7 @@ function SettingsPage() {
 
             <button
               onClick={handleSave}
+              data-testid="save-settings-btn"
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -178,7 +178,7 @@ function ImportPage() {
   };
 
   return (
-    <div className="h-full overflow-auto bg-slate-900 p-8">
+    <div data-testid="import-page" className="h-full overflow-auto bg-slate-900 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -187,8 +187,9 @@ function ImportPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-2 mb-6 border-b border-slate-700">
+        <div data-testid="import-tabs" className="flex space-x-2 mb-6 border-b border-slate-700">
           <button
+            data-testid="import-tab-csv"
             onClick={() => setActiveTab('csv')}
             className={`px-6 py-3 font-medium transition-colors border-b-2 ${
               activeTab === 'csv'
@@ -202,6 +203,7 @@ function ImportPage() {
             </div>
           </button>
           <button
+            data-testid="import-tab-hubspot"
             onClick={() => setActiveTab('hubspot')}
             className={`px-6 py-3 font-medium transition-colors border-b-2 ${
               activeTab === 'hubspot'
@@ -215,6 +217,7 @@ function ImportPage() {
             </div>
           </button>
           <button
+            data-testid="import-tab-lemlist"
             onClick={() => setActiveTab('lemlist')}
             className={`px-6 py-3 font-medium transition-colors border-b-2 ${
               activeTab === 'lemlist'
@@ -242,7 +245,7 @@ function ImportPage() {
               {/* File Upload */}
               <div className="mb-6">
                 <label className="block w-full">
-                  <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors">
+                  <div data-testid="import-dropzone" className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors">
                     <Upload size={48} className="mx-auto mb-4 text-slate-400" />
                     <p className="text-white font-medium mb-2">
                       {csvFile ? csvFile.name : 'Click to upload CSV file'}
@@ -290,6 +293,7 @@ function ImportPage() {
               )}
 
               <button
+                data-testid="import-btn"
                 onClick={handleImportCSV}
                 disabled={!csvFile || importing}
                 className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"

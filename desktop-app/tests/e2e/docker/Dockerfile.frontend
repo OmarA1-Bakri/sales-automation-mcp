@@ -1,0 +1,30 @@
+# Frontend Server for E2E Testing
+# Runs Vite dev server to serve the React app
+
+FROM node:20-alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy package files
+COPY desktop-app/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source files
+COPY desktop-app/src ./src
+COPY desktop-app/public ./public
+COPY desktop-app/index.html ./
+COPY desktop-app/vite.config.js ./
+COPY desktop-app/tailwind.config.js ./
+COPY desktop-app/postcss.config.js ./
+
+# Expose Vite port
+EXPOSE 5173
+
+# Start script that creates .env from runtime env vars then starts Vite
+# This ensures VITE_* variables are available to the client
+CMD sh -c 'echo "VITE_API_URL=${VITE_API_URL}" > .env && echo "VITE_API_KEY=${VITE_API_KEY}" >> .env && cat .env && npx vite --host 0.0.0.0'

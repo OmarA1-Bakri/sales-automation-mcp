@@ -14,7 +14,14 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "node tests/e2e/run-persona.js",
+    "test:e2e:1": "PERSONA=1 node tests/e2e/run-persona.js",
+    "test:e2e:2": "PERSONA=2 node tests/e2e/run-persona.js",
+    "test:e2e:3": "PERSONA=3 node tests/e2e/run-persona.js",
+    "test:e2e:4": "PERSONA=4 node tests/e2e/run-persona.js",
+    "test:e2e:5": "PERSONA=5 node tests/e2e/run-persona.js",
+    "test:e2e:docker": "cd .. && ./scripts/run-e2e-tests.sh"
   },
   "keywords": [
     "sales-automation",
@@ -29,7 +36,6 @@
     "axios": "^1.6.0",
     "date-fns": "^3.0.0",
     "electron-store": "^8.1.0",
-    "framer-motion": "^10.16.16",
     "lucide-react": "^0.300.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",

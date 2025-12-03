@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
  * Video Generation Status Component
  * Displays the current status of video generation with progress indicator
  */
-export default function VideoGenerationStatus({ status, progress = 0 }) {
+export default function VideoGenerationStatus({ status = 'draft', progress = 0 }) {
   // Status configuration
   const statusConfig = {
     draft: {
@@ -103,7 +103,5 @@ VideoGenerationStatus.propTypes = {
   progress: PropTypes.number
 };
 
-VideoGenerationStatus.defaultProps = {
-  status: 'draft',
-  progress: 0
-};
+// Note: Default values moved to function parameters (modern React pattern)
+// Removes deprecation warning for defaultProps in function components

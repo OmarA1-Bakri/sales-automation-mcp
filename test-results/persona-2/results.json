@@ -1,0 +1,409 @@
+{
+  "persona": "Marcus Johnson",
+  "role": "Account Executive",
+  "flows": [
+    {
+      "flowName": "Morning Dashboard Review",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Open Dashboard",
+          "success": true,
+          "duration": 66268
+        },
+        {
+          "action": "wait",
+          "description": "Wait for metrics to load",
+          "success": true,
+          "duration": 2002
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 290
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='dashboard-page']",
+          "passed": true
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-2/screenshots/dashboard-metrics-2025-12-03T10-55-47-659Z.png",
+        "/app/test-results/persona-2/screenshots/dashboard-activity-2025-12-03T10-55-48-013Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Discover Leads via AI Chat",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to AI Chat",
+          "success": true,
+          "duration": 66373
+        },
+        {
+          "action": "wait",
+          "description": "Wait for chat to initialize",
+          "success": true,
+          "duration": 2884
+        },
+        {
+          "action": "type",
+          "description": "Enter discovery prompt",
+          "success": true,
+          "duration": 3750
+        },
+        {
+          "action": "click",
+          "description": "Send message and wait for AI response",
+          "success": true,
+          "duration": 5321
+        },
+        {
+          "action": "wait",
+          "description": "Wait for response to render",
+          "success": true,
+          "duration": 2002
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 106
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='chat-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": false
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-2/screenshots/ai-chat-discovery-request-2025-12-03T10-57-08-742Z.png",
+        "/app/test-results/persona-2/screenshots/ai-chat-discovery-response-2025-12-03T10-57-08-849Z.png"
+      ],
+      "success": false,
+      "error": null
+    },
+    {
+      "flowName": "Use Quick Action - Chat with AI",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate directly to AI Assistant",
+          "success": true,
+          "duration": 66292
+        },
+        {
+          "action": "wait",
+          "description": "Wait for chat to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 98
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='chat-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Review Contacts List",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to Contacts",
+          "success": true,
+          "duration": 66325
+        },
+        {
+          "action": "wait",
+          "description": "Wait for contacts to load",
+          "success": true,
+          "duration": 2002
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 104
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='contacts-page']",
+          "passed": true
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "input"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-2/screenshots/contacts-list-2025-12-03T10-59-24-791Z.png",
+        "/app/test-results/persona-2/screenshots/contacts-filtered-2025-12-03T10-59-24-889Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "View Contact Details",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to Contacts page",
+          "success": true,
+          "duration": 66265
+        },
+        {
+          "action": "wait",
+          "description": "Wait for contacts list to load",
+          "success": true,
+          "duration": 1501
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 98
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='contacts-page']",
+          "passed": true
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "[data-testid='contacts-empty-message']"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-2/screenshots/contact-details-2025-12-03T11-00-32-865Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Check Pipeline Stats via AI",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66311
+        },
+        {
+          "action": "wait",
+          "description": "Wait for chat to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "click",
+          "description": "Click pipeline stats quick action",
+          "success": true,
+          "duration": 7183
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 106
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='chat-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-2/screenshots/ai-pipeline-stats-2025-12-03T11-01-47-573Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Request Contact Enrichment via AI",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66321
+        },
+        {
+          "action": "wait",
+          "description": "Wait for chat to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "click",
+          "description": "Click enrich quick action",
+          "success": true,
+          "duration": 5304
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 109
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='chat-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Review Recent Activity",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to Dashboard",
+          "success": true,
+          "duration": 66268
+        },
+        {
+          "action": "wait",
+          "description": "Wait for dashboard to load",
+          "success": true,
+          "duration": 2000
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 186
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='dashboard-page']",
+          "passed": true
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-2/screenshots/activity-feed-2025-12-03T11-04-08-880Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Select Multiple Contacts",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to Contacts",
+          "success": true,
+          "duration": 66287
+        },
+        {
+          "action": "wait",
+          "description": "Wait for contacts to load",
+          "success": true,
+          "duration": 1501
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 69
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='contacts-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-2/screenshots/contacts-multi-select-2025-12-03T11-05-16-931Z.png"
+      ],
+      "success": true,
+      "error": null
+    }
+  ],
+  "passedFlows": 8,
+  "failedFlows": 1,
+  "totalDuration": 643508
+}

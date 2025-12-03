@@ -147,13 +147,14 @@ function ChatPage() {
   ];
 
   return (
-    <div className="h-full flex flex-col bg-slate-900">
+    <div data-testid="chat-page" className="h-full flex flex-col bg-slate-900">
       {/* Header */}
       <div className="flex-none border-b border-slate-700 bg-slate-800 px-6 py-3">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-white">AI Sales Assistant</h1>
           <div className="flex items-center gap-2">
             <button
+              data-testid="new-chat-btn"
               onClick={handleNewConversation}
               className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg font-medium transition-colors flex items-center"
             >
@@ -163,6 +164,7 @@ function ChatPage() {
               New Chat
             </button>
             <button
+              data-testid="clear-chat-btn"
               onClick={handleClearChat}
               className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg font-medium transition-colors flex items-center"
             >
@@ -176,9 +178,9 @@ function ChatPage() {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div data-testid="chat-messages" className="flex-1 overflow-y-auto px-6 py-4">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center">
+          <div data-testid="chat-welcome" className="h-full flex flex-col items-center justify-center">
             <div className="max-w-2xl w-full">
               {/* Welcome Message */}
               <div className="text-center mb-8">
@@ -194,10 +196,11 @@ function ChatPage() {
               </div>
 
               {/* Quick Actions */}
-              <div className="grid grid-cols-2 gap-3">
+              <div data-testid="chat-quick-actions" className="grid grid-cols-2 gap-3">
                 {quickActions.map((action, index) => (
                   <button
                     key={index}
+                    data-testid="quick-action-btn"
                     onClick={() => setInput(action.prompt)}
                     className="p-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 rounded-lg text-left transition-colors group"
                   >
@@ -339,10 +342,11 @@ function ChatPage() {
       </div>
 
       {/* Input Area */}
-      <div className="flex-none border-t border-slate-700 bg-slate-800 px-6 py-4">
+      <div data-testid="chat-input-area" className="flex-none border-t border-slate-700 bg-slate-800 px-6 py-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end gap-3">
             <textarea
+              data-testid="chat-input"
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -353,6 +357,7 @@ function ChatPage() {
               style={{ minHeight: '48px', maxHeight: '200px' }}
             />
             <button
+              data-testid="chat-send-btn"
               onClick={handleSend}
               disabled={loading || !input.trim()}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"

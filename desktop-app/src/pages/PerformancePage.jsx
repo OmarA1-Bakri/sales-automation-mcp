@@ -96,7 +96,7 @@ function PerformancePage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar bg-slate-900 p-8">
+    <div data-testid="performance-page" className="h-full overflow-y-auto custom-scrollbar bg-slate-900 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -110,6 +110,7 @@ function PerformancePage() {
             </p>
           </div>
           <button
+            data-testid="refresh-performance-btn"
             onClick={handleRefresh}
             disabled={refreshing}
             className="btn btn-secondary flex items-center gap-2"
@@ -120,7 +121,7 @@ function PerformancePage() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div data-testid="performance-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             icon={<Mail className="text-blue-400" />}
             label="Emails Sent"
@@ -151,7 +152,7 @@ function PerformancePage() {
         </div>
 
         {/* Agent Performance */}
-        <div className="card bg-slate-800 border-slate-700 p-6">
+        <div data-testid="agent-performance-card" className="card bg-slate-800 border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
               <Zap className="text-yellow-400" />

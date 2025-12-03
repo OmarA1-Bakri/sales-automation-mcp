@@ -1,0 +1,258 @@
+{
+  "persona": "David Park",
+  "role": "VP of Sales",
+  "flows": [
+    {
+      "flowName": "30-Second Executive Dashboard Check",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Open Dashboard",
+          "success": true,
+          "duration": 66259
+        },
+        {
+          "action": "wait",
+          "description": "Wait for dashboard to load",
+          "success": true,
+          "duration": 2001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 280
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "visible",
+          "selector": "[data-testid='dashboard-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-4/screenshots/dashboard-executive-view-2025-12-03T10-55-47-746Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Quick Performance Page Glance",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Open Dashboard (has charts)",
+          "success": true,
+          "duration": 66355
+        },
+        {
+          "action": "wait",
+          "description": "Wait for charts to load",
+          "success": true,
+          "duration": 3885
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 229
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "svg"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Quick Campaigns Status",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66273
+        },
+        {
+          "action": "wait",
+          "description": "Wait for campaigns to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 113
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='campaigns-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": false
+        }
+      ],
+      "screenshots": [],
+      "success": false,
+      "error": null
+    },
+    {
+      "flowName": "Emergency YOLO Pause",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66331
+        },
+        {
+          "action": "wait",
+          "description": "Wait for YOLO controls to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "scroll",
+          "description": "scroll",
+          "success": true,
+          "duration": 505
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 405
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=YOLO Mode"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-4/screenshots/yolo-paused-2025-12-03T10-59-14-201Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Quick Contact Count Check",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66295
+        },
+        {
+          "action": "wait",
+          "description": "Wait for contacts page to load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 112
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='contacts-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Fast Navigation Between Pages",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 65321
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 1302
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 1304
+        }
+      ],
+      "assertions": [
+        {
+          "type": "noErrors",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": "text=Dashboard",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    }
+  ],
+  "passedFlows": 5,
+  "failedFlows": 1,
+  "totalDuration": 419179
+}

@@ -1,0 +1,556 @@
+{
+  "persona": "Alex Thompson",
+  "role": "Sales Development Representative",
+  "flows": [
+    {
+      "flowName": "First Time Dashboard Experience",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Open Dashboard for first time",
+          "success": true,
+          "duration": 66325
+        },
+        {
+          "action": "wait",
+          "description": "Let page fully load",
+          "success": true,
+          "duration": 2001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 192
+        },
+        {
+          "action": "search",
+          "description": "Look for onboarding cues",
+          "success": true,
+          "duration": 2,
+          "found": "text=Welcome"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": ".sidebar, nav",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": ".main-content, main",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-5/screenshots/first-time-dashboard-2025-12-03T07-37-51-177Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Explore All Sidebar Items",
+      "steps": [
+        {
+          "action": "click",
+          "description": "Click Dashboard",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 196
+        },
+        {
+          "action": "click",
+          "description": "Click AI Assistant",
+          "success": true,
+          "duration": 1302
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 188
+        },
+        {
+          "action": "click",
+          "description": "Click Campaigns",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 192
+        },
+        {
+          "action": "click",
+          "description": "Click Contacts",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 191
+        },
+        {
+          "action": "click",
+          "description": "Click Import",
+          "success": true,
+          "duration": 1302
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 185
+        },
+        {
+          "action": "click",
+          "description": "Click ICP Profiles",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 185
+        },
+        {
+          "action": "click",
+          "description": "Click Settings",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 978
+        }
+      ],
+      "assertions": [
+        {
+          "type": "noErrors",
+          "passed": true
+        },
+        {
+          "type": "no404",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-5/screenshots/explore-dashboard-2025-12-03T07-38-02-598Z.png",
+        "/app/test-results/persona-5/screenshots/explore-ai-assistant-2025-12-03T07-38-03-846Z.png",
+        "/app/test-results/persona-5/screenshots/explore-campaigns-2025-12-03T07-38-04-033Z.png",
+        "/app/test-results/persona-5/screenshots/explore-contacts-2025-12-03T07-38-04-226Z.png",
+        "/app/test-results/persona-5/screenshots/explore-import-2025-12-03T07-38-04-415Z.png",
+        "/app/test-results/persona-5/screenshots/explore-icp-2025-12-03T07-38-04-606Z.png",
+        "/app/test-results/persona-5/screenshots/explore-settings-2025-12-03T07-38-04-793Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Ask AI Assistant for Guidance",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66357
+        },
+        {
+          "action": "type",
+          "description": "Ask for onboarding help",
+          "success": true,
+          "duration": 4396
+        },
+        {
+          "action": "click",
+          "description": "Send message",
+          "success": true,
+          "duration": 10313
+        },
+        {
+          "action": "wait",
+          "description": "Wait for AI response",
+          "success": true,
+          "duration": 2002
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 74
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=platform"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-5/screenshots/ai-help-request-2025-12-03T07-39-28-130Z.png",
+        "/app/test-results/persona-5/screenshots/ai-help-response-2025-12-03T07-39-28-197Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "AI Assistant Chat Interface",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66299
+        },
+        {
+          "action": "wait",
+          "description": "Let page fully load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 74
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "textarea"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Experience Empty States",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66338
+        },
+        {
+          "action": "type",
+          "description": "Search for non-existent contact",
+          "success": true,
+          "duration": 1032
+        },
+        {
+          "action": "wait",
+          "description": "wait",
+          "success": true,
+          "duration": 1502
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 66
+        },
+        {
+          "action": "clear",
+          "description": "clear",
+          "success": true,
+          "duration": 14
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 4225
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=No contacts found"
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Explore Import Page",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66302
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 87
+        },
+        {
+          "action": "search",
+          "description": "search",
+          "success": true,
+          "duration": 1,
+          "found": "text=Upload"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=Import"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Browse ICP Profiles",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66363
+        },
+        {
+          "action": "wait",
+          "description": "Let profiles load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 87
+        },
+        {
+          "action": "search",
+          "description": "Find profile cards or create button",
+          "success": true,
+          "duration": 7,
+          "found": "[data-testid='icp-profile-card']"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=ICP Profiles"
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "[data-testid='icp-profile-card']"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Understand YOLO Mode",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66279
+        },
+        {
+          "action": "wait",
+          "description": "Let dashboard load",
+          "success": true,
+          "duration": 1001
+        },
+        {
+          "action": "scroll",
+          "description": "scroll",
+          "success": true,
+          "duration": 507
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 319
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "[data-testid='yolo-controls']"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Test Navigation State",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66370
+        },
+        {
+          "action": "click",
+          "description": "Go to Campaigns",
+          "success": true,
+          "duration": 2303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 276
+        },
+        {
+          "action": "click",
+          "description": "Go to Contacts",
+          "success": true,
+          "duration": 2304
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 275
+        },
+        {
+          "action": "click",
+          "description": "Return to Dashboard",
+          "success": true,
+          "duration": 2303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 285
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "text=Dashboard"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Explore Settings Page",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 67111
+        },
+        {
+          "action": "wait",
+          "description": "Let settings load",
+          "success": true,
+          "duration": 1501
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 79
+        },
+        {
+          "action": "search",
+          "description": "Find settings content",
+          "success": true,
+          "duration": 2,
+          "found": "text=API Configuration"
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 76
+        }
+      ],
+      "assertions": [
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": ".bg-slate-900"
+        },
+        {
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "[data-testid='api-key-input']"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    }
+  ],
+  "passedFlows": 10,
+  "failedFlows": 0,
+  "totalDuration": 655731
+}

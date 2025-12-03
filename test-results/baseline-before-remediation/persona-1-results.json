@@ -1,0 +1,576 @@
+{
+  "persona": "Sarah Chen",
+  "role": "Sales Operations Manager",
+  "flows": [
+    {
+      "flowName": "Complete Settings Configuration",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to Settings page",
+          "success": true,
+          "duration": 67091
+        },
+        {
+          "action": "clear",
+          "description": "Clear existing API key",
+          "success": true,
+          "duration": 19
+        },
+        {
+          "action": "type",
+          "description": "Enter E2E test API key",
+          "success": true,
+          "duration": 1697
+        },
+        {
+          "action": "click",
+          "description": "Select HTTP protocol for local dev",
+          "success": true,
+          "duration": 313
+        },
+        {
+          "action": "clear",
+          "description": "Clear API URL",
+          "success": true,
+          "duration": 17
+        },
+        {
+          "action": "type",
+          "description": "Set API URL (Docker internal)",
+          "success": true,
+          "duration": 834
+        },
+        {
+          "action": "click",
+          "description": "Test API connection",
+          "success": true,
+          "duration": 5246
+        },
+        {
+          "action": "click",
+          "description": "Save settings",
+          "success": true,
+          "duration": 2325
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[role='status'], div:has-text('Settings saved'), div:has-text('saved successfully')",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-1/screenshots/settings-configured-2025-12-03T06-52-22-547Z.png",
+        "/app/test-results/persona-1/screenshots/connection-success-2025-12-03T06-52-22-656Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Create Core ICP Profile - Enterprise FinTech CTOs",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "Navigate to ICP Profiles",
+          "success": true,
+          "duration": 66345
+        },
+        {
+          "action": "click",
+          "description": "Open create ICP modal",
+          "success": true,
+          "duration": 823
+        },
+        {
+          "action": "type",
+          "description": "Enter profile name",
+          "success": true,
+          "duration": 1873
+        },
+        {
+          "action": "type",
+          "description": "Enter description",
+          "success": true,
+          "duration": 7885
+        },
+        {
+          "action": "selectOption",
+          "description": "Select Core tier",
+          "success": true,
+          "duration": 6
+        },
+        {
+          "action": "clear",
+          "description": "Clear company size min",
+          "success": true,
+          "duration": 27
+        },
+        {
+          "action": "type",
+          "description": "Set minimum company size",
+          "success": true,
+          "duration": 195
+        },
+        {
+          "action": "clear",
+          "description": "Clear company size max",
+          "success": true,
+          "duration": 15
+        },
+        {
+          "action": "type",
+          "description": "Set maximum company size",
+          "success": true,
+          "duration": 242
+        },
+        {
+          "action": "clear",
+          "description": "Clear revenue min",
+          "success": true,
+          "duration": 14
+        },
+        {
+          "action": "type",
+          "description": "Set minimum revenue ($10M)",
+          "success": true,
+          "duration": 448
+        },
+        {
+          "action": "clear",
+          "description": "Clear revenue max",
+          "success": true,
+          "duration": 15
+        },
+        {
+          "action": "type",
+          "description": "Set maximum revenue ($500M)",
+          "success": true,
+          "duration": 509
+        },
+        {
+          "action": "type",
+          "description": "Add industry: Financial Services",
+          "success": true,
+          "duration": 997
+        },
+        {
+          "action": "click",
+          "description": "Click Add for industry",
+          "success": true,
+          "duration": 312
+        },
+        {
+          "action": "type",
+          "description": "Add industry: FinTech",
+          "success": true,
+          "duration": 393
+        },
+        {
+          "action": "click",
+          "description": "Click Add for industry",
+          "success": true,
+          "duration": 310
+        },
+        {
+          "action": "type",
+          "description": "Add industry: Banking",
+          "success": true,
+          "duration": 395
+        },
+        {
+          "action": "click",
+          "description": "Click Add for industry",
+          "success": true,
+          "duration": 311
+        },
+        {
+          "action": "type",
+          "description": "Add geography: North America",
+          "success": true,
+          "duration": 720
+        },
+        {
+          "action": "click",
+          "description": "Click Add for geography",
+          "success": true,
+          "duration": 313
+        },
+        {
+          "action": "type",
+          "description": "Add geography: Europe",
+          "success": true,
+          "duration": 341
+        },
+        {
+          "action": "click",
+          "description": "Click Add for geography",
+          "success": true,
+          "duration": 314
+        },
+        {
+          "action": "scrollIntoView",
+          "description": "Scroll to primary titles section",
+          "success": true,
+          "duration": 505
+        },
+        {
+          "action": "type",
+          "description": "Add primary title: CTO",
+          "success": true,
+          "duration": 176
+        },
+        {
+          "action": "click",
+          "description": "Click Add for primary title",
+          "success": true,
+          "duration": 311
+        },
+        {
+          "action": "type",
+          "description": "Add primary title: VP Engineering",
+          "success": true,
+          "duration": 779
+        },
+        {
+          "action": "click",
+          "description": "Click Add for primary title",
+          "success": true,
+          "duration": 313
+        },
+        {
+          "action": "type",
+          "description": "Add primary title: Chief Technology Officer",
+          "success": true,
+          "duration": 1326
+        },
+        {
+          "action": "click",
+          "description": "Click Add for primary title",
+          "success": true,
+          "duration": 312
+        },
+        {
+          "action": "slider",
+          "description": "Set auto-approve threshold: 85%",
+          "success": true,
+          "duration": 105
+        },
+        {
+          "action": "slider",
+          "description": "Set review threshold: 70%",
+          "success": true,
+          "duration": 104
+        },
+        {
+          "action": "slider",
+          "description": "Set disqualify threshold: 50%",
+          "success": true,
+          "duration": 105
+        },
+        {
+          "action": "click",
+          "description": "Submit ICP profile",
+          "success": true,
+          "duration": 2314
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "text=Enterprise FinTech Decision Makers",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": "[data-testid='icp-profile-card']",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-1/screenshots/icp-form-filled-2025-12-03T06-53-51-921Z.png",
+        "/app/test-results/persona-1/screenshots/icp-created-success-2025-12-03T06-53-52-045Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Create Expansion ICP Profile - SMB Growth Companies",
+      "steps": [
+        {
+          "action": "click",
+          "description": "Open create ICP modal",
+          "success": true,
+          "duration": 816
+        },
+        {
+          "action": "type",
+          "description": "Enter profile name",
+          "success": true,
+          "duration": 3233
+        },
+        {
+          "action": "type",
+          "description": "Enter description",
+          "success": true,
+          "duration": 5791
+        },
+        {
+          "action": "selectOption",
+          "description": "Select Expansion tier",
+          "success": true,
+          "duration": 6
+        },
+        {
+          "action": "clear",
+          "description": "Clear company size min",
+          "success": true,
+          "duration": 23
+        },
+        {
+          "action": "type",
+          "description": "Set min company size",
+          "success": true,
+          "duration": 127
+        },
+        {
+          "action": "clear",
+          "description": "Clear company size max",
+          "success": true,
+          "duration": 14
+        },
+        {
+          "action": "type",
+          "description": "Set max company size",
+          "success": true,
+          "duration": 185
+        },
+        {
+          "action": "type",
+          "description": "Add industry: SaaS",
+          "success": true,
+          "duration": 230
+        },
+        {
+          "action": "click",
+          "description": "Click Add for industry",
+          "success": true,
+          "duration": 311
+        },
+        {
+          "action": "type",
+          "description": "Add industry: Technology",
+          "success": true,
+          "duration": 564
+        },
+        {
+          "action": "click",
+          "description": "Click Add for industry",
+          "success": true,
+          "duration": 313
+        },
+        {
+          "action": "type",
+          "description": "Add primary title: Founder",
+          "success": true,
+          "duration": 391
+        },
+        {
+          "action": "click",
+          "description": "Click Add for primary title",
+          "success": true,
+          "duration": 311
+        },
+        {
+          "action": "type",
+          "description": "Add primary title: CEO",
+          "success": true,
+          "duration": 179
+        },
+        {
+          "action": "click",
+          "description": "Click Add for primary title",
+          "success": true,
+          "duration": 324
+        },
+        {
+          "action": "click",
+          "description": "click",
+          "success": true,
+          "duration": 2314
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "text=SMB Growth Stage Founders",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": "[data-testid='icp-profile-card']",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "YOLO Mode Requires Configuration",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66376
+        },
+        {
+          "action": "waitForSelector",
+          "description": "Wait for YOLO controls to load",
+          "success": true,
+          "duration": 7
+        },
+        {
+          "action": "click",
+          "description": "Click YOLO toggle button (triggers redirect to Settings)",
+          "success": true,
+          "duration": 2327
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[role='status']",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": "text=API Configuration",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-1/screenshots/yolo-redirects-to-settings-2025-12-03T06-55-16-018Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Test ICP Profile Scoring",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 66314
+        },
+        {
+          "action": "click",
+          "description": "Select the ICP profile",
+          "success": true,
+          "duration": 302
+        },
+        {
+          "action": "click",
+          "description": "Run scoring test",
+          "success": true,
+          "duration": 3316
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[role='status']",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": "text=Test Score",
+          "passed": true
+        }
+      ],
+      "screenshots": [],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Discover Leads by ICP Profile",
+      "steps": [
+        {
+          "action": "click",
+          "description": "Select the ICP profile",
+          "success": true,
+          "duration": 302
+        },
+        {
+          "action": "click",
+          "description": "Trigger lead discovery",
+          "success": true,
+          "duration": 5317
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "text=Found",
+          "passed": true
+        },
+        {
+          "type": "visible",
+          "selector": "text=Discovered",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-1/screenshots/leads-discovered-2025-12-03T06-56-31-685Z.png"
+      ],
+      "success": true,
+      "error": null
+    },
+    {
+      "flowName": "Monitor Dashboard Activity",
+      "steps": [
+        {
+          "action": "navigate",
+          "description": "navigate",
+          "success": true,
+          "duration": 68280
+        },
+        {
+          "action": "scroll",
+          "description": "Scroll to activity section",
+          "success": true,
+          "duration": 505
+        },
+        {
+          "action": "wait",
+          "description": "Wait for activity to populate",
+          "success": true,
+          "duration": 2002
+        }
+      ],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='recent-activity']",
+          "passed": true
+        },
+        {
+          "type": "count",
+          "selector": "[data-testid='stat-card']",
+          "passed": true
+        }
+      ],
+      "screenshots": [
+        "/app/test-results/persona-1/screenshots/yolo-activity-monitoring-2025-12-03T06-57-42-578Z.png"
+      ],
+      "success": true,
+      "error": null
+    }
+  ],
+  "passedFlows": 7,
+  "failedFlows": 0,
+  "totalDuration": 402852
+}

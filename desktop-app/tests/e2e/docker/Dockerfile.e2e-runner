@@ -1,0 +1,50 @@
+# E2E Test Runner with Puppeteer
+# Each persona runs in its own container with isolated Chrome instance
+
+FROM node:20-alpine
+
+# Install Chromium and dependencies for Puppeteer
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    dumb-init \
+    curl
+
+# Tell Puppeteer to use installed Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
+    CHROME_BIN=/usr/bin/chromium-browser \
+    NODE_ENV=test
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY desktop-app/package*.json ./desktop-app/
+
+# Install dependencies
+WORKDIR /app/desktop-app
+RUN npm ci --only=production=false
+
+# Copy test files
+WORKDIR /app
+COPY desktop-app/tests ./desktop-app/tests
+COPY desktop-app/vite.config.js ./desktop-app/
+COPY desktop-app/src ./desktop-app/src
+
+# Create test results directory
+RUN mkdir -p /app/test-results/screenshots /app/test-results/reports
+
+# Set working directory for tests
+WORKDIR /app/desktop-app
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Default command (overridden by docker-compose)
+CMD ["node", "tests/e2e/run-persona.js"]

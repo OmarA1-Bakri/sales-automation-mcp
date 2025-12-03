@@ -157,8 +157,20 @@ class APIService {
   }
 
   // ==========================================================================
-  // LEAD DISCOVERY
+  // LEAD DISCOVERY & ICP SCORING
   // ==========================================================================
+
+  /**
+   * Test ICP scoring with a sample profile
+   * @param {string} profileId - ICP profile ID to test
+   * @returns {Promise<Object>} Test score result
+   */
+  async testICPScore(profileId) {
+    return this.call('/api/execute', 'POST', {
+      type: 'test_icp_score',
+      parameters: { profile_id: profileId },
+    });
+  }
 
   async discoverLeadsByICP(icpProfile, count = 50, minScore = 0.75) {
     return this.call('/api/execute', 'POST', {
@@ -450,6 +462,39 @@ class APIService {
     const query = params.toString();
     const endpoint = `/api/campaigns/instances/${campaignId}/enrollments${query ? '?' + query : ''}`;
     return this.call(endpoint, 'GET');
+  }
+
+  /**
+   * Create a new campaign template
+   * @param {Object} campaign - Campaign data
+   * @returns {Promise<Object>} Created campaign
+   */
+  async createCampaign(campaign) {
+    return this.call('/api/campaigns/templates', 'POST', {
+      name: campaign.name,
+      description: campaign.description || '',
+      icp_profile_id: campaign.icpProfileId || campaign.icp_profile_id,
+      settings: {
+        daily_limit: campaign.settings?.dailyLimit || 50,
+        timezone: campaign.settings?.timezone || 'America/New_York'
+      },
+      email_sequences: campaign.emailSequences || [],
+      linkedin_sequences: campaign.linkedinSequences || []
+    });
+  }
+
+  /**
+   * Update an existing campaign template
+   * @param {string} campaignId - Campaign ID
+   * @param {Object} updates - Campaign data to update
+   * @returns {Promise<Object>} Updated campaign
+   */
+  async updateCampaign(campaignId, updates) {
+    return this.call(`/api/campaigns/templates/${campaignId}`, 'PUT', {
+      name: updates.name,
+      description: updates.description,
+      settings: updates.settings
+    });
   }
 
   /**
