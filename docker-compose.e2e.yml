@@ -69,6 +69,15 @@ services:
       - AI_PROVIDER=anthropic
       - LOG_LEVEL=warn
       - ALLOWED_ORIGINS=http://frontend:5173,http://localhost:5173
+      # E2E Test Mode - disables rate limiting for parallel test execution
+      - E2E_MODE=true
+      # External API mock mode for E2E tests
+      # When enabled, API clients return mock data instead of calling real services
+      - E2E_MOCK_EXTERNAL_APIS=true
+      - LEMLIST_API_KEY=${LEMLIST_API_KEY:-mock-lemlist-e2e-key}
+      - EXPLORIUM_API_KEY=${EXPLORIUM_API_KEY:-mock-explorium-e2e-key}
+      - HEYGEN_API_KEY=${HEYGEN_API_KEY:-mock-heygen-e2e-key}
+      - HUBSPOT_API_KEY=${HUBSPOT_API_KEY:-mock-hubspot-e2e-key}
     command: sh -c "cd /app/sales-automation-api && npm start"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]

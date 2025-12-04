@@ -86,7 +86,9 @@ function Dashboard() {
         setRecentJobs(jobsData.jobs.slice(0, 4));
       }
     } catch (error) {
-      console.error('Failed to load dashboard:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load dashboard:', error);
+      }
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);

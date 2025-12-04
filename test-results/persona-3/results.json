@@ -9,19 +9,19 @@
           "action": "navigate",
           "description": "Navigate to Campaigns",
           "success": true,
-          "duration": 66275
+          "duration": 66675
         },
         {
           "action": "wait",
           "description": "Wait for campaigns to load",
           "success": true,
-          "duration": 2002
+          "duration": 2000
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 104
+          "duration": 107
         }
       ],
       "assertions": [
@@ -37,13 +37,13 @@
         },
         {
           "type": "noErrors",
-          "passed": false
+          "passed": true
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-3/screenshots/campaigns-list-2025-12-03T10-55-47-506Z.png"
+        "/app/test-results/persona-3/screenshots/campaigns-list-2025-12-04T02-51-44-389Z.png"
       ],
-      "success": false,
+      "success": true,
       "error": null
     },
     {
@@ -53,25 +53,25 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66368
+          "duration": 65315
         },
         {
           "action": "click",
           "description": "Open create campaign modal",
           "success": true,
-          "duration": 806
+          "duration": 808
         },
         {
           "action": "wait",
           "description": "Wait for modal to appear",
           "success": true,
-          "duration": 1348
+          "duration": 500
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 1165
+          "duration": 95
         }
       ],
       "assertions": [
@@ -86,8 +86,8 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-3/screenshots/campaign-form-filled-2025-12-03T10-56-57-295Z.png",
-        "/app/test-results/persona-3/screenshots/campaign-created-2025-12-03T10-56-57-418Z.png"
+        "/app/test-results/persona-3/screenshots/campaign-form-filled-2025-12-04T02-52-51-192Z.png",
+        "/app/test-results/persona-3/screenshots/campaign-created-2025-12-04T02-52-51-284Z.png"
       ],
       "success": true,
       "error": null
@@ -99,25 +99,40 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66281
+          "duration": 65251
         },
         {
           "action": "wait",
           "description": "Wait for campaigns to load",
           "success": true,
-          "duration": 1000
+          "duration": 1002
         },
         {
           "action": "click",
           "description": "Select first campaign",
-          "success": false,
-          "duration": 2,
-          "error": "clickElement failed: Element not found for selector \"[data-testid='campaign-card']\""
+          "success": true,
+          "duration": 813
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 100
         }
       ],
-      "assertions": [],
+      "assertions": [
+        {
+          "type": "visible",
+          "selector": "[data-testid='campaigns-page']",
+          "passed": true
+        },
+        {
+          "type": "noErrors",
+          "passed": true
+        }
+      ],
       "screenshots": [],
-      "success": false,
+      "success": true,
       "error": null
     },
     {
@@ -127,7 +142,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66320
+          "duration": 65279
         },
         {
           "action": "click",
@@ -139,13 +154,13 @@
           "action": "click",
           "description": "Navigate to LinkedIn tab",
           "success": true,
-          "duration": 304
+          "duration": 303
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 126
+          "duration": 96
         }
       ],
       "assertions": [
@@ -160,7 +175,7 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-3/screenshots/linkedin-campaign-created-2025-12-03T10-59-12-380Z.png"
+        "/app/test-results/persona-3/screenshots/linkedin-campaign-created-2025-12-04T02-55-05-037Z.png"
       ],
       "success": true,
       "error": null
@@ -172,7 +187,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66294
+          "duration": 65330
         },
         {
           "action": "wait",
@@ -184,7 +199,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 129
+          "duration": 95
         }
       ],
       "assertions": [
@@ -204,7 +219,7 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-3/screenshots/campaign-metrics-2025-12-03T11-00-19-936Z.png"
+        "/app/test-results/persona-3/screenshots/campaign-metrics-2025-12-04T02-56-11-567Z.png"
       ],
       "success": true,
       "error": null
@@ -216,26 +231,26 @@
           "action": "navigate",
           "description": "Navigate to Dashboard",
           "success": true,
-          "duration": 66335
+          "duration": 65255
         },
         {
           "action": "wait",
           "description": "Wait for charts to load",
           "success": true,
-          "duration": 2001
+          "duration": 2002
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 192
+          "duration": 215
         }
       ],
       "assertions": [
         {
           "type": "visible",
-          "selector": "[data-testid='performance-page']",
-          "passed": false
+          "selector": "[data-testid='dashboard-page']",
+          "passed": true
         },
         {
           "type": "anyOf",
@@ -248,9 +263,9 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-3/screenshots/performance-dashboard-2025-12-03T11-01-28-596Z.png"
+        "/app/test-results/persona-3/screenshots/performance-dashboard-2025-12-04T02-57-19-144Z.png"
       ],
-      "success": false,
+      "success": true,
       "error": null
     },
     {
@@ -260,7 +275,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66278
+          "duration": 65348
         },
         {
           "action": "click",
@@ -272,13 +287,13 @@
           "action": "click",
           "description": "Navigate to Video tab",
           "success": true,
-          "duration": 305
+          "duration": 313
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 107
+          "duration": 99
         }
       ],
       "assertions": [
@@ -299,43 +314,43 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66316
+          "duration": 66632
         },
         {
           "action": "wait",
           "description": "Wait for campaigns to load",
           "success": true,
-          "duration": 1002
+          "duration": 1001
         },
         {
           "action": "search",
           "description": "Find campaign status",
           "success": true,
-          "duration": 3,
-          "found": "text=active"
+          "duration": 2,
+          "found": "text=draft"
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 90
+          "duration": 94
         }
       ],
       "assertions": [
         {
           "type": "anyOf",
           "passed": true,
-          "matchedSelector": "text=active"
+          "matchedSelector": "text=draft"
         },
         {
           "type": "noErrors",
-          "passed": false
+          "passed": true
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-3/screenshots/campaign-activated-2025-12-03T11-03-43-696Z.png"
+        "/app/test-results/persona-3/screenshots/campaign-activated-2025-12-04T02-59-33-636Z.png"
       ],
-      "success": false,
+      "success": true,
       "error": null
     },
     {
@@ -345,7 +360,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66269
+          "duration": 65269
         },
         {
           "action": "wait",
@@ -357,7 +372,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 94
+          "duration": 96
         }
       ],
       "assertions": [
@@ -382,19 +397,19 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 68199
+          "duration": 65350
         },
         {
           "action": "wait",
           "description": "Let AI page load",
           "success": true,
-          "duration": 1000
+          "duration": 1001
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 75
+          "duration": 81
         }
       ],
       "assertions": [
@@ -413,7 +428,7 @@
       "error": null
     }
   ],
-  "passedFlows": 6,
-  "failedFlows": 4,
-  "totalDuration": 686904
+  "passedFlows": 10,
+  "failedFlows": 0,
+  "totalDuration": 673881
 }

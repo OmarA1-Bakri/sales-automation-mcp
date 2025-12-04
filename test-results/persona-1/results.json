@@ -9,49 +9,49 @@
           "action": "navigate",
           "description": "Navigate to Settings page",
           "success": true,
-          "duration": 67082
+          "duration": 66642
         },
         {
           "action": "clear",
           "description": "Clear existing API key",
           "success": true,
-          "duration": 37
+          "duration": 21
         },
         {
           "action": "type",
           "description": "Enter E2E test API key",
           "success": true,
-          "duration": 1707
+          "duration": 1695
         },
         {
           "action": "click",
           "description": "Select HTTP protocol for local dev",
           "success": true,
-          "duration": 320
+          "duration": 318
         },
         {
           "action": "clear",
           "description": "Clear API URL",
           "success": true,
-          "duration": 15
+          "duration": 14
         },
         {
           "action": "type",
           "description": "Set API URL (Docker internal)",
           "success": true,
-          "duration": 821
+          "duration": 822
         },
         {
           "action": "click",
           "description": "Test API connection",
           "success": true,
-          "duration": 5236
+          "duration": 3313
         },
         {
           "action": "click",
           "description": "Save settings",
           "success": true,
-          "duration": 2316
+          "duration": 2331
         }
       ],
       "assertions": [
@@ -62,8 +62,8 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-1/screenshots/settings-configured-2025-12-03T10-55-56-597Z.png",
-        "/app/test-results/persona-1/screenshots/connection-success-2025-12-03T10-55-56-724Z.png"
+        "/app/test-results/persona-1/screenshots/settings-configured-2025-12-04T02-51-50-354Z.png",
+        "/app/test-results/persona-1/screenshots/connection-success-2025-12-04T02-51-50-469Z.png"
       ],
       "success": true,
       "error": null
@@ -75,25 +75,25 @@
           "action": "navigate",
           "description": "Navigate to ICP Profiles",
           "success": true,
-          "duration": 66357
+          "duration": 65315
         },
         {
           "action": "click",
           "description": "Open create ICP modal",
           "success": true,
-          "duration": 835
+          "duration": 823
         },
         {
           "action": "type",
           "description": "Enter profile name",
           "success": true,
-          "duration": 1873
+          "duration": 1849
         },
         {
           "action": "type",
           "description": "Enter description",
           "success": true,
-          "duration": 7804
+          "duration": 7740
         },
         {
           "action": "selectOption",
@@ -105,91 +105,103 @@
           "action": "clear",
           "description": "Clear company size min",
           "success": true,
-          "duration": 29
+          "duration": 13
         },
         {
           "action": "type",
           "description": "Set minimum company size",
           "success": true,
-          "duration": 178
+          "duration": 177
         },
         {
           "action": "clear",
           "description": "Clear company size max",
           "success": true,
-          "duration": 21
+          "duration": 14
         },
         {
           "action": "type",
           "description": "Set maximum company size",
           "success": true,
-          "duration": 231
+          "duration": 238
         },
         {
           "action": "clear",
           "description": "Clear revenue min",
           "success": true,
-          "duration": 18
+          "duration": 13
         },
         {
           "action": "type",
           "description": "Set minimum revenue ($10M)",
           "success": true,
-          "duration": 448
+          "duration": 449
         },
         {
           "action": "clear",
           "description": "Clear revenue max",
           "success": true,
-          "duration": 19
+          "duration": 13
         },
         {
           "action": "type",
           "description": "Set maximum revenue ($500M)",
           "success": true,
-          "duration": 502
+          "duration": 512
         },
         {
           "action": "type",
           "description": "Add industry: Financial Services",
           "success": true,
-          "duration": 985
+          "duration": 980
         },
         {
           "action": "click",
           "description": "Click Add for industry",
           "success": true,
-          "duration": 327
+          "duration": 321
         },
         {
           "action": "type",
           "description": "Add industry: FinTech",
           "success": true,
-          "duration": 396
+          "duration": 390
         },
         {
           "action": "click",
           "description": "Click Add for industry",
           "success": true,
-          "duration": 320
+          "duration": 312
         },
         {
           "action": "type",
           "description": "Add industry: Banking",
           "success": true,
-          "duration": 394
+          "duration": 389
         },
         {
           "action": "click",
           "description": "Click Add for industry",
           "success": true,
-          "duration": 324
+          "duration": 311
         },
         {
           "action": "type",
           "description": "Add geography: North America",
           "success": true,
-          "duration": 718
+          "duration": 710
+        },
+        {
+          "action": "click",
+          "description": "Click Add for geography",
+          "success": true,
+          "duration": 312
+        },
+        {
+          "action": "type",
+          "description": "Add geography: Europe",
+          "success": true,
+          "duration": 332
         },
         {
           "action": "click",
@@ -198,82 +210,70 @@
           "duration": 314
         },
         {
-          "action": "type",
-          "description": "Add geography: Europe",
-          "success": true,
-          "duration": 345
-        },
-        {
-          "action": "click",
-          "description": "Click Add for geography",
-          "success": true,
-          "duration": 322
-        },
-        {
           "action": "scrollIntoView",
           "description": "Scroll to primary titles section",
           "success": true,
-          "duration": 505
+          "duration": 506
         },
         {
           "action": "type",
           "description": "Add primary title: CTO",
           "success": true,
-          "duration": 191
+          "duration": 173
         },
         {
           "action": "click",
           "description": "Click Add for primary title",
           "success": true,
-          "duration": 323
+          "duration": 973
         },
         {
           "action": "type",
           "description": "Add primary title: VP Engineering",
           "success": true,
-          "duration": 773
+          "duration": 1483
         },
         {
           "action": "click",
           "description": "Click Add for primary title",
           "success": true,
-          "duration": 325
+          "duration": 311
         },
         {
           "action": "type",
           "description": "Add primary title: Chief Technology Officer",
           "success": true,
-          "duration": 1318
+          "duration": 1298
         },
         {
           "action": "click",
           "description": "Click Add for primary title",
           "success": true,
-          "duration": 316
+          "duration": 311
         },
         {
           "action": "slider",
           "description": "Set auto-approve threshold: 85%",
           "success": true,
-          "duration": 106
+          "duration": 109
         },
         {
           "action": "slider",
           "description": "Set review threshold: 70%",
           "success": true,
-          "duration": 104
+          "duration": 105
         },
         {
           "action": "slider",
           "description": "Set disqualify threshold: 50%",
           "success": true,
-          "duration": 104
+          "duration": 106
         },
         {
           "action": "click",
           "description": "Submit ICP profile",
           "success": true,
-          "duration": 2320
+          "duration": 2315
         }
       ],
       "assertions": [
@@ -289,8 +289,8 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-1/screenshots/icp-form-filled-2025-12-03T10-57-25-984Z.png",
-        "/app/test-results/persona-1/screenshots/icp-created-success-2025-12-03T10-57-26-123Z.png"
+        "/app/test-results/persona-1/screenshots/icp-form-filled-2025-12-04T02-53-19-831Z.png",
+        "/app/test-results/persona-1/screenshots/icp-created-success-2025-12-04T02-53-19-945Z.png"
       ],
       "success": true,
       "error": null
@@ -302,19 +302,19 @@
           "action": "click",
           "description": "Open create ICP modal",
           "success": true,
-          "duration": 1650
+          "duration": 820
         },
         {
           "action": "type",
           "description": "Enter profile name",
           "success": true,
-          "duration": 2381
+          "duration": 1361
         },
         {
           "action": "type",
           "description": "Enter description",
           "success": true,
-          "duration": 5720
+          "duration": 5699
         },
         {
           "action": "selectOption",
@@ -326,7 +326,7 @@
           "action": "clear",
           "description": "Clear company size min",
           "success": true,
-          "duration": 26
+          "duration": 17
         },
         {
           "action": "type",
@@ -338,67 +338,67 @@
           "action": "clear",
           "description": "Clear company size max",
           "success": true,
-          "duration": 25
+          "duration": 14
         },
         {
           "action": "type",
           "description": "Set max company size",
           "success": true,
-          "duration": 177
+          "duration": 188
         },
         {
           "action": "type",
           "description": "Add industry: SaaS",
           "success": true,
-          "duration": 237
+          "duration": 228
         },
         {
           "action": "click",
           "description": "Click Add for industry",
           "success": true,
-          "duration": 318
+          "duration": 314
         },
         {
           "action": "type",
           "description": "Add industry: Technology",
           "success": true,
-          "duration": 556
+          "duration": 552
         },
         {
           "action": "click",
           "description": "Click Add for industry",
           "success": true,
-          "duration": 327
+          "duration": 313
         },
         {
           "action": "type",
           "description": "Add primary title: Founder",
           "success": true,
-          "duration": 398
+          "duration": 389
         },
         {
           "action": "click",
           "description": "Click Add for primary title",
           "success": true,
-          "duration": 317
+          "duration": 311
         },
         {
           "action": "type",
           "description": "Add primary title: CEO",
           "success": true,
-          "duration": 179
+          "duration": 173
         },
         {
           "action": "click",
           "description": "Click Add for primary title",
           "success": true,
-          "duration": 322
+          "duration": 323
         },
         {
           "action": "click",
           "description": "click",
           "success": true,
-          "duration": 2319
+          "duration": 2315
         }
       ],
       "assertions": [
@@ -424,19 +424,25 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66363
+          "duration": 65278
         },
         {
           "action": "waitForSelector",
           "description": "Wait for YOLO controls to load",
           "success": true,
-          "duration": 6
+          "duration": 8
         },
         {
           "action": "click",
-          "description": "Click YOLO toggle button (triggers redirect to Settings)",
+          "description": "Click YOLO toggle button (triggers configuration warning)",
           "success": true,
-          "duration": 2330
+          "duration": 3319
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 104
         }
       ],
       "assertions": [
@@ -446,15 +452,19 @@
           "passed": true
         },
         {
-          "type": "visible",
-          "selector": "text=API Configuration",
-          "passed": false
+          "type": "anyOf",
+          "passed": true,
+          "matchedSelector": "[data-testid='settings-page']"
+        },
+        {
+          "type": "noErrors",
+          "passed": true
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-1/screenshots/yolo-redirects-to-settings-2025-12-03T10-58-50-053Z.png"
+        "/app/test-results/persona-1/screenshots/yolo-configuration-warning-2025-12-04T02-54-41-939Z.png"
       ],
-      "success": false,
+      "success": true,
       "error": null
     },
     {
@@ -464,19 +474,19 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66250
+          "duration": 65330
         },
         {
           "action": "click",
           "description": "Select the ICP profile",
           "success": true,
-          "duration": 302
+          "duration": 303
         },
         {
           "action": "click",
           "description": "Run scoring test",
           "success": true,
-          "duration": 3317
+          "duration": 4695
         }
       ],
       "assertions": [
@@ -508,7 +518,7 @@
           "action": "click",
           "description": "Trigger lead discovery",
           "success": true,
-          "duration": 5325
+          "duration": 5320
         }
       ],
       "assertions": [
@@ -524,7 +534,7 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-1/screenshots/leads-discovered-2025-12-03T11-00-05-805Z.png"
+        "/app/test-results/persona-1/screenshots/leads-discovered-2025-12-04T02-55-58-003Z.png"
       ],
       "success": true,
       "error": null
@@ -536,19 +546,19 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 68203
+          "duration": 65281
         },
         {
           "action": "scroll",
           "description": "Scroll to activity section",
           "success": true,
-          "duration": 505
+          "duration": 506
         },
         {
           "action": "wait",
           "description": "Wait for activity to populate",
           "success": true,
-          "duration": 2002
+          "duration": 2000
         }
       ],
       "assertions": [
@@ -564,13 +574,13 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-1/screenshots/yolo-activity-monitoring-2025-12-03T11-01-16-620Z.png"
+        "/app/test-results/persona-1/screenshots/yolo-activity-monitoring-2025-12-04T02-57-05-893Z.png"
       ],
       "success": true,
       "error": null
     }
   ],
-  "passedFlows": 6,
-  "failedFlows": 1,
-  "totalDuration": 403722
+  "passedFlows": 7,
+  "failedFlows": 0,
+  "totalDuration": 394006
 }

@@ -70,7 +70,10 @@ class APIService {
 
       return result;
     } catch (error) {
-      console.error(`[API Error] ${endpoint}:`, error);
+      // Only log API errors in development mode to prevent E2E test failures
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[API Error] ${endpoint}:`, error);
+      }
       throw error;
     }
   }

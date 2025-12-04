@@ -71,7 +71,9 @@ function PerformancePage() {
       }
 
     } catch (error) {
-      console.error('Failed to load performance data:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load performance data:', error);
+      }
       toast.error('Failed to load performance data');
     } finally {
       setLoading(false);

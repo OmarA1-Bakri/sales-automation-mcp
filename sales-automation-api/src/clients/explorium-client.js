@@ -19,6 +19,21 @@ import { createCircuitBreaker } from '../utils/circuit-breaker.js';
 
 export class ExploriumClient {
   constructor(config = {}) {
+    // E2E Mock Mode: When enabled, return mock data instead of calling real APIs
+    // This allows E2E tests to run without valid external API credentials
+    this.mockMode = process.env.E2E_MOCK_EXTERNAL_APIS === 'true';
+
+    if (this.mockMode) {
+      this.logger = createLogger('ExploriumClient');
+      this.logger.info('[ExploriumClient] Running in E2E mock mode - returning mock data');
+      this.apiKey = 'mock-explorium-key';
+      this.baseURL = 'https://api.explorium.ai/v1';
+      this.requestCount = 0;
+      this.resetTime = Date.now() + 60000;
+      this.maxRequestsPerMinute = 200;
+      return; // Skip real API setup in mock mode
+    }
+
     this.apiKey = config.apiKey || process.env.EXPLORIUM_API_KEY;
 
     if (!this.apiKey) {
@@ -73,6 +88,11 @@ export class ExploriumClient {
    * @returns {Promise<Object>} Enriched contact data
    */
   async enrichContact(contact, options = {}) {
+    // E2E Mock Mode: Return mock enriched contact data
+    if (this.mockMode) {
+      return this._getMockEnrichedContact(contact);
+    }
+
     this._checkRateLimit();
 
     try {
@@ -431,6 +451,11 @@ export class ExploriumClient {
    * @returns {Promise<Object>} Enriched company data
    */
   async enrichCompany(companyIdentifier, options = {}) {
+    // E2E Mock Mode: Return mock enriched company data
+    if (this.mockMode) {
+      return this._getMockEnrichedCompany(companyIdentifier);
+    }
+
     this._checkRateLimit();
 
     try {
@@ -1193,6 +1218,11 @@ export class ExploriumClient {
    * @returns {Promise<Object>} Matching companies
    */
   async discoverCompanies(criteria) {
+    // E2E Mock Mode: Return mock discovered companies
+    if (this.mockMode) {
+      return this._getMockDiscoveredCompanies(criteria);
+    }
+
     this._checkRateLimit();
 
     try {
@@ -1227,6 +1257,11 @@ export class ExploriumClient {
    * @returns {Promise<Object>} Matching contacts
    */
   async findContacts(search) {
+    // E2E Mock Mode: Return mock found contacts
+    if (this.mockMode) {
+      return this._getMockFoundContacts(search);
+    }
+
     this._checkRateLimit();
 
     try {
@@ -1410,6 +1445,22 @@ export class ExploriumClient {
    * @returns {Promise<Object>} Health status
    */
   async healthCheck() {
+    // E2E Mock Mode: Return healthy status
+    if (this.mockMode) {
+      return {
+        success: true,
+        status: 'healthy',
+        message: 'Explorium API running in E2E mock mode',
+        mockMode: true,
+        features: {
+          companyEnrichment: true,
+          contactEnrichment: true,
+          targetDiscovery: true,
+          bulkOperations: true,
+        },
+      };
+    }
+
     if (!this.apiKey) {
       return {
         success: false,
@@ -1825,6 +1876,277 @@ export class ExploriumClient {
    */
   _sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // ============================================================================
+  // E2E MOCK MODE RESPONSE METHODS
+  // ============================================================================
+
+  /**
+   * Generate mock enriched contact for E2E testing
+   * @private
+   */
+  _getMockEnrichedContact(contact) {
+    const { email, firstName, lastName, companyDomain } = contact;
+    return {
+      // Contact Details
+      email: email || 'mock.user@example.com',
+      personalEmail: null,
+      emailVerified: true,
+      emailValidation: {
+        deliverable: true,
+        validFormat: true,
+        disposable: false,
+        roleBased: false,
+        catchAll: false
+      },
+      phoneNumber: '+1-555-123-4567',
+      phoneValidation: null,
+
+      // Basic Identity
+      firstName: firstName || 'Mock',
+      lastName: lastName || 'User',
+      fullName: `${firstName || 'Mock'} ${lastName || 'User'}`,
+
+      // Current Position
+      title: 'Senior Software Engineer',
+      currentCompany: 'Mock Tech Corp',
+      currentCompanyDomain: companyDomain || 'mocktech.com',
+      seniority: 'Manager',
+      department: 'Engineering',
+
+      // Location
+      location: 'San Francisco, CA',
+      country: 'United States',
+      city: 'San Francisco',
+      state: 'California',
+
+      // Experience
+      yearsOfExperience: 8,
+      yearsInCurrentRole: 2,
+      previousCompanies: [
+        { name: 'Previous Corp', domain: 'previous.com', title: 'Software Engineer' }
+      ],
+
+      // Social Profiles
+      linkedinUrl: 'https://linkedin.com/in/mockuser',
+      twitterHandle: '@mockuser',
+      facebookUrl: null,
+
+      // Skills & Education
+      skills: ['JavaScript', 'React', 'Node.js', 'TypeScript'],
+      certifications: [],
+      education: [{ school: 'Mock University', degree: 'BS Computer Science' }],
+
+      // Metadata
+      confidenceScore: 0.95,
+      dataSource: 'explorium-mock',
+      mockMode: true,
+      enrichedAt: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Generate mock enriched company for E2E testing
+   * @private
+   */
+  _getMockEnrichedCompany(companyIdentifier) {
+    const { domain, name } = companyIdentifier;
+    return {
+      // Core Identity
+      domain: domain || 'mockcompany.com',
+      name: name || 'Mock Company Inc',
+      companyDescription: 'A mock company for E2E testing purposes',
+      tagline: 'Making testing easier',
+      logoUrl: 'https://via.placeholder.com/150',
+      websiteUrl: `https://${domain || 'mockcompany.com'}`,
+
+      // Classification
+      industry: 'Technology',
+      subIndustry: 'Software Development',
+      naicsCode: '541511',
+      naicsDescription: 'Custom Computer Programming Services',
+      sicCode: '7371',
+      sicCodeDescription: 'Computer Programming Services',
+      businessModel: 'B2B SaaS',
+      companyType: 'private',
+
+      // Size & Scale
+      employees: 150,
+      employeeRange: '101-250',
+      employeeGrowth6m: 15,
+      revenue: 25000000,
+      revenueRange: '$10M-$50M',
+
+      // Location
+      headquarters: '123 Mock Street, San Francisco, CA 94105',
+      headquartersCountry: 'United States',
+      headquartersCity: 'San Francisco',
+      headquartersState: 'California',
+      headquartersZip: '94105',
+      totalOffices: 3,
+      officeLocations: [
+        { city: 'San Francisco', country: 'US', locations: 1 },
+        { city: 'New York', country: 'US', locations: 1 },
+        { city: 'London', country: 'UK', locations: 1 }
+      ],
+
+      // Founded
+      foundedYear: 2018,
+
+      // Contact
+      phoneNumber: '+1-555-000-0000',
+
+      // Social Profiles
+      linkedinUrl: 'https://linkedin.com/company/mockcompany',
+      twitterHandle: '@mockcompany',
+      facebookUrl: null,
+      crunchbaseUrl: null,
+
+      // Public Company Data
+      stockSymbol: null,
+      stockExchange: null,
+      ipoDate: null,
+      ipoStatus: null,
+      ipoValuation: null,
+
+      // Corporate Structure
+      parentCompany: null,
+      subsidiaries: [],
+      competitors: ['Competitor A', 'Competitor B'],
+
+      // Technology
+      technologies: ['React', 'Node.js', 'PostgreSQL', 'AWS', 'Docker'],
+      techByCategory: {
+        analytics: ['Google Analytics'],
+        crm: ['Salesforce'],
+        marketingAutomation: ['HubSpot'],
+        cloudProviders: ['AWS'],
+        databases: ['PostgreSQL'],
+        frameworks: ['React', 'Express']
+      },
+
+      // Funding
+      fundingStage: 'Series B',
+      totalFundingAmount: 45000000,
+      lastFundingAmount: 30000000,
+      lastFundingDate: '2023-06-15',
+      fundingRounds: [
+        { stage: 'Seed', amount: 5000000, date: '2019-01-15' },
+        { stage: 'Series A', amount: 10000000, date: '2021-03-20' },
+        { stage: 'Series B', amount: 30000000, date: '2023-06-15' }
+      ],
+      investors: ['Mock Ventures', 'Test Capital'],
+      leadInvestors: ['Mock Ventures'],
+      valuation: 150000000,
+
+      // Signals
+      signals: ['funding', 'hiring', 'expansion'],
+
+      // Metadata
+      confidenceScore: 0.92,
+      dataSource: 'explorium-mock',
+      mockMode: true,
+      enrichedAt: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Generate mock discovered companies for E2E testing
+   * @private
+   */
+  _getMockDiscoveredCompanies(criteria) {
+    const limit = criteria.limit || 5;
+    const companies = [];
+
+    for (let i = 1; i <= Math.min(limit, 10); i++) {
+      companies.push({
+        business_id: `mock-business-${i}`,
+        domain: `mockcompany${i}.com`,
+        name: `Mock Company ${i}`,
+        industry: criteria.industry || 'Technology',
+        employee_count: 50 + (i * 25),
+        revenue_range: '$10M-$50M',
+        location: 'San Francisco, CA',
+        founded_year: 2015 + i,
+        linkedin_url: `https://linkedin.com/company/mockcompany${i}`,
+        technologies: ['React', 'Node.js', 'AWS'],
+        funding_stage: i % 2 === 0 ? 'Series A' : 'Series B',
+        mockMode: true
+      });
+    }
+
+    return {
+      success: true,
+      companies,
+      totalFound: companies.length,
+      hasMore: false,
+      mockMode: true
+    };
+  }
+
+  /**
+   * Generate mock found contacts for E2E testing
+   * @private
+   */
+  _getMockFoundContacts(search) {
+    const limit = search.limit || 5;
+    const contacts = [];
+
+    const mockNames = [
+      { first: 'Alice', last: 'Johnson' },
+      { first: 'Bob', last: 'Smith' },
+      { first: 'Carol', last: 'Williams' },
+      { first: 'David', last: 'Brown' },
+      { first: 'Eva', last: 'Davis' },
+      { first: 'Frank', last: 'Miller' },
+      { first: 'Grace', last: 'Wilson' },
+      { first: 'Henry', last: 'Moore' },
+      { first: 'Ivy', last: 'Taylor' },
+      { first: 'Jack', last: 'Anderson' }
+    ];
+
+    const mockTitles = [
+      'VP of Engineering',
+      'Senior Product Manager',
+      'Director of Sales',
+      'CTO',
+      'Head of Marketing',
+      'Software Engineer',
+      'Data Scientist',
+      'UX Designer',
+      'DevOps Lead',
+      'Account Executive'
+    ];
+
+    for (let i = 0; i < Math.min(limit, 10); i++) {
+      const name = mockNames[i % mockNames.length];
+      const title = search.titles?.[0] || mockTitles[i % mockTitles.length];
+
+      contacts.push({
+        prospect_id: `mock-prospect-${i + 1}`,
+        email: `${name.first.toLowerCase()}.${name.last.toLowerCase()}@${search.companyDomain || 'mockcompany.com'}`,
+        first_name: name.first,
+        last_name: name.last,
+        full_name: `${name.first} ${name.last}`,
+        job_title: title,
+        job_department: search.departments?.[0] || 'Engineering',
+        job_seniority_level: search.seniority?.[0] || 'Director',
+        linkedin_url: `https://linkedin.com/in/${name.first.toLowerCase()}${name.last.toLowerCase()}`,
+        company_name: 'Mock Company',
+        company_domain: search.companyDomain || 'mockcompany.com',
+        location: 'San Francisco, CA',
+        mockMode: true
+      });
+    }
+
+    return {
+      success: true,
+      contacts,
+      totalFound: contacts.length,
+      hasMore: false,
+      mockMode: true
+    };
   }
 }
 

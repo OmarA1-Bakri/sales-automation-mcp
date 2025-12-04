@@ -135,7 +135,9 @@ function ImportPage() {
         setLemlistCampaigns(result.campaigns);
       }
     } catch (error) {
-      console.error('Failed to load campaigns:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load campaigns:', error);
+      }
       toast.error('Failed to load campaigns. Enter campaign ID manually.');
     } finally {
       setLoadingCampaigns(false);

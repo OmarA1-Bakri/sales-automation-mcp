@@ -113,7 +113,9 @@ function CampaignsPage() {
 
       loadCampaigns(); // Refresh to show updated stats
     } catch (error) {
-      console.error('Enrollment check failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Enrollment check failed:', error);
+      }
       toast.error(`Enrollment check failed: ${error.message}`, { id: 'enroll' });
     } finally {
       setEnrolling(false);
@@ -164,7 +166,9 @@ function CampaignsPage() {
       // Refresh campaigns to update any changed stats
       loadCampaigns();
     } catch (error) {
-      console.error('Failed to check replies:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to check replies:', error);
+      }
       toast.error(`Failed to check replies: ${error.message}`, { id: 'replies' });
     }
   };

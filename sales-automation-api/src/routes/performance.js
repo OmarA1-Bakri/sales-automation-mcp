@@ -32,7 +32,8 @@ const performanceRateLimit = rateLimit({
     statusCode: 429
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: () => process.env.E2E_MODE === 'true'  // Bypass for E2E tests
 });
 
 // ============================================================================

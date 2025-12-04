@@ -57,7 +57,8 @@ const campaignRateLimit = rateLimit({
     statusCode: 429
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: () => process.env.E2E_MODE === 'true'  // Bypass for E2E tests
 });
 
 /**
@@ -74,7 +75,8 @@ const analyticsRateLimit = rateLimit({
     statusCode: 429
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: () => process.env.E2E_MODE === 'true'  // Bypass for E2E tests
 });
 
 // ============================================================================
@@ -97,7 +99,7 @@ const webhookRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test'  // Skip rate limiting in tests
+  skip: () => process.env.NODE_ENV === 'test' || process.env.E2E_MODE === 'true'  // Skip rate limiting in tests
 });
 
 /**

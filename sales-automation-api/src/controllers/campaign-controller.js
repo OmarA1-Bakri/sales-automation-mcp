@@ -286,7 +286,8 @@ async function listInstances(req, res) {
       {
         model: CampaignTemplate,
         as: 'template',
-        attributes: ['id', 'name', 'type', 'path_type']
+        attributes: ['id', 'name', 'type', 'path_type'],
+        required: false  // Use LEFT JOIN - allow instances without templates
       }
     ]
   });

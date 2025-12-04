@@ -9,19 +9,19 @@
           "action": "navigate",
           "description": "Open Dashboard for first time",
           "success": true,
-          "duration": 66267
+          "duration": 66678
         },
         {
           "action": "wait",
           "description": "Let page fully load",
           "success": true,
-          "duration": 2002
+          "duration": 2001
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 275
+          "duration": 228
         },
         {
           "action": "search",
@@ -48,7 +48,7 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-5/screenshots/first-time-dashboard-2025-12-03T10-55-47-634Z.png"
+        "/app/test-results/persona-5/screenshots/first-time-dashboard-2025-12-04T02-51-44-538Z.png"
       ],
       "success": true,
       "error": null
@@ -60,17 +60,41 @@
           "action": "click",
           "description": "Click Dashboard",
           "success": true,
+          "duration": 1302
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 213
+        },
+        {
+          "action": "click",
+          "description": "Click AI Assistant",
+          "success": true,
           "duration": 1303
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 303
+          "duration": 197
         },
         {
           "action": "click",
-          "description": "Click AI Assistant",
+          "description": "Click Campaigns",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 216
+        },
+        {
+          "action": "click",
+          "description": "Click Contacts",
           "success": true,
           "duration": 1302
         },
@@ -78,31 +102,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 277
-        },
-        {
-          "action": "click",
-          "description": "Click Campaigns",
-          "success": true,
-          "duration": 3207
-        },
-        {
-          "action": "screenshot",
-          "description": "screenshot",
-          "success": true,
-          "duration": 291
-        },
-        {
-          "action": "click",
-          "description": "Click Contacts",
-          "success": true,
-          "duration": 1303
-        },
-        {
-          "action": "screenshot",
-          "description": "screenshot",
-          "success": true,
-          "duration": 272
+          "duration": 195
         },
         {
           "action": "click",
@@ -114,23 +114,11 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 277
+          "duration": 193
         },
         {
           "action": "click",
           "description": "Click ICP Profiles",
-          "success": true,
-          "duration": 1303
-        },
-        {
-          "action": "screenshot",
-          "description": "screenshot",
-          "success": true,
-          "duration": 264
-        },
-        {
-          "action": "click",
-          "description": "Click Settings",
           "success": true,
           "duration": 1302
         },
@@ -138,7 +126,19 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 315
+          "duration": 192
+        },
+        {
+          "action": "click",
+          "description": "Click Settings",
+          "success": true,
+          "duration": 1303
+        },
+        {
+          "action": "screenshot",
+          "description": "screenshot",
+          "success": true,
+          "duration": 201
         }
       ],
       "assertions": [
@@ -152,13 +152,13 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-5/screenshots/explore-dashboard-2025-12-03T10-56-00-968Z.png",
-        "/app/test-results/persona-5/screenshots/explore-ai-assistant-2025-12-03T10-56-01-250Z.png",
-        "/app/test-results/persona-5/screenshots/explore-campaigns-2025-12-03T10-56-01-552Z.png",
-        "/app/test-results/persona-5/screenshots/explore-contacts-2025-12-03T10-56-01-792Z.png",
-        "/app/test-results/persona-5/screenshots/explore-import-2025-12-03T10-56-02-039Z.png",
-        "/app/test-results/persona-5/screenshots/explore-icp-2025-12-03T10-56-02-275Z.png",
-        "/app/test-results/persona-5/screenshots/explore-settings-2025-12-03T10-56-02-563Z.png"
+        "/app/test-results/persona-5/screenshots/explore-dashboard-2025-12-04T02-51-55-263Z.png",
+        "/app/test-results/persona-5/screenshots/explore-ai-assistant-2025-12-04T02-51-55-467Z.png",
+        "/app/test-results/persona-5/screenshots/explore-campaigns-2025-12-04T02-51-55-668Z.png",
+        "/app/test-results/persona-5/screenshots/explore-contacts-2025-12-04T02-51-55-858Z.png",
+        "/app/test-results/persona-5/screenshots/explore-import-2025-12-04T02-51-56-069Z.png",
+        "/app/test-results/persona-5/screenshots/explore-icp-2025-12-04T02-51-56-269Z.png",
+        "/app/test-results/persona-5/screenshots/explore-settings-2025-12-04T02-51-56-482Z.png"
       ],
       "success": true,
       "error": null
@@ -170,31 +170,31 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66360
+          "duration": 65335
         },
         {
           "action": "type",
           "description": "Ask for onboarding help",
           "success": true,
-          "duration": 4384
+          "duration": 4354
         },
         {
           "action": "click",
           "description": "Send message",
           "success": true,
-          "duration": 10317
+          "duration": 11702
         },
         {
           "action": "wait",
           "description": "Wait for AI response",
           "success": true,
-          "duration": 2001
+          "duration": 2003
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 115
+          "duration": 65
         }
       ],
       "assertions": [
@@ -205,14 +205,14 @@
         },
         {
           "type": "noErrors",
-          "passed": false
+          "passed": true
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-5/screenshots/ai-help-request-2025-12-03T10-57-26-024Z.png",
-        "/app/test-results/persona-5/screenshots/ai-help-response-2025-12-03T10-57-26-129Z.png"
+        "/app/test-results/persona-5/screenshots/ai-help-request-2025-12-04T02-53-20-152Z.png",
+        "/app/test-results/persona-5/screenshots/ai-help-response-2025-12-04T02-53-20-214Z.png"
       ],
-      "success": false,
+      "success": true,
       "error": null
     },
     {
@@ -222,19 +222,19 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 68197
+          "duration": 65242
         },
         {
           "action": "wait",
           "description": "Let page fully load",
           "success": true,
-          "duration": 1000
+          "duration": 1001
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 96
+          "duration": 72
         }
       ],
       "assertions": [
@@ -259,37 +259,37 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66258
+          "duration": 65335
         },
         {
           "action": "type",
           "description": "Search for non-existent contact",
           "success": true,
-          "duration": 1042
+          "duration": 1030
         },
         {
           "action": "wait",
           "description": "wait",
           "success": true,
-          "duration": 1501
+          "duration": 1502
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 97
+          "duration": 63
         },
         {
           "action": "clear",
           "description": "clear",
           "success": true,
-          "duration": 15
+          "duration": 13
         },
         {
           "action": "click",
           "description": "click",
           "success": true,
-          "duration": 2304
+          "duration": 2303
         }
       ],
       "assertions": [
@@ -310,13 +310,13 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66326
+          "duration": 65297
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 115
+          "duration": 85
         },
         {
           "action": "search",
@@ -348,7 +348,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66290
+          "duration": 65296
         },
         {
           "action": "wait",
@@ -360,13 +360,13 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 114
+          "duration": 87
         },
         {
           "action": "search",
           "description": "Find profile cards or create button",
           "success": true,
-          "duration": 9,
+          "duration": 7,
           "found": "[data-testid='icp-profile-card']"
         }
       ],
@@ -397,7 +397,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66324
+          "duration": 65319
         },
         {
           "action": "wait",
@@ -409,13 +409,13 @@
           "action": "scroll",
           "description": "scroll",
           "success": true,
-          "duration": 506
+          "duration": 507
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 307
+          "duration": 370
         }
       ],
       "assertions": [
@@ -440,19 +440,19 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66236
+          "duration": 66705
         },
         {
           "action": "click",
           "description": "Go to Campaigns",
           "success": true,
-          "duration": 2304
+          "duration": 2303
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 286
+          "duration": 295
         },
         {
           "action": "click",
@@ -464,19 +464,19 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 283
+          "duration": 285
         },
         {
           "action": "click",
           "description": "Return to Dashboard",
           "success": true,
-          "duration": 4183
+          "duration": 2304
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 288
+          "duration": 285
         }
       ],
       "assertions": [
@@ -501,19 +501,19 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 67161
+          "duration": 65212
         },
         {
           "action": "wait",
           "description": "Let settings load",
           "success": true,
-          "duration": 1501
+          "duration": 1502
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 77
+          "duration": 85
         },
         {
           "action": "search",
@@ -526,7 +526,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 74
+          "duration": 81
         }
       ],
       "assertions": [
@@ -550,7 +550,7 @@
       "error": null
     }
   ],
-  "passedFlows": 9,
-  "failedFlows": 1,
-  "totalDuration": 659982
+  "passedFlows": 10,
+  "failedFlows": 0,
+  "totalDuration": 644589
 }

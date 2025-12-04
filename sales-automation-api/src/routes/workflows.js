@@ -45,7 +45,7 @@ const executeRateLimit = rateLimit({
   legacyHeaders: false,
   // Uses default IP-based key generation (handles IPv6 correctly)
   // Authentication middleware already provides user context
-  skip: () => process.env.NODE_ENV === 'test'
+  skip: () => process.env.NODE_ENV === 'test' || process.env.E2E_MODE === 'true'  // Bypass for E2E tests
 });
 
 /**
@@ -62,7 +62,8 @@ const generalRateLimit = rateLimit({
     statusCode: 429
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: () => process.env.E2E_MODE === 'true'  // Bypass for E2E tests
 });
 
 // ============================================================================

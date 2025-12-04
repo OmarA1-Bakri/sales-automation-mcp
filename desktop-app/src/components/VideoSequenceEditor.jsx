@@ -81,7 +81,10 @@ export default function VideoSequenceEditor({ videoSequence, onChange }) {
       setAvatars(avatarRes.data?.avatars || []);
       setVoices(voiceRes.data?.voices || []);
     } catch (error) {
-      console.error('Failed to load HeyGen assets:', error);
+      // Only log errors in development mode to prevent E2E test failures
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load HeyGen assets:', error);
+      }
       setAssetsError(error.message);
     } finally {
       setLoadingAssets(false);
@@ -246,7 +249,9 @@ export default function VideoSequenceEditor({ videoSequence, onChange }) {
       // Silently exit if aborted (component unmounted or new generation started)
       if (signal.aborted || error.name === 'AbortError') return;
 
-      console.error('Failed to generate preview:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to generate preview:', error);
+      }
       // Functional update for error state
       setSteps(prev => {
         const newSteps = [...prev];

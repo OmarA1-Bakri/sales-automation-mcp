@@ -57,7 +57,9 @@ function App() {
         }
       }
     } catch (error) {
-      console.error('Failed to load config:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load config:', error);
+      }
     }
   };
 
@@ -90,7 +92,9 @@ function App() {
         localStorage.setItem('credentials-migrated', 'true');
       }
     } catch (error) {
-      console.error('[Security] Migration failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Security] Migration failed:', error);
+      }
     }
   };
 

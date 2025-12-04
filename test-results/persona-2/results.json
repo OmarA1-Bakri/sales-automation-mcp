@@ -9,7 +9,7 @@
           "action": "navigate",
           "description": "Open Dashboard",
           "success": true,
-          "duration": 66268
+          "duration": 66675
         },
         {
           "action": "wait",
@@ -21,7 +21,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 290
+          "duration": 217
         }
       ],
       "assertions": [
@@ -41,8 +41,8 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-2/screenshots/dashboard-metrics-2025-12-03T10-55-47-659Z.png",
-        "/app/test-results/persona-2/screenshots/dashboard-activity-2025-12-03T10-55-48-013Z.png"
+        "/app/test-results/persona-2/screenshots/dashboard-metrics-2025-12-04T02-51-44-539Z.png",
+        "/app/test-results/persona-2/screenshots/dashboard-activity-2025-12-04T02-51-44-738Z.png"
       ],
       "success": true,
       "error": null
@@ -54,25 +54,25 @@
           "action": "navigate",
           "description": "Navigate to AI Chat",
           "success": true,
-          "duration": 66373
+          "duration": 65317
         },
         {
           "action": "wait",
           "description": "Wait for chat to initialize",
           "success": true,
-          "duration": 2884
+          "duration": 1001
         },
         {
           "action": "type",
           "description": "Enter discovery prompt",
           "success": true,
-          "duration": 3750
+          "duration": 3719
         },
         {
           "action": "click",
           "description": "Send message and wait for AI response",
           "success": true,
-          "duration": 5321
+          "duration": 5312
         },
         {
           "action": "wait",
@@ -84,7 +84,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 106
+          "duration": 73
         }
       ],
       "assertions": [
@@ -95,14 +95,14 @@
         },
         {
           "type": "noErrors",
-          "passed": false
+          "passed": true
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-2/screenshots/ai-chat-discovery-request-2025-12-03T10-57-08-742Z.png",
-        "/app/test-results/persona-2/screenshots/ai-chat-discovery-response-2025-12-03T10-57-08-849Z.png"
+        "/app/test-results/persona-2/screenshots/ai-chat-discovery-request-2025-12-04T02-53-02-363Z.png",
+        "/app/test-results/persona-2/screenshots/ai-chat-discovery-response-2025-12-04T02-53-02-429Z.png"
       ],
-      "success": false,
+      "success": true,
       "error": null
     },
     {
@@ -112,7 +112,7 @@
           "action": "navigate",
           "description": "Navigate directly to AI Assistant",
           "success": true,
-          "duration": 66292
+          "duration": 65242
         },
         {
           "action": "wait",
@@ -124,7 +124,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 98
+          "duration": 73
         }
       ],
       "assertions": [
@@ -149,7 +149,7 @@
           "action": "navigate",
           "description": "Navigate to Contacts",
           "success": true,
-          "duration": 66325
+          "duration": 65297
         },
         {
           "action": "wait",
@@ -161,7 +161,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 104
+          "duration": 71
         }
       ],
       "assertions": [
@@ -181,8 +181,8 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-2/screenshots/contacts-list-2025-12-03T10-59-24-791Z.png",
-        "/app/test-results/persona-2/screenshots/contacts-filtered-2025-12-03T10-59-24-889Z.png"
+        "/app/test-results/persona-2/screenshots/contacts-list-2025-12-04T02-55-16-198Z.png",
+        "/app/test-results/persona-2/screenshots/contacts-filtered-2025-12-04T02-55-16-266Z.png"
       ],
       "success": true,
       "error": null
@@ -194,7 +194,7 @@
           "action": "navigate",
           "description": "Navigate to Contacts page",
           "success": true,
-          "duration": 66265
+          "duration": 66677
         },
         {
           "action": "wait",
@@ -206,7 +206,7 @@
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 98
+          "duration": 74
         }
       ],
       "assertions": [
@@ -226,7 +226,7 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-2/screenshots/contact-details-2025-12-03T11-00-32-865Z.png"
+        "/app/test-results/persona-2/screenshots/contact-details-2025-12-04T02-56-24-595Z.png"
       ],
       "success": true,
       "error": null
@@ -238,7 +238,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66311
+          "duration": 65267
         },
         {
           "action": "wait",
@@ -250,13 +250,13 @@
           "action": "click",
           "description": "Click pipeline stats quick action",
           "success": true,
-          "duration": 7183
+          "duration": 5306
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 106
+          "duration": 79
         }
       ],
       "assertions": [
@@ -271,7 +271,7 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-2/screenshots/ai-pipeline-stats-2025-12-03T11-01-47-573Z.png"
+        "/app/test-results/persona-2/screenshots/ai-pipeline-stats-2025-12-04T02-57-36-333Z.png"
       ],
       "success": true,
       "error": null
@@ -283,7 +283,7 @@
           "action": "navigate",
           "description": "navigate",
           "success": true,
-          "duration": 66321
+          "duration": 65317
         },
         {
           "action": "wait",
@@ -295,13 +295,13 @@
           "action": "click",
           "description": "Click enrich quick action",
           "success": true,
-          "duration": 5304
+          "duration": 5307
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 109
+          "duration": 82
         }
       ],
       "assertions": [
@@ -326,19 +326,19 @@
           "action": "navigate",
           "description": "Navigate to Dashboard",
           "success": true,
-          "duration": 66268
+          "duration": 65292
         },
         {
           "action": "wait",
           "description": "Wait for dashboard to load",
           "success": true,
-          "duration": 2000
+          "duration": 2001
         },
         {
           "action": "screenshot",
           "description": "screenshot",
           "success": true,
-          "duration": 186
+          "duration": 218
         }
       ],
       "assertions": [
@@ -358,7 +358,7 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-2/screenshots/activity-feed-2025-12-03T11-04-08-880Z.png"
+        "/app/test-results/persona-2/screenshots/activity-feed-2025-12-04T02-59-55-644Z.png"
       ],
       "success": true,
       "error": null
@@ -370,7 +370,7 @@
           "action": "navigate",
           "description": "Navigate to Contacts",
           "success": true,
-          "duration": 66287
+          "duration": 65290
         },
         {
           "action": "wait",
@@ -397,13 +397,13 @@
         }
       ],
       "screenshots": [
-        "/app/test-results/persona-2/screenshots/contacts-multi-select-2025-12-03T11-05-16-931Z.png"
+        "/app/test-results/persona-2/screenshots/contacts-multi-select-2025-12-04T03-01-02-706Z.png"
       ],
       "success": true,
       "error": null
     }
   ],
-  "passedFlows": 8,
-  "failedFlows": 1,
-  "totalDuration": 643508
+  "passedFlows": 9,
+  "failedFlows": 0,
+  "totalDuration": 630173
 }

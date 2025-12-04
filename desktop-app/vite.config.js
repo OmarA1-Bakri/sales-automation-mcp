@@ -17,5 +17,14 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    // Strip console.error/warn in production builds
+    // This removes development-only debugging statements from production
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: ['error', 'warn', 'debug'],
+        drop_debugger: true,
+      },
+    },
   },
 });

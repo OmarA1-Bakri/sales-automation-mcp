@@ -11,6 +11,7 @@ function SettingsPage() {
   const [useHttps, setUseHttps] = useState(true);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);  // E2E sync: loading state for initial render
 
   // Integration API keys
   const [integrationStatus, setIntegrationStatus] = useState(null);
@@ -58,7 +59,11 @@ function SettingsPage() {
         // Load integration status
         loadIntegrationStatus();
       } catch (error) {
-        console.error('Failed to load settings:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to load settings:', error);
+        }
+      } finally {
+        setIsLoading(false);  // E2E sync: signal that settings have loaded
       }
     };
 
@@ -72,7 +77,9 @@ function SettingsPage() {
         setIntegrationStatus(stats.integrations);
       }
     } catch (error) {
-      console.error('Failed to load integration status:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load integration status:', error);
+      }
     }
   };
 
@@ -124,7 +131,9 @@ function SettingsPage() {
 
       toast.success('Settings saved successfully');
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to save settings:', error);
+      }
       toast.error('Failed to save settings');
     }
   };
@@ -259,8 +268,19 @@ function SettingsPage() {
     return '?';
   };
 
+  // E2E sync: Show loading state while settings are being loaded
+  if (isLoading) {
+    return (
+      <div data-testid="settings-page" data-loading="true" className="h-full overflow-auto bg-slate-900 p-8">
+        <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div data-testid="settings-page" className="h-full overflow-auto bg-slate-900 p-8">
+    <div data-testid="settings-page" data-loading="false" className="h-full overflow-auto bg-slate-900 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">

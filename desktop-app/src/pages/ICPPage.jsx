@@ -292,7 +292,7 @@ function ICPPage() {
   }
 
   return (
-    <div className="h-full flex bg-slate-900">
+    <div data-testid="icp-page" className="h-full flex bg-slate-900">
       {/* Profile List Sidebar */}
       <div className="w-80 border-r border-slate-700 overflow-y-auto">
         <div className="p-6 border-b border-slate-700">

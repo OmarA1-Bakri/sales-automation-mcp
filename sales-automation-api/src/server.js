@@ -523,7 +523,7 @@ class SalesAutomationAPIServer {
       },
       standardHeaders: true,
       legacyHeaders: false,
-      skip: (req) => req.path === '/health',
+      skip: (req) => req.path === '/health' || process.env.E2E_MODE === 'true',
       handler: (req, res) => {
         const rateLimitLogger = createLogger('RateLimit');
         rateLimitLogger.warn('Rate limit exceeded', {
@@ -1200,7 +1200,7 @@ class SalesAutomationAPIServer {
     });
 
     // YOLO status
-    this.app.get('/api/yolo/status', async (req, res) => {
+    this.app.get('/api/yolo/status', authenticateDb, async (req, res) => {
       try {
         const status = await this.getYoloStatus();
         res.json(status);
@@ -1536,7 +1536,7 @@ class SalesAutomationAPIServer {
     });
 
     // List all jobs
-    this.app.get('/api/jobs', async (req, res) => {
+    this.app.get('/api/jobs', authenticateDb, async (req, res) => {
       try {
         // Use query params directly with defaults
         const status = req.query.status || undefined;
@@ -1888,6 +1888,7 @@ class SalesAutomationAPIServer {
       },
       standardHeaders: true,
       legacyHeaders: false,
+      skip: () => process.env.E2E_MODE === 'true',  // Bypass for E2E tests
       handler: (req, res) => {
         logger.warn(`[Chat] Rate limit exceeded from ${req.ip}`);
         res.status(429).json({
@@ -1917,6 +1918,19 @@ class SalesAutomationAPIServer {
           return res.status(400).json({
             success: false,
             error: 'message is required and must be a non-empty string'
+          });
+        }
+
+        // E2E Mock Mode: Return mock AI response without calling Anthropic API
+        if (process.env.E2E_MOCK_EXTERNAL_APIS === 'true') {
+          const mockConversationId = conversationId || `conv_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+          logger.info('[Chat] E2E Mock Mode: Returning mock response');
+          return res.json({
+            success: true,
+            response: `[E2E Mock] I understand you said: "${message.slice(0, 50)}...". I'm a mock AI assistant for testing. I can help with ICP profiles, lead discovery, campaigns, and sales automation tasks.`,
+            conversationId: mockConversationId,
+            toolCalls: [],
+            mockMode: true
           });
         }
 

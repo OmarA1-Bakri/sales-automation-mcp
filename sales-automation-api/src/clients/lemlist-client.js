@@ -18,6 +18,21 @@ import { createLogger } from '../utils/logger.js';
 
 export class LemlistClient {
   constructor(config = {}) {
+    // E2E Mock Mode: When enabled, return mock data instead of calling real APIs
+    // This allows E2E tests to run without valid external API credentials
+    this.mockMode = process.env.E2E_MOCK_EXTERNAL_APIS === 'true';
+
+    // SECURITY FIX: Phase 2, T2.4 - Use secure logger with PII redaction
+    this.logger = createLogger('LemlistClient');
+
+    if (this.mockMode) {
+      this.logger.info('[LemlistClient] Running in E2E mock mode - returning mock data');
+      this.apiKey = 'mock-lemlist-key';
+      this.client = null; // No real client needed in mock mode
+      this.defaultCampaignId = config.defaultCampaignId || 'mock-campaign-1';
+      return; // Skip real API setup in mock mode
+    }
+
     const apiKey = config.apiKey || process.env.LEMLIST_API_KEY;
 
     if (!apiKey) {
@@ -29,9 +44,6 @@ export class LemlistClient {
 
     this.apiKey = apiKey;
     this.defaultCampaignId = config.defaultCampaignId || null;
-
-    // SECURITY FIX: Phase 2, T2.4 - Use secure logger with PII redaction
-    this.logger = createLogger('LemlistClient');
   }
 
   // ============================================================================
@@ -44,6 +56,11 @@ export class LemlistClient {
    * @returns {Promise<Array>} Array of campaigns
    */
   async getCampaigns(options = {}) {
+    // E2E Mock Mode: Return mock campaigns
+    if (this.mockMode) {
+      return this._getMockCampaigns();
+    }
+
     try {
       const campaigns = await this.client.getCampaigns(options);
       return {
@@ -62,6 +79,11 @@ export class LemlistClient {
    * @returns {Promise<Object>} Campaign details
    */
   async getCampaign(campaignId) {
+    // E2E Mock Mode: Return mock campaign
+    if (this.mockMode) {
+      return this._getMockCampaign(campaignId);
+    }
+
     try {
       const campaign = await this.client.getCampaign(campaignId);
       return {
@@ -79,6 +101,11 @@ export class LemlistClient {
    * @returns {Promise<Object>} Created campaign
    */
   async createCampaign(campaignData) {
+    // E2E Mock Mode: Return mock created campaign
+    if (this.mockMode) {
+      return this._getMockCreatedCampaign(campaignData);
+    }
+
     try {
       const { name, emails, settings = {} } = campaignData;
 
@@ -112,6 +139,11 @@ export class LemlistClient {
    * @returns {Promise<Object>} Campaign stats
    */
   async getCampaignStats(campaignId) {
+    // E2E Mock Mode: Return mock campaign stats
+    if (this.mockMode) {
+      return this._getMockCampaignStats(campaignId);
+    }
+
     try {
       const stats = await this.client.getCampaignStats(campaignId);
       return {
@@ -133,6 +165,11 @@ export class LemlistClient {
    * @returns {Promise<Object>} Created lead
    */
   async addLead(leadData) {
+    // E2E Mock Mode: Return mock added lead
+    if (this.mockMode) {
+      return this._getMockAddedLead(leadData);
+    }
+
     try {
       const { campaignId, email, firstName, lastName, companyName, customFields } = leadData;
 
@@ -188,6 +225,11 @@ export class LemlistClient {
    * @returns {Promise<Array>} Array of leads
    */
   async getLeads(options = {}) {
+    // E2E Mock Mode: Return mock leads
+    if (this.mockMode) {
+      return this._getMockLeads(options);
+    }
+
     try {
       const leads = await this.client.getLeads(options);
       return {
@@ -585,6 +627,22 @@ export class LemlistClient {
    * @returns {Promise<Object>} Health status
    */
   async healthCheck() {
+    // E2E Mock Mode: Return healthy status
+    if (this.mockMode) {
+      return {
+        success: true,
+        status: 'healthy',
+        message: 'Lemlist API running in E2E mock mode',
+        mockMode: true,
+        features: {
+          campaigns: true,
+          leads: true,
+          enrichment: true,
+          analytics: true
+        }
+      };
+    }
+
     try {
       const result = await this.client.healthCheck();
       return {
@@ -639,6 +697,221 @@ export class LemlistClient {
     this.logger.error(`${method} failed`, errorResponse);
 
     return errorResponse;
+  }
+
+  // ============================================================================
+  // E2E MOCK MODE RESPONSE METHODS
+  // ============================================================================
+
+  /**
+   * Generate mock campaigns for E2E testing
+   * @private
+   */
+  _getMockCampaigns() {
+    const campaigns = [
+      {
+        _id: 'mock-campaign-1',
+        name: 'E2E Test Campaign - Outreach',
+        status: 'active',
+        sendingSchedule: { days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] },
+        createdAt: '2024-01-15T10:00:00.000Z',
+        updatedAt: new Date().toISOString(),
+        leadsCount: 50,
+        emailsSent: 120,
+        stats: { opens: 45, clicks: 12, replies: 8 }
+      },
+      {
+        _id: 'mock-campaign-2',
+        name: 'E2E Test Campaign - Follow-up',
+        status: 'paused',
+        sendingSchedule: { days: ['monday', 'wednesday', 'friday'] },
+        createdAt: '2024-02-01T14:30:00.000Z',
+        updatedAt: new Date().toISOString(),
+        leadsCount: 25,
+        emailsSent: 50,
+        stats: { opens: 20, clicks: 5, replies: 3 }
+      },
+      {
+        _id: 'mock-campaign-3',
+        name: 'E2E Test Campaign - New Leads',
+        status: 'draft',
+        sendingSchedule: { days: ['tuesday', 'thursday'] },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        leadsCount: 0,
+        emailsSent: 0,
+        stats: { opens: 0, clicks: 0, replies: 0 }
+      }
+    ];
+
+    return {
+      success: true,
+      campaigns,
+      count: campaigns.length,
+      mockMode: true
+    };
+  }
+
+  /**
+   * Generate mock campaign for E2E testing
+   * @private
+   */
+  _getMockCampaign(campaignId) {
+    return {
+      success: true,
+      campaign: {
+        _id: campaignId || 'mock-campaign-1',
+        name: 'E2E Test Campaign',
+        status: 'active',
+        sendingSchedule: {
+          days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+          timezone: 'America/New_York',
+          fromHour: 9,
+          toHour: 17
+        },
+        emails: [
+          { subject: 'Introduction - {{firstName}}', body: 'Hi {{firstName}}, ...' },
+          { subject: 'Quick follow-up', body: 'Just wanted to follow up...' }
+        ],
+        createdAt: '2024-01-15T10:00:00.000Z',
+        updatedAt: new Date().toISOString(),
+        leadsCount: 50,
+        emailsSent: 120,
+        mockMode: true
+      },
+      mockMode: true
+    };
+  }
+
+  /**
+   * Generate mock created campaign for E2E testing
+   * @private
+   */
+  _getMockCreatedCampaign(campaignData) {
+    const campaignId = `mock-campaign-${Date.now()}`;
+    return {
+      success: true,
+      campaign: {
+        _id: campaignId,
+        name: campaignData.name || 'New E2E Campaign',
+        status: 'draft',
+        emails: campaignData.emails || [],
+        settings: campaignData.settings || {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        leadsCount: 0,
+        mockMode: true
+      },
+      campaignId,
+      mockMode: true
+    };
+  }
+
+  /**
+   * Generate mock campaign stats for E2E testing
+   * @private
+   */
+  _getMockCampaignStats(campaignId) {
+    return {
+      success: true,
+      campaignId: campaignId || 'mock-campaign-1',
+      total: {
+        sent: 120,
+        delivered: 115,
+        opened: 45,
+        clicked: 12,
+        replied: 8,
+        bounced: 5,
+        unsubscribed: 2
+      },
+      rates: {
+        deliveryRate: 95.8,
+        openRate: 39.1,
+        clickRate: 10.4,
+        replyRate: 7.0,
+        bounceRate: 4.2
+      },
+      timeline: [
+        { date: '2024-01-15', sent: 20, opened: 8, clicked: 2 },
+        { date: '2024-01-16', sent: 25, opened: 10, clicked: 3 },
+        { date: '2024-01-17', sent: 30, opened: 12, clicked: 4 }
+      ],
+      mockMode: true
+    };
+  }
+
+  /**
+   * Generate mock added lead for E2E testing
+   * @private
+   */
+  _getMockAddedLead(leadData) {
+    const leadId = `mock-lead-${Date.now()}`;
+    return {
+      success: true,
+      lead: {
+        _id: leadId,
+        email: leadData.email || 'mock.lead@example.com',
+        firstName: leadData.firstName || 'Mock',
+        lastName: leadData.lastName || 'Lead',
+        companyName: leadData.companyName || 'Mock Company',
+        campaignId: leadData.campaignId || 'mock-campaign-1',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        mockMode: true
+      },
+      leadId,
+      mockMode: true
+    };
+  }
+
+  /**
+   * Generate mock leads for E2E testing
+   * @private
+   */
+  _getMockLeads(options = {}) {
+    const mockLeads = [
+      {
+        _id: 'mock-lead-1',
+        email: 'alice.johnson@mockcompany.com',
+        firstName: 'Alice',
+        lastName: 'Johnson',
+        companyName: 'Mock Company',
+        status: 'active',
+        emailsSent: 2,
+        emailsOpened: 1,
+        lastActivity: new Date().toISOString()
+      },
+      {
+        _id: 'mock-lead-2',
+        email: 'bob.smith@techcorp.com',
+        firstName: 'Bob',
+        lastName: 'Smith',
+        companyName: 'Tech Corp',
+        status: 'active',
+        emailsSent: 3,
+        emailsOpened: 2,
+        lastActivity: new Date().toISOString()
+      },
+      {
+        _id: 'mock-lead-3',
+        email: 'carol.williams@startup.io',
+        firstName: 'Carol',
+        lastName: 'Williams',
+        companyName: 'Startup IO',
+        status: 'replied',
+        emailsSent: 1,
+        emailsOpened: 1,
+        replied: true,
+        lastActivity: new Date().toISOString()
+      }
+    ];
+
+    return {
+      success: true,
+      leads: mockLeads,
+      count: mockLeads.length,
+      mockMode: true
+    };
   }
 }
 

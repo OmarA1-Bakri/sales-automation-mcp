@@ -21,6 +21,18 @@ export class HeyGenVideoProvider extends VideoProvider {
   constructor() {
     super();
 
+    // E2E Mock Mode: When enabled, return mock data instead of calling real APIs
+    // This allows E2E tests to run without valid external API credentials
+    this.mockMode = process.env.E2E_MOCK_EXTERNAL_APIS === 'true';
+
+    if (this.mockMode) {
+      logger.info('[HeyGenVideoProvider] Running in E2E mock mode - returning mock data');
+      this.apiKey = 'mock-heygen-key';
+      this.webhookSecret = 'mock-webhook-secret';
+      this.apiUrl = 'https://api.heygen.com';
+      return; // Skip real API setup in mock mode
+    }
+
     const config = providerConfig.getProviderConfig('heygen');
     this.apiKey = config?.apiKey;
     this.webhookSecret = config?.webhookSecret;
@@ -137,6 +149,12 @@ export class HeyGenVideoProvider extends VideoProvider {
       metadata = {}
     } = params;
 
+    // E2E Mock Mode: Return mock video generation response
+    if (this.mockMode) {
+      logger.info('[HeyGenVideoProvider] Mock generateVideo called', { campaignId, enrollmentId });
+      return this._getMockGenerateVideoResponse(params);
+    }
+
     // Replace variables in script using shared utility
     const personalizedScript = replaceTemplateVariables(script, variables);
 
@@ -226,6 +244,12 @@ export class HeyGenVideoProvider extends VideoProvider {
    * IMPORTANT: HeyGen video URLs expire - this endpoint regenerates them
    */
   async getVideoStatus(videoId) {
+    // E2E Mock Mode: Return mock video status
+    if (this.mockMode) {
+      logger.info('[HeyGenVideoProvider] Mock getVideoStatus called', { videoId });
+      return this._getMockVideoStatus(videoId);
+    }
+
     try {
       const response = await this._makeRequest(
         `/v1/video_status.get?video_id=${videoId}`,
@@ -297,6 +321,12 @@ export class HeyGenVideoProvider extends VideoProvider {
    * List available avatars
    */
   async listAvatars() {
+    // E2E Mock Mode: Return mock avatar list
+    if (this.mockMode) {
+      logger.info('[HeyGenVideoProvider] Mock listAvatars called');
+      return this._getMockAvatars();
+    }
+
     try {
       const response = await this._makeRequest('/v2/avatars', 'GET');
 
@@ -317,6 +347,12 @@ export class HeyGenVideoProvider extends VideoProvider {
    * List available voices
    */
   async listVoices() {
+    // E2E Mock Mode: Return mock voice list
+    if (this.mockMode) {
+      logger.info('[HeyGenVideoProvider] Mock listVoices called');
+      return this._getMockVoices();
+    }
+
     try {
       const response = await this._makeRequest('/v2/voices', 'GET');
 
@@ -437,6 +473,12 @@ export class HeyGenVideoProvider extends VideoProvider {
    * Get quota status
    */
   async getQuotaStatus() {
+    // E2E Mock Mode: Return mock quota status
+    if (this.mockMode) {
+      logger.info('[HeyGenVideoProvider] Mock getQuotaStatus called');
+      return this._getMockQuotaStatus();
+    }
+
     try {
       // HeyGen doesn't have a direct quota endpoint
       // We can check remaining credits indirectly through account info
@@ -465,6 +507,12 @@ export class HeyGenVideoProvider extends VideoProvider {
    * Validate configuration
    */
   async validateConfig() {
+    // E2E Mock Mode: Always return success
+    if (this.mockMode) {
+      logger.info('[HeyGenVideoProvider] Mock validateConfig - returning success');
+      return true;
+    }
+
     if (!this.apiKey) {
       throw new Error('HEYGEN_API_KEY not configured');
     }
@@ -517,6 +565,122 @@ export class HeyGenVideoProvider extends VideoProvider {
     };
 
     return progressMap[status] || 0;
+  }
+
+  // ============================================================================
+  // E2E MOCK MODE RESPONSE METHODS
+  // These are only used when E2E_MOCK_EXTERNAL_APIS=true
+  // ============================================================================
+
+  /**
+   * Mock response for generateVideo
+   */
+  _getMockGenerateVideoResponse(params) {
+    const mockVideoId = `mock-video-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return {
+      videoId: mockVideoId,
+      status: 'pending',
+      metadata: {
+        ...params.metadata,
+        heygenVideoId: mockVideoId,
+        campaignId: params.campaignId,
+        enrollmentId: params.enrollmentId,
+        mockMode: true
+      },
+      mockMode: true
+    };
+  }
+
+  /**
+   * Mock response for getVideoStatus
+   */
+  _getMockVideoStatus(videoId) {
+    // Always return completed status for mock mode
+    return {
+      videoId,
+      status: 'completed',
+      progress: 100,
+      videoUrl: `https://mock-heygen.example.com/videos/${videoId}.mp4`,
+      thumbnailUrl: `https://mock-heygen.example.com/thumbnails/${videoId}.jpg`,
+      gifUrl: `https://mock-heygen.example.com/gifs/${videoId}.gif`,
+      captionUrl: `https://mock-heygen.example.com/captions/${videoId}.vtt`,
+      duration: 30,
+      mockMode: true
+    };
+  }
+
+  /**
+   * Mock response for listAvatars
+   */
+  _getMockAvatars() {
+    return [
+      {
+        id: 'mock-avatar-1',
+        name: 'Sarah - Professional',
+        gender: 'female',
+        previewUrl: 'https://mock-heygen.example.com/avatars/sarah.jpg',
+        supportedLanguages: ['en', 'es', 'fr']
+      },
+      {
+        id: 'mock-avatar-2',
+        name: 'Michael - Business',
+        gender: 'male',
+        previewUrl: 'https://mock-heygen.example.com/avatars/michael.jpg',
+        supportedLanguages: ['en', 'de', 'it']
+      },
+      {
+        id: 'mock-avatar-3',
+        name: 'Emma - Friendly',
+        gender: 'female',
+        previewUrl: 'https://mock-heygen.example.com/avatars/emma.jpg',
+        supportedLanguages: ['en', 'pt', 'ja']
+      }
+    ];
+  }
+
+  /**
+   * Mock response for listVoices
+   */
+  _getMockVoices() {
+    return [
+      {
+        id: 'mock-voice-1',
+        name: 'Professional English',
+        language: 'en-US',
+        gender: 'female',
+        accent: 'American',
+        sampleUrl: 'https://mock-heygen.example.com/voices/professional-en.mp3'
+      },
+      {
+        id: 'mock-voice-2',
+        name: 'Friendly English',
+        language: 'en-US',
+        gender: 'male',
+        accent: 'American',
+        sampleUrl: 'https://mock-heygen.example.com/voices/friendly-en.mp3'
+      },
+      {
+        id: 'mock-voice-3',
+        name: 'British Professional',
+        language: 'en-GB',
+        gender: 'female',
+        accent: 'British',
+        sampleUrl: 'https://mock-heygen.example.com/voices/british-pro.mp3'
+      }
+    ];
+  }
+
+  /**
+   * Mock response for getQuotaStatus
+   */
+  _getMockQuotaStatus() {
+    return {
+      remaining: 100,
+      total: 120,
+      used: 20,
+      resetsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      mockMode: true
+    };
   }
 }
 

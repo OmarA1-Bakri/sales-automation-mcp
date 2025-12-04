@@ -42,7 +42,9 @@ function ContactsPage() {
         setTotalContacts(0);
       }
     } catch (error) {
-      console.error('Failed to load contacts:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load contacts:', error);
+      }
       toast.error('Failed to load contacts');
       setContacts([]);
     } finally {

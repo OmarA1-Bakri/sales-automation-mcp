@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS campaign_instances (
     completed_at TIMESTAMP WITH TIME ZONE,
     total_enrolled INTEGER DEFAULT 0,
     total_sent INTEGER DEFAULT 0,
+    total_delivered INTEGER DEFAULT 0,
     total_opened INTEGER DEFAULT 0,
     total_clicked INTEGER DEFAULT 0,
     total_replied INTEGER DEFAULT 0,
